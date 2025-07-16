@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPK Monitoring Masa Studi</title>
+    
+    <!-- jQuery -->
+    <script src="js/jquery/jquery-3.6.0.min.js"></script>
+    
+    <!-- Kendo UI -->
+    <link href="styles/kendo.common-bootstrap.min.css" rel="stylesheet">
+    <link href="styles/kendo.bootstrap-v4.min.css" rel="stylesheet">
+    <script src="js/kendo.all.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="styles/font-awesome/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link href="style.css" rel="stylesheet">
+
+    <!-- Custom JS -->
+    <script src="js/config.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/mahasiswa.js"></script>
+    <script src="js/nilai.js"></script>
+    <script src="js/fis.js"></script>
+    <script src="js/saw.js"></script>
+    <script src="js/comparison.js"></script>
+    <script src="app.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <button class="menu-button" id="toggleMenu">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="header-content">
+            <h1>
+                <i class="fas fa-graduation-cap"></i>
+                SPK Monitoring Masa Studi
+            </h1>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Drawer -->
+        <div id="drawer">
+            <div class="sidebar-menu">
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="#dashboard" class="nav-link active">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#mahasiswa" class="nav-link">
+                            <i class="fas fa-users"></i>
+                            <span>Data Mahasiswa</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#nilai" class="nav-link">
+                            <i class="fas fa-book"></i>
+                            <span>Data Nilai</span>
+                        </a>
+                    </li>
+                    <li class="nav-item has-submenu">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Metode</span>
+                            <i class="fas fa-angle-left submenu-icon"></i>
+                        </a>
+                        <ul class="submenu">
+                            <li class="nav-item">
+                                <a href="#fis" class="nav-link">
+                                    <i class="fas fa-calculator"></i>
+                                    <span>Metode FIS</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#saw" class="nav-link">
+                                    <i class="fas fa-calculator"></i>
+                                    <span>Metode SAW</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#comparison" class="nav-link">
+                                    <i class="fas fa-balance-scale"></i>
+                                    <span>Perbandingan</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Overlay for mobile -->
+        <div class="drawer-overlay"></div>
+
+        <!-- Content Area -->
+        <div class="content-wrapper">
+            <div id="content">
+                <!-- Dashboard Section -->
+                <div id="dashboardSection" class="section">
+                    <div class="content-container">
+                        <h2>Dashboard</h2>
+                        <!-- Statistik Dashboard -->
+                        <div class="dashboard-stats"></div>
+                        
+                        <!-- Grafik Dashboard -->
+                        <div class="dashboard-charts">
+                            <div class="chart-container">
+                                <div id="ipkChart"></div>
+                            </div>
+                            <div class="chart-container">
+                                <div id="klasifikasiChart"></div>
+                            </div>
+                            <div class="chart-container">
+                                <div id="sawChart"></div>
+                            </div>
+                            <div class="chart-container">
+                                <div id="masaStudiChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mahasiswa Section -->
+                <div id="mahasiswaSection" class="section" style="display: none;">
+                    <div class="content-container">
+                        <div class="section-header">
+                            <h2>Data Mahasiswa</h2>
+                            <!-- <button id="addMahasiswaBtn" class="k-button k-primary">
+                                <i class="fas fa-plus"></i> Tambah Mahasiswa
+                            </button> -->
+                        </div>
+                        <div id="mahasiswaGrid"></div>
+                        <div id="mahasiswaForm" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- Nilai Section -->
+                <div id="nilaiSection" class="section" style="display: none;">
+                    <div class="content-container">
+                        <div class="section-header">
+                            <h2>Data Nilai</h2>
+                            <button id="addNilaiBtn" class="k-button k-primary">
+                                <i class="fas fa-plus"></i> Tambah Nilai
+                            </button>
+                        </div>
+                        <div id="nilaiGrid"></div>
+                        <div id="nilaiForm" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- FIS Section -->
+                <div id="fisSection" class="section" style="display: none;">
+                    <div class="content-container">
+                        <h2>Metode FIS</h2>
+                        <div class="section-description">
+                            <p>Klasifikasi peluang kelulusan mahasiswa menggunakan metode Fuzzy Logic.</p>
+                        </div>
+                        <div class="section-content">
+                            <div class="fis-container">
+                                <!-- Single Klasifikasi Card -->
+                                <div class="fis-card fis-form-container">
+                                    <h3><i class="fas fa-user"></i> Klasifikasi Single Mahasiswa</h3>
+                                    <div class="k-form">
+                                        <div class="k-form-field">
+                                            <label class="k-label">Pilih Mahasiswa:</label>
+                                            <div id="mahasiswaDropdown"></div>
+                                        </div>
+                                        <div class="k-form-field">
+                                            <button id="btnKlasifikasi" class="k-button k-primary">
+                                                <i class="fas fa-calculator"></i>
+                                                Klasifikasi
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="hasilKlasifikasiFIS" style="display: none;">
+                                        <h3>Hasil Klasifikasi</h3>
+                                        <div id="hasilDetailFIS"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Batch Klasifikasi Card -->
+                                <div class="fis-card fis-batch-container">
+                                    <h3><i class="fas fa-users"></i> Klasifikasi Batch</h3>
+                                    <p>Lakukan klasifikasi untuk semua mahasiswa sekaligus untuk efisiensi waktu.</p>
+                                    <div class="k-form">
+                                        <div class="k-form-field">
+                                            <button id="btnBatchKlasifikasi" class="k-button k-success">
+                                                <i class="fas fa-tasks"></i>
+                                                Klasifikasi Semua Mahasiswa
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Hasil Grid Card -->
+                                <div class="fis-card fis-grid-container">
+                                    <h3><i class="fas fa-table"></i> Hasil Klasifikasi</h3>
+                                    <div id="fisGrid"></div>
+                                </div>
+
+                                <!-- Info Box -->
+                                <div class="info-box">
+                                    <h3><i class="fas fa-info-circle"></i> Tentang Metode FIS</h3>
+                                    <p>Fuzzy Inference System (FIS) adalah metode yang digunakan untuk mengklasifikasikan peluang kelulusan mahasiswa berdasarkan parameter berikut:</p>
+                                    <ul>
+                                        <li>IPK (Indeks Prestasi Kumulatif)</li>
+                                        <li>Total SKS yang telah ditempuh</li>
+                                        <li>Persentase nilai D, E, dan K</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SAW Section -->
+                <div id="sawSection" class="section" style="display: none;">
+                    <div class="content-container">
+                        <h2>Metode SAW</h2>
+                        <div class="section-description">
+                            <p>Klasifikasi peluang kelulusan mahasiswa menggunakan metode Simple Additive Weighting.</p>
+                        </div>
+                        <div class="section-content">
+                            <div class="saw-container">
+                                <!-- Single Klasifikasi Card -->
+                                <div class="saw-card saw-form-container">
+                                    <h3><i class="fas fa-user"></i> Klasifikasi Single Mahasiswa</h3>
+                                    <div class="k-form">
+                                        <div class="k-form-field">
+                                            <label class="k-label">Pilih Mahasiswa:</label>
+                                            <div id="mahasiswaDropdownSAW"></div>
+                                        </div>
+                                        <div class="k-form-field">
+                                            <button id="btnKlasifikasiSAW" class="k-button k-primary saw-button">
+                                                <i class="fas fa-calculator"></i>
+                                                Klasifikasi
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Loading indicator -->
+                                    <div id="loadingIndicatorSAW" style="display: none;">
+                                        <div class="loading-content">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <span>Sedang memproses klasifikasi...</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="hasilKlasifikasiSAW" style="display: none;">
+                                        <h3>Hasil Klasifikasi</h3>
+                                        <div id="hasilDetailSAW"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Batch Klasifikasi Card -->
+                                <div class="saw-card saw-batch-container">
+                                    <h3><i class="fas fa-users"></i> Klasifikasi Batch</h3>
+                                    <p>Lakukan klasifikasi untuk semua mahasiswa sekaligus menggunakan bobot kriteria yang telah ditentukan.</p>
+                                    <div class="k-form">
+                                        <div class="k-form-field">
+                                            <button id="btnBatchKlasifikasiSAW" class="k-button k-success saw-button">
+                                                <i class="fas fa-tasks"></i>
+                                                Klasifikasi Semua Mahasiswa
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Batch Results -->
+                                    <div id="batchResultsSAW" style="display: none;">
+                                        <h4>Hasil Analisis Batch</h4>
+                                        <div class="batch-stats">
+                                            <div class="stat-item">
+                                                <div class="stat-value stat-tinggi" id="batchTinggiSAW">0</div>
+                                                <div class="stat-label">Peluang Tinggi</div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <div class="stat-value stat-sedang" id="batchSedangSAW">0</div>
+                                                <div class="stat-label">Peluang Sedang</div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <div class="stat-value stat-kecil" id="batchKecilSAW">0</div>
+                                                <div class="stat-label">Peluang Kecil</div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <div class="stat-value stat-total" id="batchTotalSAW">0</div>
+                                                <div class="stat-label">Total Mahasiswa</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Hasil Grid Card -->
+                                <div class="saw-card saw-grid-container">
+                                    <h3><i class="fas fa-table"></i> Hasil Klasifikasi</h3>
+                                    <div id="sawGrid"></div>
+                                </div>
+
+                                <!-- Chart Container -->
+                                <div class="saw-chart-container">
+                                    <h3><i class="fas fa-chart-bar"></i> Visualisasi Hasil</h3>
+                                    <div id="sawChart"></div>
+                                </div>
+
+                                <!-- Info Box -->
+                                <div class="saw-info-box">
+                                    <h3><i class="fas fa-info-circle"></i> Tentang Metode SAW</h3>
+                                    <p>Simple Additive Weighting (SAW) adalah metode yang digunakan untuk mengklasifikasikan peluang kelulusan mahasiswa dengan mempertimbangkan bobot dari setiap kriteria:</p>
+                                    <ul>
+                                        <li><strong>IPK (35%)</strong> - Benefit: Semakin tinggi semakin baik</li>
+                                        <li><strong>Total SKS (37.5%)</strong> - Benefit: Semakin tinggi semakin baik</li>
+                                        <li><strong>Nilai D/E/K (37.5%)</strong> - Cost: Semakin rendah semakin baik</li>
+                                    </ul>
+                                    <p>Metode ini menghitung nilai preferensi untuk setiap alternatif dengan mengalikan nilai ternormalisasi setiap kriteria dengan bobotnya.</p>
+                                    <div class="threshold-info">
+                                        <h4>Threshold Klasifikasi:</h4>
+                                        <ul>
+                                            <li>Skor ≥ 0.7 = Peluang Lulus Tinggi</li>
+                                            <li>0.45 ≤ Skor < 0.7 = Peluang Lulus Sedang</li>
+                                            <li>Skor < 0.45 = Peluang Lulus Kecil</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparison Section -->
+                <div id="comparisonSection" class="section" style="display: none;">
+                    <div class="content-container">
+                        <h2>Perbandingan Metode</h2>
+                        <div class="section-description">
+                            <p>Analisis perbandingan hasil klasifikasi antara metode Fuzzy Inference System (FIS) dan Simple Additive Weighting (SAW).</p>
+                        </div>
+                        <div class="section-content">
+                            <div class="comparison-container">
+                                <!-- Statistik Baris -->
+                                <div class="comparison-stats-row" style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+                                    <div class="comparison-card" style="flex:1; min-width:220px;">
+                                        <h3><i class="fas fa-chart-pie"></i> Statistik FIS</h3>
+                                        <div class="comparison-stats">
+                                            <div class="stat-card">
+                                                <div class="stat-value" id="fisTotal">0</div>
+                                                <div class="stat-label">Total Klasifikasi</div>
+                                            </div>
+                                            <div class="stat-card">
+                                                <div class="stat-value" id="fisAkurasi">0%</div>
+                                                <div class="stat-label">Akurasi</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="comparison-card" style="flex:1; min-width:220px;">
+                                        <h3><i class="fas fa-chart-pie"></i> Statistik SAW</h3>
+                                        <div class="comparison-stats">
+                                            <div class="stat-card">
+                                                <div class="stat-value" id="sawTotal">0</div>
+                                                <div class="stat-label">Total Klasifikasi</div>
+                                            </div>
+                                            <div class="stat-card">
+                                                <div class="stat-value" id="sawAkurasi">0%</div>
+                                                <div class="stat-label">Akurasi</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="comparison-card" style="flex:1; min-width:220px;">
+                                        <h3><i class="fas fa-balance-scale"></i> Statistik Lain</h3>
+                                        <div class="comparison-stats">
+                                            <div class="stat-card">
+                                                <div class="stat-value" id="statConsistent">-</div>
+                                                <div class="stat-label">Konsisten</div>
+                                            </div>
+                                            <div class="stat-card">
+                                                <div class="stat-value" id="statDifferent">-</div>
+                                                <div class="stat-label">Berbeda</div>
+                                            </div>
+                                            <div class="stat-card">
+                                                <div class="stat-value" id="statCorrelation">-</div>
+                                                <div class="stat-label">Korelasi Ranking</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Chart -->
+                                <div class="comparison-chart-container" style="grid-column: 1 / -1;">
+                                    <h3><i class="fas fa-chart-bar"></i> Visualisasi Perbandingan</h3>
+                                    <div id="comparisonChart"></div>
+                                </div>
+                                <!-- Tabel -->
+                                <div class="comparison-card" style="grid-column: 1 / -1;">
+                                    <div class="comparison-table-header">
+                                        <h3><i class="fas fa-table"></i> Detail Perbandingan</h3>
+                                        <div class="comparison-controls">
+                                            <select class="comparison-filter k-dropdown" id="comparisonFilter">
+                                                <option value="all">Semua Hasil</option>
+                                                <option value="consistent">Hasil Konsisten</option>
+                                                <option value="different">Hasil Berbeda</option>
+                                            </select>
+                                            <button class="refresh-comparison k-button k-button-solid k-button-solid-primary">
+                                                <i class="fas fa-refresh"></i> Refresh
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="comparison-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>NIM</th>
+                                                    <th>Nama</th>
+                                                    <th>Hasil FIS</th>
+                                                    <th>Hasil SAW</th>
+                                                    <th>Selisih</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="comparisonTableBody">
+                                                <!-- Data akan diisi oleh JS -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <!-- Analisis/Info -->
+                                <div class="comparison-info-box" style="grid-column: 1 / -1;">
+                                    <h3><i class="fas fa-info-circle"></i> Analisis Perbandingan</h3>
+                                    <ul>
+                                        <li>FIS lebih baik dalam menangani ketidakpastian dan variasi data</li>
+                                        <li>SAW lebih sederhana dan mudah dalam penyesuaian kriteria</li>
+                                        <li>Kombinasi kedua metode dapat memberikan insight yang lebih komprehensif</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification -->
+            <div id="notification"></div>
+            <script id="successTemplate" type="text/x-kendo-template">
+                <div class="notification-success">
+                    <span class="k-icon k-i-check"></span>
+                    <h4>#= title #</h4>
+                    <p>#= message #</p>
+                </div>
+            </script>
+            <script id="errorTemplate" type="text/x-kendo-template">
+                <div class="notification-error">
+                    <span class="k-icon k-i-close"></span>
+                    <h4>#= title #</h4>
+                    <p>#= message #</p>
+                </div>
+            </script>
+            <script id="warningTemplate" type="text/x-kendo-template">
+                <div class="notification-warning">
+                    <span class="k-icon k-i-warning"></span>
+                    <h4>#= title #</h4>
+                    <p>#= message #</p>
+                </div>
+            </script>
+        </div>
+    </div>
+</body>
+</html>
