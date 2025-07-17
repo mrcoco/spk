@@ -14,36 +14,35 @@ from datetime import datetime
 
 # Import konfigurasi database
 try:
-    from config import DATABASE_URL
+    from config import Config
 except ImportError:
-    print("❌ Error: Tidak dapat mengimpor DATABASE_URL dari config.py")
-    print("💡 Pastikan file config.py ada dan berisi DATABASE_URL")
+    print("❌ Error: Tidak dapat mengimpor Config dari config.py")
+    print("💡 Pastikan file config.py ada dan berisi class Config")
     sys.exit(1)
 
 def get_db_config():
-    """Mengekstrak konfigurasi database dari DATABASE_URL"""
-    if not DATABASE_URL:
-        print("❌ Error: DATABASE_URL tidak terdefinisi")
-        sys.exit(1)
-    
+    """Mendapatkan konfigurasi database dari Config"""
     try:
-        # Format: postgresql://username:password@host:port/database
-        url = DATABASE_URL.replace('postgresql://', '')
-        auth, rest = url.split('@')
-        username, password = auth.split(':')
-        host_port, database = rest.split('/')
-        host, port = host_port.split(':')
+        # Gunakan method dari Config untuk mendapatkan konfigurasi database
+        db_config = Config.get_database_config()
+        
+        # Validasi konfigurasi
+        required_fields = ['host', 'port', 'database', 'user', 'password']
+        for field in required_fields:
+            if not db_config.get(field):
+                print(f"❌ Error: {field} tidak terdefinisi dalam konfigurasi database")
+                sys.exit(1)
         
         return {
-            'host': host,
-            'port': port,
-            'database': database,
-            'user': username,
-            'password': password
+            'host': db_config['host'],
+            'port': db_config['port'],
+            'database': db_config['database'],
+            'user': db_config['user'],
+            'password': db_config['password']
         }
     except Exception as e:
-        print(f"❌ Error saat parsing DATABASE_URL: {e}")
-        print("💡 Format yang diharapkan: postgresql://username:password@host:port/database")
+        print(f"❌ Error saat membaca konfigurasi database: {e}")
+        print("💡 Pastikan environment variables atau file .env sudah diset dengan benar")
         sys.exit(1)
 
 def check_database_exists(db_config):
@@ -243,11 +242,34 @@ def main():
     parser.add_argument('--verify', '-v',
                        action='store_true',
                        help='Verifikasi hasil restore')
+    parser.add_argument('--validate-config', '--vc',
+                       action='store_true',
+                       help='Validasi konfigurasi sebelum restore')
     
     args = parser.parse_args()
     
+    # Validasi konfigurasi jika diminta
+    if args.validate_config:
+        print("🔍 Validasi Konfigurasi...")
+        if not Config.validate_config():
+            print("❌ Konfigurasi tidak valid")
+            sys.exit(1)
+        print("✅ Konfigurasi valid")
+        if not args.force:
+            return  # Exit jika hanya validasi yang diminta
+    
     print("🔄 Database Restore Tool")
     print("=" * 50)
+    
+    # Tampilkan informasi konfigurasi
+    print("📋 Konfigurasi:")
+    print(f"   Environment: {Config.ENVIRONMENT}")
+    print(f"   Debug Mode: {Config.DEBUG}")
+    print(f"   Database Host: {Config.POSTGRES_HOST}")
+    print(f"   Database Port: {Config.POSTGRES_PORT}")
+    print(f"   Database Name: {Config.POSTGRES_DB}")
+    print(f"   Database User: {Config.POSTGRES_USER}")
+    print("-" * 50)
     
     # Dapatkan konfigurasi database
     try:
@@ -296,7 +318,12 @@ def main():
             sys.exit(1)
     
     print("\n🎉 Restore database selesai!")
-    print("💡 Tips: Gunakan 'python run_seeder.py' untuk menjalankan seeder jika diperlukan")
+    print("💡 Tips:")
+    print("   - Gunakan 'python3 run_seeder.py' untuk menjalankan seeder jika diperlukan")
+    print("   - Gunakan 'python3 test_config.py' untuk test konfigurasi")
+    print("   - Gunakan '--validate-config' untuk validasi konfigurasi")
+    print(f"   - Environment: {Config.ENVIRONMENT}")
+    print(f"   - Database: {Config.POSTGRES_DB}@{Config.POSTGRES_HOST}:{Config.POSTGRES_PORT}")
 
 if __name__ == "__main__":
     main() 
