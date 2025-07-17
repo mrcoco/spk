@@ -127,17 +127,16 @@ function initializeFISGrid() {
 }
 
 function initializeMahasiswaDropdown() {
-    $("#mahasiswaDropdown").kendoDropDownList({
+    $("#mahasiswaDropdown").kendoComboBox({
         dataSource: {
             transport: {
                 read: {
-                    url: function() {
-                        return CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA + "/search");
-                    },
+                    url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA + "/search"),
                     dataType: "json",
                     data: function() {
+                        var comboBox = $("#mahasiswaDropdown").data("kendoComboBox");
                         return {
-                            q: $("#mahasiswaDropdown").data("kendoDropDownList").filterInput.val() || "",
+                            q: comboBox ? comboBox.text() : "",
                             limit: 20
                         };
                     }
@@ -148,45 +147,56 @@ function initializeMahasiswaDropdown() {
                     return response || [];
                 }
             },
-            serverFiltering: true,
-            filter: {
-                field: "nama",
-                operator: "contains",
-                value: ""
-            }
+            serverFiltering: true
         },
         dataTextField: "nama",
         dataValueField: "nim",
+        valuePrimitive: true,
         optionLabel: "Ketik minimal 3 karakter untuk mencari mahasiswa...",
         filter: "contains",
         minLength: 3,
         delay: 300,
+        suggest: true,
+        enforceMinLength: true,
+        noDataTemplate: 'Ketik minimal 3 karakter...',
+        clearButton: true,
+        autoBind: false,
         template: "#: nim # - #: nama #",
-        virtual: {
-            itemHeight: 26,
-            valueMapper: function(options) {
-                options.success([options.value]);
-            }
-        },
-        filterInput: {
-            placeholder: "Ketik minimal 3 karakter..."
-        },
-        filter: function(e) {
-            var filterValue = e.filter.value;
-            if (filterValue.length < 3) {
-                e.preventDefault();
-                this.dataSource.data([]);
-                return;
+        valueTemplate: "#: nim #",
+        placeholder: "Ketik minimal 3 karakter...",
+        change: function(e) {
+            var comboBox = this;
+            var value = comboBox.value();
+            var dataSource = comboBox.dataSource;
+            var dataItem = dataSource.data().find(function(item) {
+                return item.nim === value;
+            });
+            if (!dataItem) {
+                comboBox.value('');
+                window.selectedMahasiswaData = null;
+                showNotification('warning', 'Pilih mahasiswa dari daftar!');
+            } else {
+                window.selectedMahasiswaData = dataItem;
+                console.log('Selected NIM:', dataItem.nim);
             }
         }
     });
+    window.selectedMahasiswaData = null;
 }
 
 function initializeButtons() {
     // Event handler untuk tombol klasifikasi single
     $("#btnKlasifikasi").click(function() {
-        var dropdown = $("#mahasiswaDropdown").data("kendoDropDownList");
+        var dropdown = $("#mahasiswaDropdown").data("kendoComboBox");
         var selectedNim = dropdown.value();
+        
+        // Coba ambil NIM dari selectedDataItem jika value bukan NIM
+        if (window.selectedMahasiswaData && window.selectedMahasiswaData.nim) {
+            selectedNim = window.selectedMahasiswaData.nim;
+        }
+        
+        console.log("Dropdown value:", dropdown.value());
+        console.log("Selected NIM to use:", selectedNim);
         
         if (!selectedNim) {
             showNotification(

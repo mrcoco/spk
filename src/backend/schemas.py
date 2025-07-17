@@ -67,6 +67,22 @@ class KlasifikasiKelulusanResponse(KlasifikasiKelulusanBase):
     class Config:
         orm_mode = True
 
+class FuzzyResponse(BaseModel):
+    """
+    Schema khusus untuk response endpoint fuzzy yang mengizinkan nilai_fuzzy > 1.0
+    """
+    nim: str
+    kategori: KategoriPeluang
+    nilai_fuzzy: float = Field(..., ge=0.0, le=100.0)  # Skala 0-100
+    ipk_membership: float = Field(..., ge=0.0, le=100.0)
+    sks_membership: float = Field(..., ge=0.0, le=100.0)
+    nilai_dk_membership: float = Field(..., ge=0.0, le=100.0)
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
 class NilaiBase(BaseModel):
     nim: str = Field(..., min_length=8, max_length=20)
     tahun: int = Field(..., ge=2000, le=2100)
@@ -130,6 +146,17 @@ class MahasiswaResponse(MahasiswaBase):
     updated_at: datetime
     nilai_list: List[NilaiResponse] = []
     klasifikasi: Optional[KlasifikasiKelulusanResponse] = None
+
+    class Config:
+        orm_mode = True
+
+class MahasiswaSearchResponse(MahasiswaBase):
+    """
+    Schema untuk endpoint search yang tidak include klasifikasi
+    untuk menghindari konflik validasi nilai_fuzzy
+    """
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         orm_mode = True

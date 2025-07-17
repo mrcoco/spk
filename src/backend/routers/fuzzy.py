@@ -5,7 +5,7 @@ from typing import List
 
 from database import get_db
 from models import Mahasiswa, KlasifikasiKelulusan
-from schemas import KlasifikasiKelulusanResponse, KlasifikasiGridResponse
+from schemas import KlasifikasiKelulusanResponse, KlasifikasiGridResponse, FuzzyResponse
 from fuzzy_logic import FuzzyKelulusan
 
 router = APIRouter(prefix="/api/fuzzy", tags=["fuzzy"])
@@ -139,7 +139,7 @@ def batch_klasifikasi_mahasiswa(db: Session = Depends(get_db)):
             detail=f"Terjadi kesalahan saat melakukan batch klasifikasi: {str(e)}"
         )
 
-@router.get("/{nim}", response_model=KlasifikasiKelulusanResponse)
+@router.get("/{nim}", response_model=FuzzyResponse)
 def get_fuzzy_result(nim: str, db: Session = Depends(get_db)):
     # Cek apakah mahasiswa ada
     mahasiswa = db.query(Mahasiswa).filter(Mahasiswa.nim == nim).first()

@@ -7,7 +7,7 @@ from sqlalchemy import func
 from database import get_db
 from models import Mahasiswa, KlasifikasiKelulusan, Nilai
 from schemas import (
-    MahasiswaCreate, MahasiswaUpdate, MahasiswaResponse,
+    MahasiswaCreate, MahasiswaUpdate, MahasiswaResponse, MahasiswaSearchResponse,
     GridResponse
 )
 from fuzzy_logic import FuzzyKelulusan
@@ -85,6 +85,31 @@ def create_mahasiswa(mahasiswa: MahasiswaCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_mahasiswa)
     return db_mahasiswa
+
+@router.get("/search", response_model=List[MahasiswaSearchResponse])
+def search_mahasiswa_for_dropdown(
+    q: str = Query(..., min_length=3, description="Query pencarian minimal 3 karakter"),
+    limit: int = Query(20, ge=1, le=100, description="Limit hasil pencarian"),
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint untuk pencarian mahasiswa yang digunakan oleh dropdown.
+    Memerlukan minimal 3 karakter untuk melakukan pencarian.
+    """
+    if len(q) < 3:
+        raise HTTPException(
+            status_code=400, 
+            detail="Query pencarian minimal 3 karakter"
+        )
+    
+    # Pencarian berdasarkan NIM atau nama
+    query = db.query(Mahasiswa).filter(
+        (Mahasiswa.nim.ilike(f"%{q}%")) |
+        (Mahasiswa.nama.ilike(f"%{q}%"))
+    ).order_by(Mahasiswa.nama.asc()).limit(limit)
+    
+    mahasiswa_list = query.all()
+    return mahasiswa_list
 
 @router.get("/{nim}", response_model=MahasiswaResponse)
 def get_mahasiswa_by_nim(nim: str, db: Session = Depends(get_db)):
@@ -254,29 +279,3 @@ def sync_nilai_mahasiswa(nim: str, db: Session = Depends(get_db)):
         "total_mk": total_mk,
         "total_dek": dek_count
     } 
-
-@router.get("/search", response_model=List[MahasiswaResponse])
-def search_mahasiswa_for_dropdown(
-    q: str = Query(..., min_length=3, description="Query pencarian minimal 3 karakter"),
-    limit: int = Query(20, ge=1, le=100, description="Limit hasil pencarian"),
-    db: Session = Depends(get_db)
-):
-    """
-    
-    Endpoint untuk pencarian mahasiswa yang digunakan oleh dropdown.
-    Memerlukan minimal 3 karakter untuk melakukan pencarian.
-    """
-    if len(q) < 3:
-        raise HTTPException(
-            status_code=400, 
-            detail="Query pencarian minimal 3 karakter"
-        )
-    
-    # Pencarian berdasarkan NIM atau nama
-    query = db.query(Mahasiswa).filter(
-        (Mahasiswa.nim.ilike(f"%{q}%")) |
-        (Mahasiswa.nama.ilike(f"%{q}%"))
-    ).order_by(Mahasiswa.nama.asc()).limit(limit)
-    
-    mahasiswa_list = query.all()
-    return mahasiswa_list 
