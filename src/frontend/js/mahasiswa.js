@@ -1,8 +1,46 @@
+// Fungsi untuk menunggu CONFIG tersedia
+function waitForConfig() {
+    return new Promise((resolve, reject) => {
+        if (typeof CONFIG !== 'undefined') {
+            console.log('✅ CONFIG sudah tersedia di mahasiswa.js');
+            resolve();
+            return;
+        }
+
+        console.log('⚠️ CONFIG belum tersedia, menunggu...');
+        let attempts = 0;
+        const maxAttempts = 100; // 10 detik dengan interval 100ms
+
+        const checkConfig = setInterval(() => {
+            attempts++;
+            
+            if (typeof CONFIG !== 'undefined') {
+                clearInterval(checkConfig);
+                console.log('✅ CONFIG berhasil dimuat di mahasiswa.js');
+                resolve();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkConfig);
+                console.error('❌ CONFIG tidak dapat dimuat dalam waktu yang ditentukan');
+                reject(new Error('CONFIG timeout'));
+            }
+        }, 100);
+    });
+}
+
 // Inisialisasi DataSource untuk Grid Mahasiswa
-var mahasiswaDataSource = new kendo.data.DataSource({
-    transport: {
-        read: {
-            url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA),
+var mahasiswaDataSource;
+
+function initializeMahasiswaDataSource() {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di initializeMahasiswaDataSource');
+        return;
+    }
+
+    mahasiswaDataSource = new kendo.data.DataSource({
+        transport: {
+            read: {
+                url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA),
             dataType: "json",
             type: "GET"
         },
@@ -114,12 +152,19 @@ var mahasiswaDataSource = new kendo.data.DataSource({
             "error"
         );
     }
-});
+    });
+}
 
 // Inisialisasi Grid Mahasiswa
 $(document).ready(function() {
-    var grid = $("#mahasiswaGrid").kendoGrid({
-        dataSource: mahasiswaDataSource,
+    // Tunggu sampai CONFIG tersedia
+    waitForConfig().then(() => {
+        // Inisialisasi DataSource terlebih dahulu
+        initializeMahasiswaDataSource();
+        
+        // Kemudian inisialisasi Grid
+        var grid = $("#mahasiswaGrid").kendoGrid({
+            dataSource: mahasiswaDataSource,
         height: 550,
         toolbar: [
             { name: "create", text: "Tambah Mahasiswa" },
@@ -289,6 +334,9 @@ $(document).ready(function() {
         }
     }).data("kendoGrid");
     initializeMahasiswaForm();
+    }).catch(error => {
+        console.error('Failed to initialize mahasiswa grid:', error);
+    });
 });
 
 function initializeMahasiswaGrid() {
@@ -398,6 +446,13 @@ function initializeMahasiswaForm() {
 
 // Fungsi untuk menghapus mahasiswa dengan validasi
 function deleteMahasiswa(nim) {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di deleteMahasiswa');
+        showNotification("Error", "Konfigurasi aplikasi belum siap", "error");
+        return Promise.reject(new Error("CONFIG tidak tersedia"));
+    }
+
     if (!nim) {
         showNotification("Error", "NIM tidak valid", "error");
         return Promise.reject(new Error("NIM tidak valid"));
@@ -448,6 +503,13 @@ function getMahasiswaDataSource() {
 
 // Fungsi untuk sync nilai satu mahasiswa
 function syncNilai(e, element) {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di syncNilai');
+        showNotification("Error", "Konfigurasi aplikasi belum siap", "error");
+        return;
+    }
+
     e.preventDefault();
     var grid = $("#mahasiswaGrid").data("kendoGrid");
     var dataItem = grid.dataItem($(element).closest("tr"));
@@ -482,6 +544,13 @@ function syncNilai(e, element) {
 
 // Fungsi untuk sync semua nilai
 function syncAllNilai() {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di syncAllNilai');
+        showNotification("Error", "Konfigurasi aplikasi belum siap", "error");
+        return;
+    }
+
     var grid = $("#mahasiswaGrid").data("kendoGrid");
     
     // Tambahkan class spin ke icon
@@ -516,6 +585,13 @@ function syncAllNilai() {
 
 // Fungsi untuk menampilkan window klasifikasi
 function showKlasifikasi(e, element) {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di showKlasifikasi');
+        showNotification("Error", "Konfigurasi aplikasi belum siap", "error");
+        return;
+    }
+
     e.preventDefault();
     var grid = $("#mahasiswaGrid").data("kendoGrid");
     var dataItem = grid.dataItem($(element).closest("tr"));
@@ -628,6 +704,13 @@ function showBatchKlasifikasi() {
 }
 
 function executeBatchKlasifikasi() {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di executeBatchKlasifikasi');
+        showNotification("Error", "Konfigurasi aplikasi belum siap", "error");
+        return;
+    }
+
     // Tampilkan loading
     const loadingDialog = $("<div>")
         .append("<p style='text-align: center;'><i class='fas fa-spinner fa-spin'></i></p>")

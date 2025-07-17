@@ -18,50 +18,94 @@
     <meta name="env-ENABLE_COMPARISON" content="true">
     <meta name="env-ENABLE_BATCH_PROCESSING" content="true">
     
-    <!-- jQuery -->
+    <!-- jQuery (CDN/eksternal, tidak perlu version) -->
     <script src="js/jquery/jquery-3.6.0.min.js"></script>
     
-    <!-- Kendo UI -->
+    <!-- Kendo UI (CDN/eksternal, tidak perlu version) -->
     <link href="styles/kendo.common-bootstrap.min.css" rel="stylesheet">
     <link href="styles/kendo.bootstrap-v4.min.css" rel="stylesheet">
     <script src="js/kendo.all.min.js"></script>
     
-    <!-- Font Awesome -->
+    <!-- Font Awesome (CDN/eksternal, tidak perlu version) -->
     <link rel="stylesheet" href="styles/font-awesome/all.min.css">
     
-    <!-- Custom CSS -->
-    <link href="style.css" rel="stylesheet">
-
-    <!-- Custom JS -->
-    <script src="js/env-loader.js"></script>
-    <script src="js/env-updater.js"></script>
-    <script src="js/config.js"></script>
-    <script src="js/router.js"></script>
-    <script src="js/dashboard.js"></script>
-    <script src="js/mahasiswa.js"></script>
-    <script src="js/nilai.js"></script>
-    <script src="js/fis.js"></script>
-    <script src="js/saw.js"></script>
-    <!-- <script src="js/comparison.js"></script> -->
-    <script src="app.js"></script>
-    
-    <!-- Test Configuration -->
+    <!-- Version/Timestamp untuk cache busting dan loader custom asset -->
     <script>
-        // Load test script berdasarkan environment
-        if (window.envUpdater) {
-            const script = document.createElement('script');
-            if (window.envUpdater.isProduction()) {
-                script.src = 'js/test-env-production.js';
-            } else {
-                script.src = 'js/test-config.js';
+        // Generate timestamp untuk cache busting
+        window.APP_VERSION = Date.now();
+        function addVersion(url) {
+            const separator = url.includes('?') ? '&' : '?';
+            return url + separator + 'v=' + window.APP_VERSION;
+        }
+        // Loader untuk file CSS dan JS custom
+        const cssFiles = [
+            'style.css'
+        ];
+        const jsFiles = [
+            'js/env-loader.js',
+            'js/env-updater.js',
+            'js/config.js',
+            'js/router.js',
+            'js/dashboard.js',
+            'js/mahasiswa.js',
+            'js/nilai.js',
+            'js/fis.js',
+            'js/saw.js',
+            'app.js'
+        ];
+        // Load CSS
+        cssFiles.forEach(href => {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = addVersion(href);
+            document.head.appendChild(link);
+        });
+        // Load JS dengan urutan yang benar
+        function loadScriptsSequentially(files, index = 0) {
+            if (index >= files.length) {
+                console.log('✅ Semua script berhasil dimuat');
+                return;
             }
+            
+            const script = document.createElement('script');
+            script.src = addVersion(files[index]);
+            
+            script.onload = function() {
+                console.log(`✅ Script loaded: ${files[index]}`);
+                loadScriptsSequentially(files, index + 1);
+            };
+            
+            script.onerror = function() {
+                console.error(`❌ Error loading script: ${files[index]}`);
+                // Lanjutkan ke script berikutnya meski ada error
+                loadScriptsSequentially(files, index + 1);
+            };
+            
             document.head.appendChild(script);
         }
         
-        // Load destroy test script
-        // const destroyTestScript = document.createElement('script');
-        // destroyTestScript.src = 'js/test-destroy.js';
-        // document.head.appendChild(destroyTestScript);
+        // Mulai loading script secara berurutan
+        loadScriptsSequentially(jsFiles);
+    </script>
+    
+    <!-- Test Configuration (tetap dinamis, gunakan addVersion) -->
+    <script>
+        // Load test script berdasarkan environment dengan version
+        window.addEventListener('DOMContentLoaded', function() {
+            if (window.envUpdater) {
+                const script = document.createElement('script');
+                if (window.envUpdater.isProduction()) {
+                    script.src = addVersion('js/test-env-production.js');
+                } else {
+                    script.src = addVersion('js/test-config.js');
+                }
+                document.head.appendChild(script);
+            }
+            // Load destroy test script dengan version jika diperlukan
+            // const destroyTestScript = document.createElement('script');
+            // destroyTestScript.src = addVersion('js/test-destroy.js');
+            // document.head.appendChild(destroyTestScript);
+        });
     </script>
 </head>
 <body>
@@ -232,6 +276,29 @@
                                                 <i class="fas fa-tasks"></i>
                                                 Klasifikasi Semua Mahasiswa
                                             </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Batch Results -->
+                                    <div id="batchResultsFIS" style="display: none;">
+                                        <h4>Hasil Analisis Batch</h4>
+                                        <div class="batch-stats">
+                                            <div class="stat-item">
+                                                <div class="stat-value stat-tinggi" id="batchTinggiFIS">0</div>
+                                                <div class="stat-label">Peluang Tinggi</div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <div class="stat-value stat-sedang" id="batchSedangFIS">0</div>
+                                                <div class="stat-label">Peluang Sedang</div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <div class="stat-value stat-kecil" id="batchKecilFIS">0</div>
+                                                <div class="stat-label">Peluang Kecil</div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <div class="stat-value stat-total" id="batchTotalFIS">0</div>
+                                                <div class="stat-label">Total Mahasiswa</div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -498,27 +565,74 @@
                 </div>
             </div>
 
-            <!-- Notification -->
+            <!-- Notification Container -->
             <div id="notification"></div>
+            
+            <!-- Success Template -->
             <script id="successTemplate" type="text/x-kendo-template">
-                <div class="notification-success">
-                    <span class="k-icon k-i-check"></span>
-                    <h4>#= title #</h4>
-                    <p>#= message #</p>
+                <div class="toast-notification toast-success" onclick="closeToast(this)">
+                    <div class="toast-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="toast-content">
+                        <div class="toast-title">#= title #</div>
+                        <div class="toast-message">#= message #</div>
+                    </div>
+                    <div class="toast-close" onclick="event.stopPropagation(); closeToast(this.parentElement)">
+                        <i class="fas fa-times"></i>
+                    </div>
+                    <div class="toast-progress"></div>
                 </div>
             </script>
+            
+            <!-- Error Template -->
             <script id="errorTemplate" type="text/x-kendo-template">
-                <div class="notification-error">
-                    <span class="k-icon k-i-close"></span>
-                    <h4>#= title #</h4>
-                    <p>#= message #</p>
+                <div class="toast-notification toast-error" onclick="closeToast(this)">
+                    <div class="toast-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="toast-content">
+                        <div class="toast-title">#= title #</div>
+                        <div class="toast-message">#= message #</div>
+                    </div>
+                    <div class="toast-close" onclick="event.stopPropagation(); closeToast(this.parentElement)">
+                        <i class="fas fa-times"></i>
+                    </div>
+                    <div class="toast-progress"></div>
                 </div>
             </script>
+            
+            <!-- Warning Template -->
             <script id="warningTemplate" type="text/x-kendo-template">
-                <div class="notification-warning">
-                    <span class="k-icon k-i-warning"></span>
-                    <h4>#= title #</h4>
-                    <p>#= message #</p>
+                <div class="toast-notification toast-warning" onclick="closeToast(this)">
+                    <div class="toast-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="toast-content">
+                        <div class="toast-title">#= title #</div>
+                        <div class="toast-message">#= message #</div>
+                    </div>
+                    <div class="toast-close" onclick="event.stopPropagation(); closeToast(this.parentElement)">
+                        <i class="fas fa-times"></i>
+                    </div>
+                    <div class="toast-progress"></div>
+                </div>
+            </script>
+            
+            <!-- Info Template -->
+            <script id="infoTemplate" type="text/x-kendo-template">
+                <div class="toast-notification toast-info" onclick="closeToast(this)">
+                    <div class="toast-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="toast-content">
+                        <div class="toast-title">#= title #</div>
+                        <div class="toast-message">#= message #</div>
+                    </div>
+                    <div class="toast-close" onclick="event.stopPropagation(); closeToast(this.parentElement)">
+                        <i class="fas fa-times"></i>
+                    </div>
+                    <div class="toast-progress"></div>
                 </div>
             </script>
         </div>

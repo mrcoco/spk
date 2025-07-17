@@ -5,18 +5,42 @@
 
 // Pastikan env-loader.js sudah dimuat sebelum config.js
 if (typeof window.envLoader === 'undefined') {
-    console.error('❌ env-loader.js harus dimuat sebelum config.js');
-    // Fallback ke default values
-    window.envLoader = {
-        get: (key, defaultValue) => defaultValue,
-        getBoolean: (key, defaultValue) => defaultValue,
-        getNumber: (key, defaultValue) => defaultValue,
-        getArray: (key, defaultValue) => defaultValue,
-        isDevelopment: () => true,
-        isProduction: () => false,
-        isDebug: () => true
-    };
+    console.warn('⚠️ env-loader.js belum dimuat, menunggu...');
+    
+    // Tunggu sampai env-loader.js dimuat
+    let attempts = 0;
+    const maxAttempts = 50; // 5 detik dengan interval 100ms
+    
+    const waitForEnvLoader = setInterval(() => {
+        attempts++;
+        
+        if (typeof window.envLoader !== 'undefined') {
+            clearInterval(waitForEnvLoader);
+            console.log('✅ env-loader.js berhasil dimuat');
+            initializeConfig();
+        } else if (attempts >= maxAttempts) {
+            clearInterval(waitForEnvLoader);
+            console.error('❌ env-loader.js tidak dapat dimuat, menggunakan fallback');
+            // Fallback ke default values
+            window.envLoader = {
+                get: (key, defaultValue) => defaultValue,
+                getBoolean: (key, defaultValue) => defaultValue,
+                getNumber: (key, defaultValue) => defaultValue,
+                getArray: (key, defaultValue) => defaultValue,
+                isDevelopment: () => true,
+                isProduction: () => false,
+                isDebug: () => true
+            };
+            initializeConfig();
+        }
+    }, 100);
+} else {
+    console.log('✅ env-loader.js sudah tersedia');
+    initializeConfig();
 }
+
+// Fungsi untuk inisialisasi konfigurasi
+function initializeConfig() {
 
 const CONFIG = {
     // API Configuration
@@ -68,6 +92,8 @@ const CONFIG = {
             MAHASISWA: `${this.API_PREFIX}/mahasiswa`,
             NILAI: `${this.API_PREFIX}/nilai`,
             FUZZY: `${this.API_PREFIX}/fuzzy`,
+            FUZZY_RESULT: `${this.API_PREFIX}/fuzzy/results`,
+            FUZZY_BATCH: `${this.API_PREFIX}/fuzzy/batch-klasifikasi`,
             SAW: `${this.API_PREFIX}/saw`,
             COMPARISON: `${this.API_PREFIX}/comparison`,
             BATCH_KLASIFIKASI: `${this.API_PREFIX}/batch/klasifikasi`
@@ -172,6 +198,13 @@ const CONFIG = {
 // Log konfigurasi di development
 CONFIG.logConfig();
 
+// Ekspos CONFIG ke global scope
+window.CONFIG = CONFIG;
+
 // Mencegah modifikasi objek CONFIG
 Object.freeze(CONFIG);
-Object.freeze(CONFIG.ENDPOINTS); 
+Object.freeze(CONFIG.ENDPOINTS);
+
+console.log('✅ CONFIG berhasil diinisialisasi dan diekspos ke global scope');
+
+} // Tutup fungsi initializeConfig 

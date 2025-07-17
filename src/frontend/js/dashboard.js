@@ -1,25 +1,75 @@
+// Fungsi untuk menampilkan notifikasi (fallback jika app.js belum load)
+function showNotification(title, message, type) {
+    const notification = $("#notification").data("kendoNotification");
+    if (notification) {
+        notification.show({
+            title: title,
+            message: message
+        }, type);
+    } else {
+        // Fallback jika Kendo Notification belum siap
+        console.warn("Kendo Notification belum diinisialisasi, menggunakan alert sebagai fallback");
+        console.log("{$title}, {$message}, menggunakan alert sebagai fallback");
+        // alert(`${title}: ${message}`);
+    }
+}
+
 // Inisialisasi Dashboard saat dokumen siap
 $(document).ready(function() {
-    initializeDashboard();
-    // Tambahkan style ke head
-    $('head').append(dashboardStyle);
+    // Tunggu sampai CONFIG tersedia
+    waitForConfig().then(() => {
+        initializeDashboard();
+        // Tambahkan style ke head
+        $('head').append(dashboardStyle);
 
-    // Inisialisasi Form FIS saat section FIS ditampilkan
-    // Ubah event handler untuk mendeteksi perubahan display
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.target.id === 'fisSection' && 
-                mutation.target.style.display !== 'none') {
-                initializeFISForm();
-            }
+        // Inisialisasi Form FIS saat section FIS ditampilkan
+        // Ubah event handler untuk mendeteksi perubahan display
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.target.id === 'fisSection' && 
+                    mutation.target.style.display !== 'none') {
+                    initializeFISForm();
+                }
+            });
         });
-    });
 
-    observer.observe(document.getElementById('fisSection'), {
-        attributes: true,
-        attributeFilter: ['style']
+        observer.observe(document.getElementById('fisSection'), {
+            attributes: true,
+            attributeFilter: ['style']
+        });
+    }).catch(error => {
+        console.error('Failed to initialize dashboard:', error);
     });
 });
+
+// Fungsi untuk menunggu CONFIG tersedia
+function waitForConfig() {
+    return new Promise((resolve, reject) => {
+        if (typeof CONFIG !== 'undefined') {
+            console.log('✅ CONFIG sudah tersedia di dashboard.js');
+            resolve();
+            return;
+        }
+
+        console.log('⚠️ CONFIG belum tersedia, menunggu...');
+        let attempts = 0;
+        const maxAttempts = 100; // 10 detik dengan interval 100ms
+
+        const checkConfig = setInterval(() => {
+            attempts++;
+            
+            if (typeof CONFIG !== 'undefined') {
+                clearInterval(checkConfig);
+                console.log('✅ CONFIG berhasil dimuat di dashboard.js');
+                resolve();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkConfig);
+                console.error('❌ CONFIG tidak dapat dimuat dalam waktu yang ditentukan');
+                reject(new Error('CONFIG timeout'));
+            }
+        }, 100);
+    });
+}
 
 // Inisialisasi Dashboard
 function initializeDashboard() {
@@ -35,6 +85,17 @@ function initializeDashboard() {
 
 function initializeDashboardStats() {
     try {
+        // Pastikan CONFIG tersedia
+        if (typeof CONFIG === 'undefined') {
+            console.error('❌ CONFIG tidak tersedia di initializeDashboardStats');
+            showNotification(
+                "Error",
+                "Konfigurasi aplikasi belum siap",
+                "error"
+            );
+            return;
+        }
+
         // Tampilkan loading state
         showLoadingStats();
         
@@ -349,6 +410,13 @@ function initializeDashboardCharts() {
 
 function initializeFuzzyDistribution() {
     try {
+        // Pastikan CONFIG tersedia
+        if (typeof CONFIG === 'undefined') {
+            console.error('❌ CONFIG tidak tersedia di initializeFuzzyDistribution');
+            updateFuzzyDistributionChart(null);
+            return;
+        }
+
         // Mengambil data distribusi klasifikasi fuzzy logic
         $.ajax({
             url: CONFIG.getApiUrl('/api/dashboard/fuzzy-distribution'),
@@ -447,6 +515,13 @@ function updateFuzzyDistributionChart(data) {
 }
 
 function loadFuzzyStats() {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di loadFuzzyStats');
+        updateFuzzyStats(null);
+        return;
+    }
+
     $.ajax({
         url: CONFIG.getApiUrl('/api/dashboard/fuzzy-distribution'),
         method: 'GET',
@@ -528,6 +603,13 @@ function initializeSAWDistribution() {
 }
 
 function loadSAWDistributionWithRetry(retryCount = 0) {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di loadSAWDistributionWithRetry');
+        updateSAWDistributionChart(null);
+        return;
+    }
+
     const maxRetries = 3;
     const timeoutDuration = 30000; // 30 detik
     
@@ -610,6 +692,13 @@ function hideSAWDistributionLoading() {
 }
 
 function refreshSAWDistribution() {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di refreshSAWDistribution');
+        updateSAWDistributionChart(null);
+        return;
+    }
+
     // Tampilkan loading state
     showSAWDistributionLoading();
     
@@ -719,6 +808,13 @@ function updateSAWDistributionChart(data) {
 }
 
 function loadSAWStats() {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di loadSAWStats');
+        updateSAWStats(null);
+        return;
+    }
+
     $.ajax({
         url: CONFIG.getApiUrl('/api/saw/distribution'),
         method: 'GET',
@@ -788,6 +884,17 @@ function updateSAWStats(data) {
 
 // Inisialisasi Form FIS
 function initializeFISForm() {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di initializeFISForm');
+        showNotification(
+            "Error",
+            "Konfigurasi aplikasi belum siap",
+            "error"
+        );
+        return;
+    }
+
     // Inisialisasi Dropdown Mahasiswa
     $("#mahasiswaDropdown").kendoComboBox({
         dataSource: {
@@ -865,28 +972,74 @@ function initializeFISForm() {
             url: `${CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY)}/${selectedNim}`,
             type: "GET",
             success: function(response) {
-                // Tampilkan hasil klasifikasi
+                // Tampilkan hasil klasifikasi dengan profile mahasiswa dan data raw
+                const classificationColor = getFISClassificationColor(response.kategori);
+                
                 var hasilContent = `
-                    <div class="k-form">
-                        <div class="k-form-field">
-                            <label><strong>Kategori Kelulusan:</strong></label>
-                            <span class="k-form-field-text">${response.kategori}</span>
+                    <div class="fis-result">
+                        <div class="result-header">
+                            <h4>Hasil untuk ${response.nama || 'N/A'} (${response.nim || 'N/A'})</h4>
                         </div>
-                        <div class="k-form-field">
-                            <label><strong>Nilai Fuzzy:</strong></label>
-                            <span class="k-form-field-text">${response.nilai_fuzzy.toFixed(2)}</span>
+                        
+                        <div class="result-section">
+                            <h5>Informasi Mahasiswa</h5>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="label">NIM:</span>
+                                    <span class="value">${response.nim || 'N/A'}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label">Nama:</span>
+                                    <span class="value">${response.nama || 'N/A'}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label">Program Studi:</span>
+                                    <span class="value">${response.program_studi || 'N/A'}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="k-form-field">
-                            <label><strong>Keanggotaan IPK:</strong></label>
-                            <span class="k-form-field-text">${response.ipk_membership}</span>
+                        
+                        <div class="result-section">
+                            <h5>Data Raw</h5>
+                            <div class="criteria-grid">
+                                <div class="criteria-item">
+                                    <div class="criteria-header">
+                                        <strong>IPK</strong>
+                                    </div>
+                                    <div class="criteria-values">
+                                        <div>Nilai: <strong>${response.ipk?.toFixed(2) || 'N/A'}</strong></div>
+                                        <div>Keanggotaan: <strong>${response.ipk_membership?.toFixed(2) || 'N/A'}</strong></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="criteria-item">
+                                    <div class="criteria-header">
+                                        <strong>SKS</strong>
+                                    </div>
+                                    <div class="criteria-values">
+                                        <div>Nilai: <strong>${response.sks || 'N/A'}</strong></div>
+                                        <div>Keanggotaan: <strong>${response.sks_membership?.toFixed(2) || 'N/A'}</strong></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="criteria-item">
+                                    <div class="criteria-header">
+                                        <strong>Nilai D/E/K</strong>
+                                    </div>
+                                    <div class="criteria-values">
+                                        <div>Nilai: <strong>${response.persen_dek?.toFixed(2) || 'N/A'}%</strong></div>
+                                        <div>Keanggotaan: <strong>${response.nilai_dk_membership?.toFixed(2) || 'N/A'}</strong></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="k-form-field">
-                            <label><strong>Keanggotaan SKS:</strong></label>
-                            <span class="k-form-field-text">${response.sks_membership}</span>
-                        </div>
-                        <div class="k-form-field">
-                            <label><strong>Keanggotaan Nilai D/E/K:</strong></label>
-                            <span class="k-form-field-text">${response.nilai_dk_membership}</span>
+                        
+                        <div class="result-final" style="background: ${classificationColor}; color: white; padding: 20px; border-radius: 8px; text-align: center; margin-top: 20px;">
+                            <h4>Nilai Fuzzy Final: ${response.nilai_fuzzy?.toFixed(2) || 'N/A'}</h4>
+                            <h3>Klasifikasi: ${response.kategori || 'N/A'}</h3>
+                            <p style="margin: 0; opacity: 0.9;">
+                                ${getFISClassificationThreshold(response.kategori)}
+                            </p>
                         </div>
                     </div>
                 `;
@@ -911,6 +1064,35 @@ function initializeFISForm() {
             }
         });
     });
+}
+
+// Fungsi helper untuk FIS classification
+function getFISClassificationColor(classification) {
+    if (!classification || typeof classification !== 'string') {
+        return '#6c757d'; // Default gray color
+    }
+    
+    if (classification.includes('Tinggi')) return '#28a745';
+    if (classification.includes('Sedang')) return '#ffc107';
+    if (classification.includes('Kecil')) return '#dc3545';
+    
+    return '#6c757d'; // Default gray color
+}
+
+function getFISClassificationThreshold(classification) {
+    if (!classification || typeof classification !== 'string') {
+        return 'Klasifikasi tidak tersedia';
+    }
+    
+    if (classification.includes('Tinggi')) {
+        return 'Nilai Fuzzy ≥ 70 - Kelulusan Tinggi';
+    } else if (classification.includes('Sedang')) {
+        return 'Nilai Fuzzy 40-69 - Kelulusan Sedang';
+    } else if (classification.includes('Kecil')) {
+        return 'Nilai Fuzzy < 40 - Kelulusan Kecil';
+    }
+    
+    return 'Klasifikasi tidak tersedia';
 }
 
 // Tambahkan style untuk dashboard
@@ -1035,6 +1217,158 @@ const dashboardStyle = `
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 15px;
+}
+
+/* Styling untuk hasil klasifikasi FIS */
+.fis-result {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-top: 20px;
+}
+
+.result-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.result-header h4 {
+    margin: 0;
+    color: #1a237e;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+}
+
+.result-section {
+    margin-bottom: 25px;
+}
+
+.result-section h5 {
+    color: #1a237e;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.info-item {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 4px solid #1a237e;
+}
+
+.info-item .label {
+    font-weight: 600;
+    color: #495057;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.info-item .value {
+    color: #1a237e;
+    font-weight: 500;
+}
+
+.criteria-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.criteria-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.criteria-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.criteria-header {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.criteria-header strong {
+    color: #1a237e;
+    font-size: 1rem;
+}
+
+.criteria-values {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.criteria-values div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+}
+
+.criteria-values div:first-child {
+    font-weight: 500;
+    color: #495057;
+}
+
+.result-final {
+    margin-top: 20px;
+    border-radius: 8px;
+    text-align: center;
+    padding: 20px;
+}
+
+.result-final h4 {
+    margin: 0 0 10px 0;
+    font-size: 1.2rem;
+}
+
+.result-final h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.result-final p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 0.9rem;
+}
+
+/* Responsive design untuk hasil klasifikasi */
+@media (max-width: 768px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .criteria-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .fis-result {
+        padding: 15px;
+    }
+    
+    .result-header h4 {
+        font-size: 1.1rem;
+    }
 }
 
 .fuzzy-stat-item {

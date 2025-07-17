@@ -1,10 +1,55 @@
+// Fungsi untuk menunggu CONFIG tersedia
+function waitForConfig() {
+    return new Promise((resolve, reject) => {
+        if (typeof CONFIG !== 'undefined') {
+            console.log('✅ CONFIG sudah tersedia di nilai.js');
+            resolve();
+            return;
+        }
+
+        console.log('⚠️ CONFIG belum tersedia, menunggu...');
+        let attempts = 0;
+        const maxAttempts = 100; // 10 detik dengan interval 100ms
+
+        const checkConfig = setInterval(() => {
+            attempts++;
+            
+            if (typeof CONFIG !== 'undefined') {
+                clearInterval(checkConfig);
+                console.log('✅ CONFIG berhasil dimuat di nilai.js');
+                resolve();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkConfig);
+                console.error('❌ CONFIG tidak dapat dimuat dalam waktu yang ditentukan');
+                reject(new Error('CONFIG timeout'));
+            }
+        }, 100);
+    });
+}
+
 // Inisialisasi Grid Nilai
 $(document).ready(function() {
-    initializeNilaiGrid();
-    initializeNilaiForm();
+    // Tunggu sampai CONFIG tersedia
+    waitForConfig().then(() => {
+        initializeNilaiGrid();
+        initializeNilaiForm();
+    }).catch(error => {
+        console.error('Failed to initialize nilai components:', error);
+    });
 });
 
 function initializeNilaiGrid() {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di initializeNilaiGrid');
+        showNotification(
+            "Error",
+            "Konfigurasi aplikasi belum siap",
+            "error"
+        );
+        return;
+    }
+
     $("#nilaiGrid").kendoGrid({
         dataSource: {
             transport: {
@@ -161,6 +206,17 @@ function initializeNilaiGrid() {
 }
 
 function initializeNilaiForm() {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di initializeNilaiForm');
+        showNotification(
+            "Error",
+            "Konfigurasi aplikasi belum siap",
+            "error"
+        );
+        return;
+    }
+
     $("#nilaiForm").kendoForm({
         orientation: "vertical",
         formData: {

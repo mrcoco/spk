@@ -10,34 +10,43 @@ const routes = {
 
 // Inisialisasi aplikasi
 $(document).ready(function() {
-    // Inisialisasi notifikasi
-    $("#notification").kendoNotification({
-        position: {
-            pinned: true,
-            top: 30,
-            right: 30
-        },
-        autoHideAfter: 3000,
-        stacking: "down",
-        templates: [
-            {
-                type: "success",
-                template: "<div class='notification-success'><span class='k-icon k-i-check'></span><h4>#= title #</h4><p>#= message #</p></div>"
-            },
-            {
-                type: "error",
-                template: "<div class='notification-error'><span class='k-icon k-i-close'></span><h4>#= title #</h4><p>#= message #</p></div>"
-            },
-            {
-                type: "warning",
-                template: "<div class='notification-warning'><span class='k-icon k-i-warning'></span><h4>#= title #</h4><p>#= message #</p></div>"
-            },
-            {
-                type: "info",
-                template: "<div class='notification-info'><span class='k-icon k-i-info'></span><h4>#= title #</h4><p>#= message #</p></div>"
-            }
-        ]
-    });
+    // Inisialisasi notifikasi dengan error handling
+    try {
+        if ($("#notification").length > 0) {
+            $("#notification").kendoNotification({
+                position: {
+                    pinned: true,
+                    top: 20,
+                    right: 20
+                },
+                autoHideAfter: 5000,
+                stacking: "down",
+                templates: [
+                    {
+                        type: "success",
+                        template: $("#successTemplate").html()
+                    },
+                    {
+                        type: "error",
+                        template: $("#errorTemplate").html()
+                    },
+                    {
+                        type: "warning",
+                        template: $("#warningTemplate").html()
+                    },
+                    {
+                        type: "info",
+                        template: $("#infoTemplate").html()
+                    }
+                ]
+            });
+            console.log("Kendo Notification berhasil diinisialisasi");
+        } else {
+            console.error("Elemen #notification tidak ditemukan");
+        }
+    } catch (error) {
+        console.error("Error saat inisialisasi Kendo Notification:", error);
+    }
 
     // Inisialisasi router
     const router = new Router(routes);
@@ -85,21 +94,53 @@ $(document).ready(function() {
         }
     });
 
-    // Inisialisasi komponen dashboard
-    if (typeof initializeDashboardStats === 'function') {
-        initializeDashboardStats();
-    }
+    // Inisialisasi komponen dashboard dengan delay untuk memastikan Kendo Notification siap
+    setTimeout(() => {
+        if (typeof initializeDashboardStats === 'function') {
+            initializeDashboardStats();
+        }
+    }, 100); // Delay 100ms untuk memastikan Kendo Notification sudah diinisialisasi
 });
 
-// Fungsi untuk menampilkan notifikasi
+// Fungsi untuk menampilkan notifikasi dengan retry mechanism
 function showNotification(title, message, type) {
-    $("#notification").data("kendoNotification").show({
-        title: title,
-        message: message
-    }, type);
+    const notification = $("#notification").data("kendoNotification");
+    if (notification) {
+        notification.show({
+            title: title,
+            message: message
+        }, type);
+    } else {
+        // Retry mechanism - tunggu sebentar dan coba lagi
+        setTimeout(() => {
+            const retryNotification = $("#notification").data("kendoNotification");
+            if (retryNotification) {
+                retryNotification.show({
+                    title: title,
+                    message: message
+                }, type);
+            } else {
+                // Fallback jika Kendo Notification belum siap setelah retry
+                console.warn("Kendo Notification belum diinisialisasi setelah retry, menggunakan alert sebagai fallback");
+                alert(`${title}: ${message}`);
+            }
+        }, 50); // Retry setelah 50ms
+    }
 }
 
 // Fungsi untuk refresh data grid
 function refreshGrid(gridId) {
     $(gridId).data("kendoGrid").dataSource.read();
+}
+
+// Fungsi untuk menutup toast notification
+function closeToast(toastElement) {
+    if (toastElement && toastElement.classList.contains('toast-notification')) {
+        toastElement.style.animation = 'toastSlideOut 0.3s ease-in forwards';
+        setTimeout(() => {
+            if (toastElement.parentNode) {
+                toastElement.parentNode.removeChild(toastElement);
+            }
+        }, 300);
+    }
 }
