@@ -11,6 +11,9 @@ Dokumentasi lengkap untuk aplikasi SPK (Sistem Pendukung Keputusan) Monitoring M
 - **[Restore by Table](database/README_RESTORE_BY_TABLE.md)** - Metode restore per-tabel untuk database besar
 - **[Database Schema](database/SCHEMA.md)** - Skema database dan relasi tabel
 
+### 🔬 Sistem & Algoritma
+- **[SPK System Documentation](SPK_SYSTEM_DOCUMENTATION.md)** - Dokumentasi lengkap sistem SPK, implementasi FIS dan SAW
+
 ### 🔌 API
 - **[API Documentation](api/README.md)** - Dokumentasi endpoint API
 - **Database Schema** - Skema database dan relasi tabel (akan ditambahkan)
