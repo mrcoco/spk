@@ -22,10 +22,19 @@ var mahasiswaDataSource = new kendo.data.DataSource({
         },
         destroy: {
             url: function(data) {
+                // Validasi data sebelum destroy
+                if (!data || !data.nim) {
+                    console.error("Invalid data for destroy operation:", data);
+                    throw new Error("Data tidak valid untuk operasi hapus");
+                }
                 return CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA) + "/" + data.nim;
             },
             dataType: "json",
-            type: "DELETE"
+            type: "DELETE",
+            beforeSend: function(xhr, options) {
+                // Log untuk debugging
+                console.log("Destroy request for:", options.data);
+            }
         },
         parameterMap: function(data, type) {
             if (type === "read") {
@@ -67,7 +76,18 @@ var mahasiswaDataSource = new kendo.data.DataSource({
             }
         },
         data: "data",
-        total: "total"
+        total: "total",
+        parse: function(response) {
+            // Memastikan setiap item memiliki uid
+            if (response.data && Array.isArray(response.data)) {
+                response.data.forEach(function(item) {
+                    if (!item.uid) {
+                        item.uid = kendo.guid();
+                    }
+                });
+            }
+            return response;
+        }
     },
     pageSize: 10,
     serverPaging: true,
@@ -237,6 +257,35 @@ $(document).ready(function() {
             }
             
             console.log("Grid initialized with", dataSource.data().length, "records");
+        },
+        remove: function(e) {
+            // Validasi data sebelum remove
+            if (!e.model || !e.model.nim) {
+                console.error("Invalid model for remove operation:", e.model);
+                e.preventDefault();
+                showNotification("Error", "Data tidak valid untuk operasi hapus", "error");
+                return;
+            }
+            
+            // Konfirmasi hapus
+            if (!confirm(`Apakah Anda yakin ingin menghapus mahasiswa dengan NIM ${e.model.nim}?`)) {
+                e.preventDefault();
+                return;
+            }
+            
+            console.log("Removing mahasiswa:", e.model.nim);
+        },
+        dataBinding: function(e) {
+            // Validasi data sebelum binding
+            if (e.items && Array.isArray(e.items)) {
+                e.items.forEach(function(item, index) {
+                    if (!item.uid) {
+                        console.warn("Item without uid found at index", index, item);
+                        // Generate uid jika tidak ada
+                        item.uid = kendo.guid();
+                    }
+                });
+            }
         }
     }).data("kendoGrid");
     initializeMahasiswaForm();
@@ -347,9 +396,49 @@ function initializeMahasiswaForm() {
     });
 }
 
-// Fungsi untuk refresh grid
+// Fungsi untuk menghapus mahasiswa dengan validasi
+function deleteMahasiswa(nim) {
+    if (!nim) {
+        showNotification("Error", "NIM tidak valid", "error");
+        return Promise.reject(new Error("NIM tidak valid"));
+    }
+
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA) + "/" + nim,
+            type: "DELETE",
+            dataType: "json",
+            success: function(response) {
+                showNotification("Sukses", "Data mahasiswa berhasil dihapus", "success");
+                resolve(response);
+            },
+            error: function(xhr, status, error) {
+                let errorMessage = "Gagal menghapus data mahasiswa";
+                if (xhr.responseJSON && xhr.responseJSON.detail) {
+                    errorMessage += ": " + xhr.responseJSON.detail;
+                } else if (xhr.statusText) {
+                    errorMessage += ": " + xhr.statusText;
+                }
+                showNotification("Error", errorMessage, "error");
+                reject(new Error(errorMessage));
+            }
+        });
+    });
+}
+
+// Fungsi untuk refresh grid dengan error handling
 function refreshGrid() {
-    mahasiswaDataSource.read();
+    try {
+        const grid = $("#mahasiswaGrid").data("kendoGrid");
+        if (grid && grid.dataSource) {
+            grid.dataSource.read();
+        } else {
+            console.warn("Grid not available for refresh");
+        }
+    } catch (error) {
+        console.error("Error refreshing grid:", error);
+        showNotification("Error", "Gagal refresh data", "error");
+    }
 }
 
 // Fungsi untuk mendapatkan DataSource
