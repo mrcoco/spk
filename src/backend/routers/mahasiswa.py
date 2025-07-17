@@ -262,6 +262,7 @@ def search_mahasiswa_for_dropdown(
     db: Session = Depends(get_db)
 ):
     """
+    
     Endpoint untuk pencarian mahasiswa yang digunakan oleh dropdown.
     Memerlukan minimal 3 karakter untuk melakukan pencarian.
     """
