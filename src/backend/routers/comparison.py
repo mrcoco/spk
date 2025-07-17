@@ -26,8 +26,11 @@ async def compare_methods(db: Session = Depends(get_db)):
         - Analisis perbedaan
     """
     try:
+        logger.info("Starting comparison methods calculation")
+        
         # Ambil semua mahasiswa
         mahasiswa_list = db.query(Mahasiswa).all()
+        logger.info(f"Found {len(mahasiswa_list)} mahasiswa")
         
         if not mahasiswa_list:
             raise HTTPException(status_code=404, detail="Tidak ada data mahasiswa")
@@ -46,58 +49,108 @@ async def compare_methods(db: Session = Depends(get_db)):
         total_different = 0
         
         for mahasiswa in mahasiswa_list:
-            # Hitung FIS
-            fis_kategori, fis_nilai, fis_ipk_membership, fis_sks_membership, fis_nilai_dk_membership = fuzzy_system.calculate_graduation_chance(
-                mahasiswa.ipk,
-                mahasiswa.sks,
-                mahasiswa.persen_dek
-            )
-            
-            # Hitung SAW
-            saw_result = calculate_saw(db, mahasiswa.nim, save_to_db=False)
-            
-            if saw_result:
-                saw_kategori = saw_result["klasifikasi"]
-                saw_nilai = saw_result["final_value"]
+            try:
+                # Hitung FIS
+                fis_kategori, fis_nilai, fis_ipk_membership, fis_sks_membership, fis_nilai_dk_membership = fuzzy_system.calculate_graduation_chance(
+                    mahasiswa.ipk,
+                    mahasiswa.sks,
+                    mahasiswa.persen_dek
+                )
                 
-                # Update distribusi
-                fis_distribution[fis_kategori] += 1
-                saw_distribution[saw_kategori] += 1
+                # Hitung SAW
+                saw_result = calculate_saw(db, mahasiswa.nim, save_to_db=False)
                 
-                # Hitung konsistensi
-                is_consistent = fis_kategori == saw_kategori
-                if is_consistent:
-                    total_consistent += 1
+                if saw_result:
+                    saw_kategori = saw_result["klasifikasi"]
+                    saw_nilai = saw_result["final_value"]
+                    
+                    # Update distribusi
+                    fis_distribution[fis_kategori] += 1
+                    saw_distribution[saw_kategori] += 1
+                    
+                    # Hitung konsistensi
+                    is_consistent = fis_kategori == saw_kategori
+                    if is_consistent:
+                        total_consistent += 1
+                    else:
+                        total_different += 1
+                    
+                    # Hitung selisih nilai
+                    nilai_selisih = abs(fis_nilai - saw_nilai)
+                    
+                    # Tambahkan ke data perbandingan
+                    comparison_data.append({
+                        "nim": mahasiswa.nim,
+                        "nama": mahasiswa.nama,
+                        "ipk": mahasiswa.ipk,
+                        "sks": mahasiswa.sks,
+                        "persen_dek": mahasiswa.persen_dek,
+                        "fis_kategori": fis_kategori,
+                        "fis_nilai": round(fis_nilai, 3),
+                        "fis_details": {
+                            "ipk_membership": round(fis_ipk_membership, 3),
+                            "sks_membership": round(fis_sks_membership, 3),
+                            "nilai_dk_membership": round(fis_nilai_dk_membership, 3)
+                        },
+                        "saw_kategori": saw_kategori,
+                        "saw_nilai": round(saw_nilai, 3),
+                        "saw_details": {
+                            "ipk_normalized": round(saw_result["normalized_values"]["IPK"], 3),
+                            "sks_normalized": round(saw_result["normalized_values"]["SKS"], 3),
+                            "nilai_dek_normalized": round(saw_result["normalized_values"]["Nilai D/E/K"], 3)
+                        },
+                        "is_consistent": is_consistent,
+                        "nilai_selisih": round(nilai_selisih, 3),
+                        "selisih_category": get_selisih_category(nilai_selisih)
+                    })
                 else:
-                    total_different += 1
-                
-                # Hitung selisih nilai
-                nilai_selisih = abs(fis_nilai - saw_nilai)
-                
-                # Tambahkan ke data perbandingan
+                    # Jika SAW gagal, tetap tambahkan data FIS saja
+                    logger.warning(f"SAW calculation failed for NIM {mahasiswa.nim}, adding FIS data only")
+                    fis_distribution[fis_kategori] += 1
+                    
+                    comparison_data.append({
+                        "nim": mahasiswa.nim,
+                        "nama": mahasiswa.nama,
+                        "ipk": mahasiswa.ipk,
+                        "sks": mahasiswa.sks,
+                        "persen_dek": mahasiswa.persen_dek,
+                        "fis_kategori": fis_kategori,
+                        "fis_nilai": round(fis_nilai, 3),
+                        "fis_details": {
+                            "ipk_membership": round(fis_ipk_membership, 3),
+                            "sks_membership": round(fis_sks_membership, 3),
+                            "nilai_dk_membership": round(fis_nilai_dk_membership, 3)
+                        },
+                        "saw_kategori": "Tidak dapat dihitung",
+                        "saw_nilai": 0,
+                        "saw_details": {
+                            "ipk_normalized": 0,
+                            "sks_normalized": 0,
+                            "nilai_dek_normalized": 0
+                        },
+                        "is_consistent": False,
+                        "nilai_selisih": round(fis_nilai, 3),
+                        "selisih_category": "Error SAW"
+                    })
+                    
+            except Exception as e:
+                logger.error(f"Error processing mahasiswa {mahasiswa.nim}: {str(e)}")
+                # Tambahkan data error untuk mahasiswa ini
                 comparison_data.append({
                     "nim": mahasiswa.nim,
                     "nama": mahasiswa.nama,
                     "ipk": mahasiswa.ipk,
                     "sks": mahasiswa.sks,
                     "persen_dek": mahasiswa.persen_dek,
-                    "fis_kategori": fis_kategori,
-                    "fis_nilai": round(fis_nilai, 3),
-                    "fis_details": {
-                        "ipk_membership": round(fis_ipk_membership, 3),
-                        "sks_membership": round(fis_sks_membership, 3),
-                        "nilai_dk_membership": round(fis_nilai_dk_membership, 3)
-                    },
-                    "saw_kategori": saw_kategori,
-                    "saw_nilai": round(saw_nilai, 3),
-                    "saw_details": {
-                        "ipk_normalized": round(saw_result["normalized_values"]["IPK"], 3),
-                        "sks_normalized": round(saw_result["normalized_values"]["SKS"], 3),
-                        "nilai_dek_normalized": round(saw_result["normalized_values"]["Nilai D/E/K"], 3)
-                    },
-                    "is_consistent": is_consistent,
-                    "nilai_selisih": round(nilai_selisih, 3),
-                    "selisih_category": get_selisih_category(nilai_selisih)
+                    "fis_kategori": "Error",
+                    "fis_nilai": 0,
+                    "fis_details": {"ipk_membership": 0, "sks_membership": 0, "nilai_dk_membership": 0},
+                    "saw_kategori": "Error",
+                    "saw_nilai": 0,
+                    "saw_details": {"ipk_normalized": 0, "sks_normalized": 0, "nilai_dek_normalized": 0},
+                    "is_consistent": False,
+                    "nilai_selisih": 0,
+                    "selisih_category": "Error"
                 })
         
         # Hitung statistik perbandingan
@@ -113,7 +166,10 @@ async def compare_methods(db: Session = Depends(get_db)):
         # Hitung korelasi ranking
         ranking_correlation = calculate_ranking_correlation(fis_ranking, saw_ranking)
         
-        return {
+        logger.info(f"Comparison calculation completed. Total data: {len(comparison_data)}")
+        logger.info(f"Statistics: consistent={total_consistent}, different={total_different}, accuracy={accuracy_percentage}%")
+        
+        response_data = {
             "status": "success",
             "total_mahasiswa": total_mahasiswa,
             "statistics": {
@@ -161,6 +217,9 @@ async def compare_methods(db: Session = Depends(get_db)):
                 }
             }
         }
+        
+        logger.info("Returning comparison data successfully")
+        return response_data
         
     except Exception as e:
         logger.error(f"Error in compare_methods: {str(e)}")
