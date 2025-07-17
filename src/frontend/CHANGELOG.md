@@ -2848,3 +2848,38 @@ curl -X GET "http://localhost:8000/api/saw/calculate/18101241003"
 - Buat panduan troubleshooting untuk masalah normalisasi
 
 // ... existing code ...
+
+## [Unreleased] - 2025-07-16
+
+### Perbaikan & Pengujian Halaman Comparison, SAW, FIS, dan Dashboard
+
+#### Halaman Comparison
+- Memastikan seluruh ID elemen penting (`#fisTotal`, `#sawTotal`, `#statConsistent`, `#statDifferent`, `#statCorrelation`, `#comparisonChart`, `#comparisonTableBody`) unik dan tidak ganda.
+- Memastikan endpoint `/api/comparison/methods` mengembalikan data lengkap dan status `success`.
+- Memperbaiki fungsi JavaScript agar update statistik, chart, dan tabel menggunakan ID yang benar.
+- Memperbaiki router SPA agar hanya satu section yang aktif dan inisialisasi comparison hanya sekali.
+- Memperbaiki fungsi `ensureComparisonSectionVisible()` agar tidak mengganggu router dan hanya memastikan chart visible.
+- Mengubah layout `.comparison-container` dari grid ke flex agar tidak ada bug layout yang menyebabkan elemen tidak visible.
+- Menambahkan/memperbaiki CSS untuk chart dan tabel agar min-height, width, dan overflow benar.
+- Pengujian: Data comparison berhasil tampil, chart dan tabel responsif, tidak ada error di console, dan request API sukses.
+
+#### Halaman SAW
+- Menghapus ID ganda pada chart SAW (`#sawChart`) dan dashboard (`#dashboardSawChart`).
+- Menyamakan ukuran dan style card SAW dengan FIS (padding, border-radius, shadow, hover effect, responsive grid).
+- Memperbaiki warna, font, dan layout agar konsisten dengan FIS.
+- Pengujian: Semua card SAW tampil konsisten, chart dan tabel responsif, tidak ada error di console.
+
+#### Halaman FIS
+- Memastikan layout, card, dan grid konsisten dengan SAW.
+- Pengujian: Semua card FIS tampil konsisten, chart dan tabel responsif, tidak ada error di console.
+
+#### Dashboard
+- Memperbaiki button refresh (sync) pada dashboard agar lebih menarik dan modern:
+  - Mengganti icon menjadi `fa-sync-alt`.
+  - Menambahkan gradient, animasi hover, shimmer effect, dan animasi icon.
+  - Menyesuaikan padding, border-radius, dan shadow.
+- Pengujian: Button refresh tampil menarik, animasi berjalan, dan fungsi refresh berjalan normal.
+
+#### Umum
+- Pengujian dilakukan dengan hard refresh, pengecekan console dan network tab, serta validasi seluruh elemen dan data tampil sesuai.
+- Semua perbaikan telah diuji di browser desktop dan mobile.

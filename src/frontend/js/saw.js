@@ -2,6 +2,13 @@
 function initializeSAWSection() {
     console.log("Initializing SAW section...");
     
+    // Prevent multiple initializations
+    if (window.sawSectionInitialized) {
+        console.log("SAW section already initialized, skipping...");
+        return;
+    }
+    window.sawSectionInitialized = true;
+    
     // Check if elements exist
     console.log("SAW Chart element exists:", $('#sawChart').length);
     console.log("SAW Grid element exists:", $('#sawGrid').length);
@@ -13,8 +20,11 @@ function initializeSAWSection() {
     // Show initial loading state for stats
     showSAWStatsLoading();
     
+    // Remove existing event listener to prevent duplication
+    $(window).off('hashchange.saw');
+    
     // Add event listener for hash change to ensure visibility
-    $(window).on('hashchange', function() {
+    $(window).on('hashchange.saw', function() {
         if (window.location.hash === '#saw') {
             console.log('Hash changed to SAW, ensuring visibility...');
             setTimeout(() => {
@@ -682,43 +692,37 @@ function testSAWChart() {
 function ensureSAWSectionVisible() {
     console.log('Ensuring SAW section and chart container are visible...');
     
-    // Force SAW section to be visible - multiple approaches
+    // Let the router handle section visibility, just ensure SAW section is properly set
     $('#sawSection').show();
     $('#sawSection').css('display', 'block');
     $('#sawSection').css('visibility', 'visible');
-    $('#sawSection').removeAttr('style');
-    $('#sawSection').attr('style', 'display: block !important; visibility: visible !important;');
-    
-    // Force all parent containers to be visible
-    $('.content-container').show();
-    $('.section-content').show();
-    $('.saw-container').show();
+    $('#sawSection').addClass('active');
     
     // Force chart container to be visible
     $('.saw-chart-container').show();
     $('.saw-chart-container').css('display', 'block');
     $('.saw-chart-container').css('visibility', 'visible');
-    $('.saw-chart-container').removeAttr('style');
-    $('.saw-chart-container').attr('style', 'display: block !important; visibility: visible !important;');
     
     // Force chart element to be visible
     $('#sawChart').show();
     $('#sawChart').css('display', 'block');
     $('#sawChart').css('visibility', 'visible');
-    $('#sawChart').removeAttr('style');
-    $('#sawChart').attr('style', 'display: block !important; visibility: visible !important; min-height: 400px; width: 100%;');
+    $('#sawChart').css('min-height', '400px');
+    $('#sawChart').css('width', '100%');
     
-    // Force all sections to be visible temporarily for debugging
-    $('.section').show();
-    $('.section').css('display', 'block');
+    // Ensure other sections remain hidden (but don't interfere with router)
+    if (window.location.hash === '#saw') {
+        $('.section').not('#sawSection').hide();
+        $('.section').not('#sawSection').css('display', 'none');
+        $('.section').not('#sawSection').css('visibility', 'hidden');
+        $('.section').not('#sawSection').removeClass('active');
+    }
     
-    console.log('Forced SAW section and chart container to be visible');
+    console.log('SAW section and chart container visibility ensured');
     console.log('SAW Section display:', $('#sawSection').css('display'));
     console.log('SAW Section visibility:', $('#sawSection').css('visibility'));
     console.log('Chart Container display:', $('.saw-chart-container').css('display'));
-    console.log('Chart Container visibility:', $('.saw-chart-container').css('visibility'));
     console.log('Chart Element display:', $('#sawChart').css('display'));
-    console.log('Chart Element visibility:', $('#sawChart').css('visibility'));
 }
 
 function waitForChartContainerVisibility(data, filteredChartData) {
@@ -819,8 +823,8 @@ function createFallbackChart(data, filteredChartData) {
     // Create a temporary container for the chart
     const tempContainer = $('<div id="tempSawChart" style="width: 100%; height: 400px; border: 2px solid #ccc; margin: 20px 0; padding: 20px; background: #f9f9f9;"></div>');
     
-    // Add it to the page
-    $('body').append(tempContainer);
+    // Add it to the SAW section instead of body
+    $('#sawSection').append(tempContainer);
     
     try {
         $("#tempSawChart").kendoChart({
@@ -853,7 +857,7 @@ function createFallbackChart(data, filteredChartData) {
         // Also show data as text in the original container
         $('#sawChart').html(`
             <div style="padding: 20px; background: #f8f9fa; border-radius: 8px; margin: 20px 0;">
-                <h4>Distribusi Klasifikasi SAW</h4>
+                <h4>Distribusi Klasifikasi SAW (Fallback)</h4>
                 <p>Chart ditampilkan di bawah karena masalah container visibility.</p>
                 <div style="margin: 15px 0;">
                     <strong>Data Distribusi:</strong><br>
@@ -868,7 +872,7 @@ function createFallbackChart(data, filteredChartData) {
         console.error('Error creating fallback chart:', error);
         $('#sawChart').html(`
             <div style="padding: 20px; background: #f8f9fa; border-radius: 8px; margin: 20px 0;">
-                <h4>Distribusi Klasifikasi SAW</h4>
+                <h4>Distribusi Klasifikasi SAW (Error)</h4>
                 <p>Chart tidak dapat ditampilkan. Berikut adalah data distribusi:</p>
                 <div style="margin: 15px 0;">
                     <strong>Data Distribusi:</strong><br>

@@ -106,7 +106,7 @@
         <div class="content-wrapper">
             <div id="content">
                 <!-- Dashboard Section -->
-                <div id="dashboardSection" class="section">
+                <div id="dashboardSection" class="section" style="display: block;">
                     <div class="content-container">
                         <h2>Dashboard</h2>
                         <!-- Statistik Dashboard -->
@@ -121,7 +121,7 @@
                                 <div id="klasifikasiChart"></div>
                             </div>
                             <div class="chart-container">
-                                <div id="sawChart"></div>
+                                <div id="dashboardSawChart"></div>
                             </div>
                             <div class="chart-container">
                                 <div id="masaStudiChart"></div>
@@ -345,8 +345,8 @@
                         <div class="section-content">
                             <div class="comparison-container">
                                 <!-- Statistik Baris -->
-                                <div class="comparison-stats-row" style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
-                                    <div class="comparison-card" style="flex:1; min-width:220px;">
+                                <div class="comparison-stats-row">
+                                    <div class="comparison-card">
                                         <h3><i class="fas fa-chart-pie"></i> Statistik FIS</h3>
                                         <div class="comparison-stats">
                                             <div class="stat-card">
@@ -359,7 +359,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="comparison-card" style="flex:1; min-width:220px;">
+                                    <div class="comparison-card">
                                         <h3><i class="fas fa-chart-pie"></i> Statistik SAW</h3>
                                         <div class="comparison-stats">
                                             <div class="stat-card">
@@ -372,7 +372,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="comparison-card" style="flex:1; min-width:220px;">
+                                    <div class="comparison-card">
                                         <h3><i class="fas fa-balance-scale"></i> Statistik Lain</h3>
                                         <div class="comparison-stats">
                                             <div class="stat-card">
@@ -391,12 +391,12 @@
                                     </div>
                                 </div>
                                 <!-- Chart -->
-                                <div class="comparison-chart-container" style="grid-column: 1 / -1;">
+                                <div class="comparison-chart-container">
                                     <h3><i class="fas fa-chart-bar"></i> Visualisasi Perbandingan</h3>
                                     <div id="comparisonChart"></div>
                                 </div>
                                 <!-- Tabel -->
-                                <div class="comparison-card" style="grid-column: 1 / -1;">
+                                <div class="comparison-card">
                                     <div class="comparison-table-header">
                                         <h3><i class="fas fa-table"></i> Detail Perbandingan</h3>
                                         <div class="comparison-controls">
@@ -426,9 +426,31 @@
                                             </tbody>
                                         </table>
                                     </div>
+                                    <!-- Pagination Controls -->
+                                    <div class="comparison-pagination">
+                                        <div class="pagination-info">
+                                            <span id="paginationInfo">Menampilkan 0 dari 0 data</span>
+                                        </div>
+                                        <div class="pagination-controls">
+                                            <button id="firstPage" class="pagination-btn" disabled><i class="fas fa-angle-double-left"></i></button>
+                                            <button id="prevPage" class="pagination-btn" disabled><i class="fas fa-angle-left"></i></button>
+                                            <div class="page-numbers" id="pageNumbers"></div>
+                                            <button id="nextPage" class="pagination-btn" disabled><i class="fas fa-angle-right"></i></button>
+                                            <button id="lastPage" class="pagination-btn" disabled><i class="fas fa-angle-double-right"></i></button>
+                                        </div>
+                                        <div class="pagination-size">
+                                            <label for="pageSize">Baris per halaman:</label>
+                                            <select id="pageSize" class="page-size-select">
+                                                <option value="10">10</option>
+                                                <option value="25">25</option>
+                                                <option value="50">50</option>
+                                                <option value="100">100</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                                 <!-- Analisis/Info -->
-                                <div class="comparison-info-box" style="grid-column: 1 / -1;">
+                                <div class="comparison-info-box">
                                     <h3><i class="fas fa-info-circle"></i> Analisis Perbandingan</h3>
                                     <ul>
                                         <li>FIS lebih baik dalam menangani ketidakpastian dan variasi data</li>

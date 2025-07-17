@@ -19,9 +19,13 @@ class Router {
         if (this.currentHash === hash) return;
         this.currentHash = hash;
 
-        // Hide all sections first
+        console.log('Router: Navigating to hash:', hash);
+
+        // Hide all sections first with multiple approaches
         document.querySelectorAll('.section').forEach(section => {
             section.style.display = 'none';
+            section.style.visibility = 'hidden';
+            section.classList.remove('active');
         });
 
         // Remove active class from all links
@@ -34,7 +38,11 @@ class Router {
         if (sectionId) {
             const section = document.getElementById(sectionId);
             if (section) {
+                console.log('Router: Showing section:', sectionId);
                 section.style.display = 'block';
+                section.style.visibility = 'visible';
+                section.classList.add('active');
+                
                 // Activate corresponding nav link
                 const navLink = document.querySelector(`a[href="#${hash}"]`);
                 if (navLink) {
@@ -45,6 +53,19 @@ class Router {
                 this.initializeGrid(hash);
             }
         }
+        
+        // Double-check that only the correct section is visible
+        document.querySelectorAll('.section').forEach(section => {
+            if (section.id !== sectionId) {
+                section.style.display = 'none';
+                section.style.visibility = 'hidden';
+                section.classList.remove('active');
+            }
+        });
+        
+        // Final verification
+        const visibleSections = document.querySelectorAll('.section[style*="display: block"]');
+        console.log('Router: Visible sections after navigation:', Array.from(visibleSections).map(s => s.id));
     }
 
     initializeGrid(hash) {
@@ -61,12 +82,20 @@ class Router {
                 break;
             case 'saw':
                 if (typeof initializeSAWSection === 'function') {
-                    initializeSAWSection();
+                    // Only initialize if not already initialized
+                    if (!window.sawInitialized) {
+                        window.sawInitialized = true;
+                        initializeSAWSection();
+                    }
                 }
                 break;
             case 'comparison':
                 if (typeof initializeComparison === 'function') {
-                    initializeComparison();
+                    // Only initialize if not already initialized
+                    if (!window.comparisonInitialized) {
+                        window.comparisonInitialized = true;
+                        initializeComparison();
+                    }
                 }
                 break;
             // Add other cases as needed

@@ -217,6 +217,13 @@ body.drawer-expanded .content-wrapper {
 /* Sections */
 .section {
     padding: 1rem;
+    display: none;
+    visibility: hidden;
+}
+
+.section.active {
+    display: block;
+    visibility: visible;
 }
 
 .section-header {
@@ -1255,7 +1262,7 @@ body.drawer-expanded .content-wrapper {
     overflow: hidden;
 }
 
-/* Responsive Design for SAW */
+/* Responsive Design for SAW - Updated to match FIS */
 @media (max-width: 768px) {
     .saw-container {
         grid-template-columns: 1fr;
@@ -1322,10 +1329,18 @@ body.drawer-expanded .content-wrapper {
 
 /* Comparison Section Styling */
 .comparison-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: 20px;
     margin-bottom: 30px;
+}
+
+/* Comparison Stats Row */
+.comparison-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
 }
 
 .comparison-card {
@@ -1334,6 +1349,9 @@ body.drawer-expanded .content-wrapper {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 20px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
 }
 
 .comparison-card:hover {
@@ -1347,24 +1365,84 @@ body.drawer-expanded .content-wrapper {
     font-size: 1.2em;
     border-bottom: 2px solid #e0e0e0;
     padding-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.comparison-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin: 20px 0;
+    flex: 1;
+    align-items: flex-start;
+}
+
+.comparison-stats .stat-card {
+    flex: 1;
+    min-width: 120px;
+    max-width: 150px;
+}
+
+.stat-card {
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.stat-card .stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #673AB7;
+    margin: 10px 0;
+}
+
+.stat-card .stat-label {
+    color: #666;
+    font-size: 14px;
 }
 
 .comparison-chart-container {
-    grid-column: 1 / -1;
     background: #fff;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     margin-top: 20px;
+    width: 100%;
+    max-height: 600px;
+    overflow: hidden;
+}
+
+#comparisonChart {
+    min-height: 400px;
+    max-height: 500px;
+    width: 100%;
+    display: block !important;
+    visibility: visible !important;
+    overflow: hidden;
 }
 
 .comparison-info-box {
-    grid-column: 1 / -1;
     background: #f3e5f5;
     border-left: 4px solid #673AB7;
     padding: 20px;
     margin-top: 20px;
     border-radius: 4px;
+    width: 100%;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    min-width: 600px;
 }
 
 .comparison-info-box h3 {
@@ -1393,33 +1471,6 @@ body.drawer-expanded .content-wrapper {
 
 .comparison-table tr:hover {
     background-color: #f8f8f8;
-}
-
-.comparison-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin: 20px 0;
-}
-
-.stat-card {
-    background: #fff;
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
-    border: 1px solid #e0e0e0;
-}
-
-.stat-card .stat-value {
-    font-size: 24px;
-    font-weight: bold;
-    color: #673AB7;
-    margin: 10px 0;
-}
-
-.stat-card .stat-label {
-    color: #666;
-    font-size: 14px;
 }
 
 .method-comparison {
@@ -1462,9 +1513,48 @@ body.drawer-expanded .content-wrapper {
 }
 
 /* Responsive Design for Comparison */
+@media (max-width: 1024px) {
+    .comparison-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .comparison-card {
+        min-height: 180px;
+        padding: 15px;
+    }
+    
+    .comparison-stats .stat-card {
+        min-width: 100px;
+        max-width: 120px;
+    }
+}
+
 @media (max-width: 768px) {
     .comparison-container {
+        gap: 15px;
+    }
+    
+    .comparison-stats-row {
         grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .comparison-card {
+        min-height: auto;
+        padding: 15px;
+    }
+    
+    .comparison-stats {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .comparison-stats .stat-card {
+        min-width: 120px;
+        max-width: none;
+        flex: 1;
     }
     
     .method-comparison {
@@ -1474,28 +1564,81 @@ body.drawer-expanded .content-wrapper {
     .comparison-card {
         margin-bottom: 15px;
     }
+    
+    .comparison-chart-container {
+        max-height: 400px;
+        padding: 15px;
+    }
+    
+    #comparisonChart {
+        min-height: 300px;
+        max-height: 350px;
+    }
 }
 
-/* SAW Specific Styles */
+@media (max-width: 480px) {
+    .comparison-stats-row {
+        gap: 10px;
+    }
+    
+    .comparison-card {
+        padding: 12px;
+    }
+    
+    .comparison-stats {
+        gap: 8px;
+    }
+    
+    .comparison-stats .stat-card {
+        min-width: 100px;
+        padding: 10px;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 20px;
+    }
+    
+    .stat-card .stat-label {
+        font-size: 12px;
+    }
+    
+    .comparison-chart-container {
+        max-height: 350px;
+        padding: 10px;
+    }
+    
+    #comparisonChart {
+        min-height: 250px;
+        max-height: 300px;
+    }
+}
+
+/* SAW Specific Styles - Updated to match FIS */
 .saw-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
-    margin-top: 20px;
+    margin-bottom: 30px;
 }
 
 .saw-card {
     background: #fff;
-    padding: 20px;
     border-radius: 8px;
-    border: 1px solid #e0e0e0;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.saw-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .saw-card h3 {
-    color: #673AB7;
+    color: #FF5722;
     margin-bottom: 15px;
-    border-bottom: 2px solid #673AB7;
+    font-size: 1.2em;
+    border-bottom: 2px solid #e0e0e0;
     padding-bottom: 10px;
 }
 
@@ -1526,13 +1669,13 @@ body.drawer-expanded .content-wrapper {
 }
 
 .saw-button {
-    background: #673AB7 !important;
-    border-color: #673AB7 !important;
+    background: #FF5722 !important;
+    border-color: #FF5722 !important;
 }
 
 .saw-button:hover {
-    background: #5e35b1 !important;
-    border-color: #5e35b1 !important;
+    background: #e64a19 !important;
+    border-color: #e64a19 !important;
 }
 
 .saw-chart-container {
@@ -1540,30 +1683,30 @@ body.drawer-expanded .content-wrapper {
     background: #fff;
     padding: 20px;
     border-radius: 8px;
-    border: 1px solid #e0e0e0;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     margin-top: 20px;
 }
 
 .saw-chart-container h3 {
-    color: #673AB7;
+    color: #FF5722;
     margin-bottom: 15px;
-    border-bottom: 2px solid #673AB7;
+    font-size: 1.2em;
+    border-bottom: 2px solid #e0e0e0;
     padding-bottom: 10px;
 }
 
 .saw-info-box {
     grid-column: 1 / -1;
-    background: #f8f9fa;
+    background: #fff3e0;
+    border-left: 4px solid #FF5722;
     padding: 20px;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
     margin-top: 20px;
+    border-radius: 4px;
 }
 
 .saw-info-box h3 {
-    color: #673AB7;
-    margin-bottom: 15px;
+    color: #FF5722;
+    margin-bottom: 10px;
 }
 
 .saw-info-box ul {

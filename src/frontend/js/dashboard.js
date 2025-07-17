@@ -194,10 +194,11 @@ function updateDashboardStats(data) {
         </div>
         <div class="dashboard-saw-stats">
             <div class="saw-stats-header">
-                <h3><i class="fas fa-calculator"></i> Distribusi Klasifikasi SAW</h3>
+                <h3><i class="fas fa-calculator"></i> Distribusi Klasifikasi SAW </h3>
                 <div class="saw-stats-actions">
-                    <button class="refresh-saw-btn k-button k-button-solid k-button-solid-primary" onclick="refreshSAWDistribution()">
-                        <i class="fas fa-refresh"></i> Refresh
+                    <button class="refresh-saw-btn" onclick="refreshSAWDistribution()">
+                        <i class="fas fa-sync-alt"></i>
+                        <span> Sync</span>
                     </button>
                 </div>
             </div>
@@ -322,7 +323,7 @@ function initializeDashboardCharts() {
     });
     
     // Inisialisasi Chart SAW
-    $("#sawChart").kendoChart({
+    $("#dashboardSawChart").kendoChart({
         title: {
             text: "Distribusi Klasifikasi SAW"
         },
@@ -613,7 +614,7 @@ function refreshSAWDistribution() {
     showSAWDistributionLoading();
     
     // Disable refresh button
-    $('.refresh-saw-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Memuat...');
+    $('.refresh-saw-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i><span>Memuat...</span>');
     
     $.ajax({
         url: CONFIG.getApiUrl('/api/saw/distribution/refresh'),
@@ -655,8 +656,8 @@ function refreshSAWDistribution() {
             updateSAWDistributionChart(null);
         },
         complete: function() {
-            // Re-enable refresh button
-            $('.refresh-saw-btn').prop('disabled', false).html('<i class="fas fa-refresh"></i> Refresh');
+                // Re-enable refresh button
+    $('.refresh-saw-btn').prop('disabled', false).html('<i class="fas fa-sync-alt"></i><span>Refresh Data</span>');
         },
         timeout: 60000 // 1 menit untuk refresh
     });
@@ -681,7 +682,7 @@ function updateSAWDistributionChart(data) {
     const sawData = data || defaultData;
     
     // Update chart dengan data yang didapat
-    $("#sawChart").kendoChart({
+    $("#dashboardSawChart").kendoChart({
         title: {
             text: "Distribusi Klasifikasi SAW"
         },
@@ -1197,19 +1198,173 @@ const dashboardStyle = `
     }
     
     .saw-stats-actions {
-        display: flex;
-        gap: 10px;
-    }
+    display: flex;
+    gap: 10px;
+}
+
+/* Desktop styles for refresh button - Enhanced Design */
+.refresh-saw-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 50%, #ff9ff3 100%);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+    text-decoration: none;
+    outline: none;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.refresh-saw-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.refresh-saw-btn:hover::before {
+    left: 100%;
+}
+
+.refresh-saw-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 12px 35px rgba(255, 107, 107, 0.6);
+    background: linear-gradient(135deg, #ff5252 0%, #d63031 50%, #fd79a8 100%);
+}
+
+.refresh-saw-btn:active {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.refresh-saw-btn i {
+    font-size: 1.1em;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.refresh-saw-btn:hover i {
+    transform: rotate(360deg) scale(1.2);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.refresh-saw-btn span {
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.refresh-saw-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 50%, #ecf0f1 100%);
+}
+
+.refresh-saw-btn:disabled:hover {
+    transform: none;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.refresh-saw-btn:disabled i {
+    transform: none;
+    filter: none;
+}
     
     .refresh-saw-btn {
-        padding: 6px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
         font-size: 0.9em;
-        border-radius: 4px;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 50%, #ff9ff3 100%);
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        text-decoration: none;
+        outline: none;
+        position: relative;
+        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .refresh-saw-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+    
+    .refresh-saw-btn:hover::before {
+        left: 100%;
+    }
+    
+    .refresh-saw-btn:hover {
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
+        background: linear-gradient(135deg, #ff5252 0%, #d63031 50%, #fd79a8 100%);
+    }
+    
+    .refresh-saw-btn:active {
+        transform: translateY(-1px) scale(1.01);
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+    }
+    
+    .refresh-saw-btn i {
+        font-size: 1em;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    }
+    
+    .refresh-saw-btn:hover i {
+        transform: rotate(360deg) scale(1.1);
+        filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
+    }
+    
+    .refresh-saw-btn span {
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     }
     
     .refresh-saw-btn:disabled {
-        opacity: 0.6;
+        opacity: 0.7;
         cursor: not-allowed;
+        transform: none;
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 50%, #ecf0f1 100%);
+    }
+    
+    .refresh-saw-btn:disabled:hover {
+        transform: none;
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    }
+    
+    .refresh-saw-btn:disabled i {
+        transform: none;
+        filter: none;
     }
     
     .saw-stat-item {
