@@ -28,6 +28,25 @@ class FuzzyKelulusan:
        - Scikit-fuzzy: Butuh numpy, scipy, matplotlib
        - Implementasi ini: Pure Python, minimal dependencies
     
+    PERBAIKAN IMPLEMENTASI (v2.0):
+    ===============================
+    
+    1. SKALA OUTPUT:
+       - Sebelum: 0-1 (0.75 setara 75%)
+       - Sekarang: 0-100 (80.00 setara 80%) - sesuai FIS_SAW_fix.ipynb
+    
+    2. FUZZY RULES:
+       - Sebelum: 8 rules sederhana
+       - Sekarang: 20 rules lengkap sesuai notebook
+    
+    3. DEFUZZIFICATION:
+       - Sebelum: Weighted average dengan nilai 0.25, 0.5, 0.75
+       - Sekarang: Centroid method dengan nilai 20, 50, 80
+    
+    4. THRESHOLD KLASIFIKASI:
+       - Sebelum: 0.4 dan 0.6 (skala 0-1)
+       - Sekarang: 40 dan 60 (skala 0-100)
+    
     Referensi definisi sesuai FIS_SAW_fix.ipynb
     """
     def __init__(self):
@@ -48,6 +67,13 @@ class FuzzyKelulusan:
         self.nilai_dk_baik = (0, 0, 4, 8)  # trapesium (min, a, b, max)
         self.nilai_dk_sedang = (7, 12, 18)  # segitiga (a, b, c)
         self.nilai_dk_buruk = (16, 20, 45, 70)  # trapesium (min, a, b, max)
+        
+        # Output crisp values sesuai notebook (skala 0-100)
+        self.output_values = {
+            'kecil': 20,    # Peluang_Lulus_Kecil
+            'sedang': 50,   # Peluang_Lulus_Sedang
+            'tinggi': 80    # Peluang_Lulus_Tinggi
+        }
 
     def _calculate_membership_triangle(self, x: float, a: float, b: float, c: float) -> float:
         """
@@ -237,70 +263,85 @@ class FuzzyKelulusan:
         sks_rendah, sks_sedang, sks_tinggi = sks_memberships
         nilai_dk_baik, nilai_dk_sedang, nilai_dk_buruk = nilai_dk_memberships
 
-        # Rule 1: Peluang Tinggi (sesuai FIS_SAW_fix.ipynb)
-        peluang_tinggi = max([
-            min(ipk_tinggi, sks_tinggi, nilai_dk_baik),    # tinggi & banyak & sedikit
-            min(ipk_sedang, sks_sedang, nilai_dk_baik),    # sedang & sedang & sedikit
-            min(ipk_tinggi, sks_sedang, nilai_dk_baik),    # tinggi & sedang & sedikit
-            min(ipk_sedang, sks_tinggi, nilai_dk_baik)     # sedang & banyak & sedikit
-        ])
+        # Initialize output membership values
+        peluang_kecil = 0.0
+        peluang_sedang = 0.0
+        peluang_tinggi = 0.0
 
-        # Rule 2: Peluang Sedang (sesuai FIS_SAW_fix.ipynb)
-        peluang_sedang = max([
-            min(ipk_sedang, sks_sedang, nilai_dk_sedang),  # sedang & sedang & sedang
-            min(ipk_rendah, sks_sedang, nilai_dk_baik),    # rendah & sedang & sedikit
-            min(ipk_rendah, sks_sedang, nilai_dk_sedang),  # rendah & sedang & sedang
-            min(ipk_rendah, sks_tinggi, nilai_dk_sedang),  # rendah & banyak & sedang
-            min(ipk_sedang, sks_tinggi, nilai_dk_sedang),  # sedang & banyak & sedang
-            min(ipk_rendah, sks_tinggi, nilai_dk_baik),    # rendah & banyak & sedikit
-            min(ipk_tinggi, sks_sedang, nilai_dk_sedang)   # tinggi & sedang & sedang
-        ])
+        # 20 Rules sesuai FIS_SAW_fix.ipynb
+        rules = [
+            # Rule 1: IPK tinggi & SKS banyak & nilai sedikit -> Tinggi
+            (ipk_tinggi, sks_tinggi, nilai_dk_baik, 'tinggi'),
+            # Rule 2: IPK sedang & SKS sedang & nilai sedang -> Sedang
+            (ipk_sedang, sks_sedang, nilai_dk_sedang, 'sedang'),
+            # Rule 3: IPK rendah & SKS sedikit & nilai banyak -> Kecil
+            (ipk_rendah, sks_rendah, nilai_dk_buruk, 'kecil'),
+            # Rule 4: IPK sedang & SKS sedang & nilai sedikit -> Tinggi
+            (ipk_sedang, sks_sedang, nilai_dk_baik, 'tinggi'),
+            # Rule 5: IPK rendah & SKS sedang & nilai banyak -> Kecil
+            (ipk_rendah, sks_sedang, nilai_dk_buruk, 'kecil'),
+            # Rule 6: IPK tinggi & SKS sedang & nilai sedikit -> Tinggi
+            (ipk_tinggi, sks_sedang, nilai_dk_baik, 'tinggi'),
+            # Rule 7: IPK sedang & SKS banyak & nilai banyak -> Kecil
+            (ipk_sedang, sks_tinggi, nilai_dk_buruk, 'kecil'),
+            # Rule 8: IPK tinggi & SKS banyak & nilai banyak -> Kecil
+            (ipk_tinggi, sks_tinggi, nilai_dk_buruk, 'kecil'),
+            # Rule 9: IPK rendah & SKS sedang & nilai sedikit -> Sedang
+            (ipk_rendah, sks_sedang, nilai_dk_baik, 'sedang'),
+            # Rule 10: IPK rendah & SKS sedang & nilai sedang -> Sedang
+            (ipk_rendah, sks_sedang, nilai_dk_sedang, 'sedang'),
+            # Rule 11: IPK sedang & SKS banyak & nilai sedikit -> Tinggi
+            (ipk_sedang, sks_tinggi, nilai_dk_baik, 'tinggi'),
+            # Rule 12: IPK sedang & SKS sedikit & nilai sedikit -> Kecil
+            (ipk_sedang, sks_rendah, nilai_dk_baik, 'kecil'),
+            # Rule 13: IPK rendah & SKS banyak & nilai banyak -> Kecil
+            (ipk_rendah, sks_tinggi, nilai_dk_buruk, 'kecil'),
+            # Rule 14: IPK rendah & SKS banyak & nilai sedang -> Sedang
+            (ipk_rendah, sks_tinggi, nilai_dk_sedang, 'sedang'),
+            # Rule 15: IPK sedang & SKS banyak & nilai sedang -> Sedang
+            (ipk_sedang, sks_tinggi, nilai_dk_sedang, 'sedang'),
+            # Rule 16: IPK rendah & SKS sedikit & nilai sedikit -> Kecil
+            (ipk_rendah, sks_rendah, nilai_dk_baik, 'kecil'),
+            # Rule 17: IPK rendah & SKS banyak & nilai sedikit -> Sedang
+            (ipk_rendah, sks_tinggi, nilai_dk_baik, 'sedang'),
+            # Rule 18: IPK tinggi & SKS sedikit & nilai sedikit -> Kecil
+            (ipk_tinggi, sks_rendah, nilai_dk_baik, 'kecil'),
+            # Rule 19: IPK tinggi & SKS sedang & nilai sedang -> Sedang
+            (ipk_tinggi, sks_sedang, nilai_dk_sedang, 'sedang'),
+            # Rule 20: IPK sedang & SKS sedikit & nilai sedang -> Kecil
+            (ipk_sedang, sks_rendah, nilai_dk_sedang, 'kecil'),
+        ]
 
-        # Rule 3: Peluang Kecil (sesuai FIS_SAW_fix.ipynb)
-        peluang_kecil = max([
-            min(ipk_rendah, sks_rendah, nilai_dk_buruk),   # rendah & sedikit & banyak
-            min(ipk_rendah, sks_sedang, nilai_dk_buruk),   # rendah & sedang & banyak
-            min(ipk_tinggi, sks_sedang, nilai_dk_buruk),   # tinggi & sedang & banyak
-            min(ipk_sedang, sks_tinggi, nilai_dk_buruk),   # sedang & banyak & banyak
-            min(ipk_tinggi, sks_tinggi, nilai_dk_buruk),   # tinggi & banyak & banyak
-            min(ipk_sedang, sks_rendah, nilai_dk_baik),    # sedang & sedikit & sedikit
-            min(ipk_rendah, sks_tinggi, nilai_dk_buruk),   # rendah & banyak & banyak
-            min(ipk_rendah, sks_rendah, nilai_dk_baik),    # rendah & sedikit & sedikit
-            min(ipk_tinggi, sks_rendah, nilai_dk_baik),    # tinggi & sedikit & sedikit
-            min(ipk_sedang, sks_rendah, nilai_dk_sedang),  # sedang & sedikit & sedang
-            min(ipk_rendah, sks_rendah, nilai_dk_sedang),  # rendah & sedikit & sedang
-            min(ipk_sedang, sks_rendah, nilai_dk_buruk),   # sedang & sedikit & banyak
-            min(ipk_tinggi, sks_rendah, nilai_dk_sedang),  # tinggi & sedikit & sedang
-            min(ipk_tinggi, sks_rendah, nilai_dk_buruk)    # tinggi & sedikit & banyak
-        ])
+        # Apply all rules
+        for ipk_val, sks_val, nilai_val, output_category in rules:
+            rule_strength = min(ipk_val, sks_val, nilai_val)
+            
+            if output_category == 'kecil':
+                peluang_kecil = max(peluang_kecil, rule_strength)
+            elif output_category == 'sedang':
+                peluang_sedang = max(peluang_sedang, rule_strength)
+            elif output_category == 'tinggi':
+                peluang_tinggi = max(peluang_tinggi, rule_strength)
 
         return (peluang_kecil, peluang_sedang, peluang_tinggi)
 
     def defuzzification(self, peluang_memberships: Tuple[float, float, float]) -> Tuple[float, KategoriPeluang]:
         """
-        Melakukan defuzzifikasi menggunakan metode weighted average
+        Melakukan defuzzifikasi menggunakan metode centroid sesuai FIS_SAW_fix.ipynb
         
-        CATATAN: Jika menggunakan scikit-fuzzy, defuzzifikasi akan berbeda:
-        - Scikit-fuzzy menggunakan metode centroid yang menghitung pusat massa 
-          dari fungsi keanggotaan output pada rentang 0-100
-        - Contoh output scikit-fuzzy:
-          * Peluang_Lulus_Kecil = fuzz.trimf([0, 0, 40]) → centroid ~20
-          * Peluang_Lulus_Sedang = fuzz.trimf([30, 50, 70]) → centroid ~50  
-          * Peluang_Lulus_Tinggi = fuzz.trimf([60, 100, 100]) → centroid ~80
-        - Hasil scikit-fuzzy akan berupa nilai 0-100, sedangkan implementasi ini 0-1
-        - Untuk konversi: nilai_scikit_fuzzy / 100 ≈ nilai_implementasi_ini
+        CATATAN: Implementasi ini sekarang menggunakan skala 0-100 sesuai notebook:
+        - Peluang_Lulus_Kecil = 20 (centroid dari fuzz.trimf([0, 0, 40]))
+        - Peluang_Lulus_Sedang = 50 (centroid dari fuzz.trimf([30, 50, 70]))
+        - Peluang_Lulus_Tinggi = 80 (centroid dari fuzz.trimf([60, 100, 100]))
         """
         peluang_kecil, peluang_sedang, peluang_tinggi = peluang_memberships
         
-        # Nilai tengah untuk setiap kategori (equivalent dengan centroid scikit-fuzzy)
-        # Kecil: 0.25 (setara ~25 di scikit-fuzzy)
-        # Sedang: 0.5 (setara ~50 di scikit-fuzzy)  
-        # Tinggi: 0.75 (setara ~75 di scikit-fuzzy)
-        nilai_kecil = 0.25
-        nilai_sedang = 0.5
-        nilai_tinggi = 0.75
+        # Output crisp values sesuai notebook (skala 0-100)
+        nilai_kecil = self.output_values['kecil']    # 20
+        nilai_sedang = self.output_values['sedang']  # 50
+        nilai_tinggi = self.output_values['tinggi']  # 80
 
-        # Weighted average (simplified centroid calculation)
+        # Weighted average (centroid method)
         numerator = (peluang_kecil * nilai_kecil + 
                     peluang_sedang * nilai_sedang + 
                     peluang_tinggi * nilai_tinggi)
@@ -311,22 +352,17 @@ class FuzzyKelulusan:
         else:
             nilai_crisp = numerator / denominator
 
-        # Menentukan kategori berdasarkan nilai crisp
-        # Threshold disesuaikan dengan FIS_SAW_fix.ipynb: 0.4 dan 0.6
-        # 
-        # CATATAN: Jika menggunakan scikit-fuzzy, kategori ditentukan berbeda:
-        # - Scikit-fuzzy: otomatis menentukan kategori dari nilai centroid tertinggi
-        # - Di FIS_SAW_fix.ipynb menggunakan threshold:
+        # Menentukan kategori berdasarkan nilai crisp (skala 0-100)
+        # Threshold sesuai FIS_SAW_fix.ipynb:
         #   * output >= 60 → "Peluang Lulus Tinggi"
         #   * output >= 40 → "Peluang Lulus Sedang"
         #   * output < 40 → "Peluang Lulus Kecil"
-        # - Threshold ini setara dengan 0.4 dan 0.6 dalam skala 0-1
-        if nilai_crisp < 0.4:  # < 40 jika menggunakan scikit-fuzzy scale (0-100)
-            kategori = KategoriPeluang.KECIL
-        elif nilai_crisp < 0.6:  # 40-60 jika menggunakan scikit-fuzzy scale (0-100)
-            kategori = KategoriPeluang.SEDANG
-        else:  # >= 60 jika menggunakan scikit-fuzzy scale (0-100)
+        if nilai_crisp >= 60:
             kategori = KategoriPeluang.TINGGI
+        elif nilai_crisp >= 40:
+            kategori = KategoriPeluang.SEDANG
+        else:
+            kategori = KategoriPeluang.KECIL
 
         return nilai_crisp, kategori
 

@@ -9,6 +9,11 @@ Directory ini berisi file-file utility dan tools yang tidak terkait langsung den
 - **Test Scripts** - Script untuk testing koneksi dan operasi database
 - **Monitor Scripts** - Script untuk monitoring proses restore
 
+### 🧠 FIS (Fuzzy Inference System) Tools
+- **test_fis_comparison.py** - Membandingkan implementasi FIS project dengan notebook
+- **fix_fis_implementation.py** - Memperbaiki implementasi FIS untuk NIM spesifik
+- **batch_update_fis.py** - Batch update semua mahasiswa dengan FIS yang diperbaiki
+
 ### 🧪 Testing Tools
 - **Environment Tests** - Script untuk testing environment variables
 - **Configuration Tests** - Script untuk testing konfigurasi aplikasi
@@ -100,6 +105,18 @@ python tools/test_config.py
 python tools/run_seeder.py
 ```
 
+### FIS Implementation
+```bash
+# Test perbandingan dengan notebook
+python tools/test_fis_comparison.py
+
+# Fix implementasi untuk NIM spesifik
+python tools/fix_fis_implementation.py
+
+# Batch update semua mahasiswa
+python tools/batch_update_fis.py
+```
+
 ## 📝 Catatan Penting
 
 1. **Backup Database**: 
@@ -145,6 +162,7 @@ python tools/monitor_restore.py monitor
 
 - **[Database Restore Guide](../../docs/database/README_DATABASE_RESTORE.md)** - Panduan lengkap restore database
 - **[Environment Configuration](../../docs/deployment/README_ENVIRONMENT.md)** - Konfigurasi environment variables
+- **[FIS Implementation Fix](../../docs/backend/FIS_IMPLEMENTATION_FIX.md)** - Dokumentasi perbaikan implementasi FIS
 - **[Troubleshooting Guide](../../docs/troubleshooting/README.md)** - Panduan troubleshooting
 
 ---
