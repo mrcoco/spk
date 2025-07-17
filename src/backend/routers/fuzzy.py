@@ -139,7 +139,7 @@ def batch_klasifikasi_mahasiswa(db: Session = Depends(get_db)):
             detail=f"Terjadi kesalahan saat melakukan batch klasifikasi: {str(e)}"
         )
 
-@router.get("/{nim}", response_model=FuzzyResponse)
+@router.get("/{nim}")
 def get_fuzzy_result(nim: str, db: Session = Depends(get_db)):
     # Cek apakah mahasiswa ada
     mahasiswa = db.query(Mahasiswa).filter(Mahasiswa.nim == nim).first()
@@ -176,7 +176,23 @@ def get_fuzzy_result(nim: str, db: Session = Depends(get_db)):
 
         db.commit()
         db.refresh(klasifikasi)
-        return klasifikasi
+        
+        # Return data lengkap termasuk data mahasiswa
+        return {
+            "nim": mahasiswa.nim,
+            "nama": mahasiswa.nama,
+            "program_studi": mahasiswa.program_studi,
+            "ipk": mahasiswa.ipk,
+            "sks": mahasiswa.sks,
+            "persen_dek": mahasiswa.persen_dek,
+            "kategori": klasifikasi.kategori,
+            "nilai_fuzzy": klasifikasi.nilai_fuzzy,
+            "ipk_membership": klasifikasi.ipk_membership,
+            "sks_membership": klasifikasi.sks_membership,
+            "nilai_dk_membership": klasifikasi.nilai_dk_membership,
+            "created_at": klasifikasi.created_at,
+            "updated_at": klasifikasi.updated_at
+        }
 
     except Exception as e:
         raise HTTPException(

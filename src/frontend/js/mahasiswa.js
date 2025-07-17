@@ -155,12 +155,155 @@ function initializeMahasiswaDataSource() {
     });
 }
 
+// Fungsi pencarian mahasiswa
+function initializeSearchFilter() {
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const searchInfo = document.getElementById('searchInfo');
+    const searchResultText = document.getElementById('searchResultText');
+    
+    // Validasi elemen
+    if (!searchInput || !searchBtn || !clearSearchBtn || !searchInfo || !searchResultText) {
+        console.error('❌ Elemen filter pencarian tidak ditemukan');
+        return;
+    }
+    
+    // Pastikan DataSource sudah diinisialisasi
+    if (!mahasiswaDataSource) {
+        console.error('❌ DataSource mahasiswa belum diinisialisasi');
+        return;
+    }
+    
+    let searchTimeout;
+    
+    // Fungsi untuk melakukan pencarian
+    function performSearch() {
+        const searchTerm = searchInput.value.trim();
+        
+        // Tampilkan loading state
+        searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mencari...';
+        searchBtn.disabled = true;
+        
+        if (!searchTerm) {
+            // Jika kosong, reset filter
+            mahasiswaDataSource.filter({});
+            searchInfo.style.display = 'none';
+            // Reset button state
+            searchBtn.innerHTML = '<i class="fas fa-search"></i> Cari';
+            searchBtn.disabled = false;
+            return;
+        }
+        
+        // Buat filter untuk mencari di kolom NIM atau nama
+        const filter = {
+            logic: "or",
+            filters: [
+                {
+                    field: "nim",
+                    operator: "contains",
+                    value: searchTerm
+                },
+                {
+                    field: "nama",
+                    operator: "contains",
+                    value: searchTerm
+                }
+            ]
+        };
+        
+        // Terapkan filter ke DataSource
+        mahasiswaDataSource.filter(filter);
+        
+        // Tampilkan info pencarian
+        searchInfo.style.display = 'block';
+        searchResultText.textContent = `Menampilkan hasil pencarian untuk: "${searchTerm}"`;
+        
+        // Reset button state setelah delay
+        setTimeout(() => {
+            searchBtn.innerHTML = '<i class="fas fa-search"></i> Cari';
+            searchBtn.disabled = false;
+        }, 300);
+    }
+    
+    // Event listener untuk tombol search
+    searchBtn.addEventListener('click', performSearch);
+    
+    // Event listener untuk tombol clear
+    clearSearchBtn.addEventListener('click', function() {
+        // Tampilkan loading state
+        clearSearchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Clearing...';
+        clearSearchBtn.disabled = true;
+        
+        searchInput.value = '';
+        mahasiswaDataSource.filter({});
+        searchInfo.style.display = 'none';
+        searchInput.focus();
+        
+        // Reset button state
+        setTimeout(() => {
+            clearSearchBtn.innerHTML = '<i class="fas fa-times"></i> Clear';
+            clearSearchBtn.disabled = false;
+        }, 200);
+        
+        // Reset search button juga
+        searchBtn.innerHTML = '<i class="fas fa-search"></i> Cari';
+        searchBtn.disabled = false;
+    });
+    
+    // Event listener untuk input (search saat mengetik dengan delay)
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        
+        // Tampilkan loading state pada button
+        searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mencari...';
+        searchBtn.disabled = true;
+        
+        searchTimeout = setTimeout(() => {
+            performSearch();
+        }, 500); // Delay 500ms
+    });
+    
+    // Event listener untuk Enter key
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+    
+    // Event listener untuk DataSource change untuk update info
+    mahasiswaDataSource.bind('change', function(e) {
+        const searchTerm = searchInput.value.trim();
+        if (searchTerm && e.items) {
+            const totalItems = e.items.length;
+            const totalInDataSource = mahasiswaDataSource.total();
+            
+            if (totalItems === 0) {
+                searchResultText.textContent = `Tidak ada hasil untuk: "${searchTerm}"`;
+                searchInfo.style.background = 'rgba(220,53,69,0.1)';
+                searchInfo.style.borderColor = 'rgba(220,53,69,0.2)';
+                searchInfo.style.color = '#dc3545';
+            } else {
+                searchResultText.textContent = `Menampilkan ${totalItems} dari ${totalInDataSource} hasil untuk: "${searchTerm}"`;
+                searchInfo.style.background = 'rgba(0,123,255,0.1)';
+                searchInfo.style.borderColor = 'rgba(0,123,255,0.2)';
+                searchInfo.style.color = '#0056b3';
+            }
+        }
+    });
+    
+    console.log('✅ Filter pencarian mahasiswa berhasil diinisialisasi');
+}
+
 // Inisialisasi Grid Mahasiswa
 $(document).ready(function() {
     // Tunggu sampai CONFIG tersedia
     waitForConfig().then(() => {
         // Inisialisasi DataSource terlebih dahulu
         initializeMahasiswaDataSource();
+        
+        // Inisialisasi filter pencarian
+        initializeSearchFilter();
         
         // Kemudian inisialisasi Grid
         var grid = $("#mahasiswaGrid").kendoGrid({

@@ -150,6 +150,17 @@ class MahasiswaResponse(MahasiswaBase):
     class Config:
         orm_mode = True
 
+class MahasiswaGridResponse(MahasiswaBase):
+    """
+    Schema untuk endpoint grid mahasiswa yang tidak include klasifikasi
+    untuk menghindari konflik validasi nilai_fuzzy
+    """
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
 class MahasiswaSearchResponse(MahasiswaBase):
     """
     Schema untuk endpoint search yang tidak include klasifikasi
@@ -215,7 +226,7 @@ class DashboardResponse(BaseModel):
         }
 
 class GridResponse(BaseModel):
-    data: List[MahasiswaResponse]
+    data: List[MahasiswaGridResponse]
     total: int
 
     class Config:

@@ -947,6 +947,9 @@ function initializeFISForm() {
             } else {
                 window.selectedMahasiswaDataDashboard = dataItem;
                 console.log('Selected NIM Dashboard:', dataItem.nim);
+                
+                // Trigger event untuk sinkronisasi dengan halaman FIS
+                $(document).trigger('dashboardMahasiswaSelected', [dataItem]);
             }
         }
     });

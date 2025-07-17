@@ -88,7 +88,7 @@ def create_mahasiswa(mahasiswa: MahasiswaCreate, db: Session = Depends(get_db)):
 
 @router.get("/search", response_model=List[MahasiswaSearchResponse])
 def search_mahasiswa_for_dropdown(
-    q: str = Query(..., min_length=3, description="Query pencarian minimal 3 karakter"),
+    q: str = Query(..., description="Query pencarian minimal 3 karakter"),
     limit: int = Query(20, ge=1, le=100, description="Limit hasil pencarian"),
     db: Session = Depends(get_db)
 ):
@@ -96,11 +96,9 @@ def search_mahasiswa_for_dropdown(
     Endpoint untuk pencarian mahasiswa yang digunakan oleh dropdown.
     Memerlukan minimal 3 karakter untuk melakukan pencarian.
     """
-    if len(q) < 3:
-        raise HTTPException(
-            status_code=400, 
-            detail="Query pencarian minimal 3 karakter"
-        )
+    # Handle placeholder untuk query yang tidak valid
+    if q == "___INVALID___" or len(q) < 3:
+        return []
     
     # Pencarian berdasarkan NIM atau nama
     query = db.query(Mahasiswa).filter(
@@ -279,3 +277,4 @@ def sync_nilai_mahasiswa(nim: str, db: Session = Depends(get_db)):
         "total_mk": total_mk,
         "total_dek": dek_count
     } 
+    
