@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPK Monitoring Masa Studi</title>
     
-    <!-- Environment Variables -->
+    <!-- Environment Variables - Will be updated dynamically by env-updater.js -->
     <meta name="env-API_BASE_URL" content="http://localhost:8000">
     <meta name="env-API_PREFIX" content="/api">
     <meta name="env-API_VERSION" content="v1">
@@ -45,12 +45,16 @@
     <script src="js/comparison.js"></script>
     <script src="app.js"></script>
     
-    <!-- Test Configuration (Development Only) -->
+    <!-- Test Configuration -->
     <script>
-        // Load test script hanya di development
-        if (window.envLoader && window.envLoader.isDevelopment()) {
+        // Load test script berdasarkan environment
+        if (window.envUpdater) {
             const script = document.createElement('script');
-            script.src = 'js/test-config.js';
+            if (window.envUpdater.isProduction()) {
+                script.src = 'js/test-env-production.js';
+            } else {
+                script.src = 'js/test-config.js';
+            }
             document.head.appendChild(script);
         }
     </script>

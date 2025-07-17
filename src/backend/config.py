@@ -5,9 +5,23 @@ from typing import List, Optional
 # Try to load dotenv if available
 try:
     from dotenv import load_dotenv  # type: ignore
-    load_dotenv()
+    # Load .env file if exists, otherwise load env.local
+    if os.path.exists('.env'):
+        load_dotenv('.env')
+    elif os.path.exists('env.local'):
+        load_dotenv('env.local')
+    elif os.path.exists('env.backend'):
+        load_dotenv('env.backend')
+    else:
+        # Try to load from parent directory
+        parent_env = os.path.join(os.path.dirname(__file__), '..', '.env')
+        if os.path.exists(parent_env):
+            load_dotenv(parent_env)
+        else:
+            print("Warning: No .env file found. Using default configuration.")
 except ImportError:
     # If python-dotenv is not installed, continue without it
+    print("Warning: python-dotenv not installed. Install with: pip install python-dotenv")
     pass
 
 class Config:

@@ -1,85 +1,103 @@
 /**
  * Environment Variables Updater untuk Frontend
- * Mengupdate meta tags berdasarkan environment variables
+ * Mengupdate meta tags dan environment variables berdasarkan environment
  */
 
 class EnvUpdater {
     constructor() {
-        this.env = {};
-        this.loadEnvironmentVariables();
-        this.updateMetaTags();
+        this.currentEnvironment = this.detectEnvironment();
+        this.updateEnvironmentVariables();
     }
 
     /**
-     * Load environment variables dari berbagai sumber
+     * Deteksi environment berdasarkan URL atau hostname
+     * @returns {string} Environment (development/production)
      */
-    loadEnvironmentVariables() {
-        // 1. Coba load dari window.__ENV__ (injected oleh server)
-        if (window.__ENV__) {
-            this.env = { ...window.__ENV__ };
-            console.log('✅ Environment variables loaded from window.__ENV__');
-            return;
-        }
-
-        // 2. Coba load dari URL parameters
-        this.loadFromUrlParams();
-
-        // 3. Coba load dari localStorage
-        this.loadFromLocalStorage();
-
-        // 4. Set default values
-        this.setDefaultValues();
-
-        console.log('✅ Environment variables loaded for meta tags');
-    }
-
-    /**
-     * Load environment variables dari URL parameters
-     */
-    loadFromUrlParams() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const envParams = {};
+    detectEnvironment() {
+        const hostname = window.location.hostname;
+        const port = window.location.port;
         
-        urlParams.forEach((value, key) => {
-            if (key.startsWith('env_')) {
-                const envKey = key.replace('env_', '');
-                envParams[envKey] = value;
-            }
-        });
+        // Deteksi production environment
+        if (hostname === '139.59.236.100' || 
+            hostname.includes('139.59.236.100') ||
+            hostname === 'localhost' && port === '80' ||
+            hostname !== 'localhost') {
+            return 'production';
+        }
+        
+        return 'development';
+    }
 
-        if (Object.keys(envParams).length > 0) {
-            this.env = { ...this.env, ...envParams };
-            console.log('✅ Environment variables loaded from URL parameters');
+    /**
+     * Update environment variables berdasarkan environment yang terdeteksi
+     */
+    updateEnvironmentVariables() {
+        const isProduction = this.currentEnvironment === 'production';
+        
+        // Konfigurasi berdasarkan environment
+        const config = isProduction ? this.getProductionConfig() : this.getDevelopmentConfig();
+        
+        // Update meta tags
+        this.updateMetaTags(config);
+        
+        // Update window.__ENV__ jika belum ada
+        if (!window.__ENV__) {
+            window.__ENV__ = config;
+        }
+        
+        // Log environment yang terdeteksi
+        console.log(`🌍 Environment detected: ${this.currentEnvironment}`);
+        console.log(`🔗 API Base URL: ${config.API_BASE_URL}`);
+        
+        // Reload env-loader jika sudah ada
+        if (window.envLoader) {
+            window.envLoader.loadEnvironmentVariables();
         }
     }
 
     /**
-     * Load environment variables dari localStorage
+     * Konfigurasi untuk production environment
+     * @returns {Object} Production configuration
      */
-    loadFromLocalStorage() {
-        try {
-            const storedEnv = localStorage.getItem('__ENV__');
-            if (storedEnv) {
-                const parsedEnv = JSON.parse(storedEnv);
-                this.env = { ...this.env, ...parsedEnv };
-                console.log('✅ Environment variables loaded from localStorage');
-            }
-        } catch (error) {
-            console.warn('⚠️ Failed to load environment from localStorage:', error);
-        }
+    getProductionConfig() {
+        return {
+            API_BASE_URL: 'http://139.59.236.100:8000',
+            API_PREFIX: '/api',
+            API_VERSION: 'v1',
+            APP_NAME: 'SPK Monitoring Masa Studi',
+            APP_VERSION: '1.0.0',
+            ENVIRONMENT: 'production',
+            DEBUG: 'false',
+            LOG_LEVEL: 'warn',
+            CORS_ENABLED: 'true',
+            ENABLE_SAW: 'true',
+            ENABLE_FUZZY: 'true',
+            ENABLE_COMPARISON: 'true',
+            ENABLE_BATCH_PROCESSING: 'true',
+            THEME: 'default',
+            LANGUAGE: 'id',
+            TIMEZONE: 'Asia/Jakarta',
+            MAX_FILE_SIZE: '10485760',
+            DEFAULT_PAGE_SIZE: '10',
+            MAX_PAGE_SIZE: '100',
+            CACHE_ENABLED: 'true',
+            CACHE_TTL: '300000',
+            SHOW_ERROR_DETAILS: 'false',
+            LOG_ERRORS: 'true'
+        };
     }
 
     /**
-     * Set default values untuk environment variables
+     * Konfigurasi untuk development environment
+     * @returns {Object} Development configuration
      */
-    setDefaultValues() {
-        const defaults = {
+    getDevelopmentConfig() {
+        return {
             API_BASE_URL: 'http://localhost:8000',
             API_PREFIX: '/api',
             API_VERSION: 'v1',
             APP_NAME: 'SPK Monitoring Masa Studi',
             APP_VERSION: '1.0.0',
-            APP_DESCRIPTION: 'Sistem Pendukung Keputusan Monitoring Masa Studi Mahasiswa',
             ENVIRONMENT: 'development',
             DEBUG: 'true',
             LOG_LEVEL: 'info',
@@ -99,134 +117,79 @@ class EnvUpdater {
             SHOW_ERROR_DETAILS: 'true',
             LOG_ERRORS: 'true'
         };
-
-        // Set default values jika tidak ada
-        Object.keys(defaults).forEach(key => {
-            if (!this.env.hasOwnProperty(key)) {
-                this.env[key] = defaults[key];
-            }
-        });
     }
 
     /**
-     * Update meta tags berdasarkan environment variables
+     * Update meta tags dengan konfigurasi yang sesuai
+     * @param {Object} config - Konfigurasi environment
      */
-    updateMetaTags() {
+    updateMetaTags(config) {
         const metaTags = [
-            'API_BASE_URL',
-            'API_PREFIX',
-            'API_VERSION',
-            'APP_NAME',
-            'APP_VERSION',
-            'APP_DESCRIPTION',
-            'ENVIRONMENT',
-            'DEBUG',
-            'LOG_LEVEL',
-            'CORS_ENABLED',
-            'ENABLE_SAW',
-            'ENABLE_FUZZY',
-            'ENABLE_COMPARISON',
-            'ENABLE_BATCH_PROCESSING',
-            'THEME',
-            'LANGUAGE',
-            'TIMEZONE',
-            'MAX_FILE_SIZE',
-            'DEFAULT_PAGE_SIZE',
-            'MAX_PAGE_SIZE',
-            'CACHE_ENABLED',
-            'CACHE_TTL',
-            'SHOW_ERROR_DETAILS',
-            'LOG_ERRORS'
+            { name: 'env-API_BASE_URL', content: config.API_BASE_URL },
+            { name: 'env-API_PREFIX', content: config.API_PREFIX },
+            { name: 'env-API_VERSION', content: config.API_VERSION },
+            { name: 'env-APP_NAME', content: config.APP_NAME },
+            { name: 'env-APP_VERSION', content: config.APP_VERSION },
+            { name: 'env-ENVIRONMENT', content: config.ENVIRONMENT },
+            { name: 'env-DEBUG', content: config.DEBUG },
+            { name: 'env-ENABLE_SAW', content: config.ENABLE_SAW },
+            { name: 'env-ENABLE_FUZZY', content: config.ENABLE_FUZZY },
+            { name: 'env-ENABLE_COMPARISON', content: config.ENABLE_COMPARISON },
+            { name: 'env-ENABLE_BATCH_PROCESSING', content: config.ENABLE_BATCH_PROCESSING }
         ];
 
-        metaTags.forEach(key => {
-            this.updateMetaTag(key, this.env[key]);
+        metaTags.forEach(meta => {
+            let metaElement = document.querySelector(`meta[name="${meta.name}"]`);
+            
+            if (metaElement) {
+                // Update existing meta tag
+                metaElement.setAttribute('content', meta.content);
+            } else {
+                // Create new meta tag
+                metaElement = document.createElement('meta');
+                metaElement.setAttribute('name', meta.name);
+                metaElement.setAttribute('content', meta.content);
+                document.head.appendChild(metaElement);
+            }
         });
 
-        // Update title jika ada
-        if (this.env.APP_NAME) {
-            document.title = this.env.APP_NAME;
-        }
-
-        console.log('✅ Meta tags updated');
+        console.log('✅ Meta tags updated for environment:', this.currentEnvironment);
     }
 
     /**
-     * Update meta tag individual
-     * @param {string} key - Environment variable key
-     * @param {string} value - Environment variable value
+     * Get current environment
+     * @returns {string} Current environment
      */
-    updateMetaTag(key, value) {
-        const metaName = `env-${key}`;
-        let meta = document.querySelector(`meta[name="${metaName}"]`);
-        
-        if (!meta) {
-            // Buat meta tag baru jika tidak ada
-            meta = document.createElement('meta');
-            meta.setAttribute('name', metaName);
-            document.head.appendChild(meta);
-        }
-        
-        meta.setAttribute('content', value);
+    getCurrentEnvironment() {
+        return this.currentEnvironment;
     }
 
     /**
-     * Get environment variable
-     * @param {string} key - Environment variable key
-     * @param {*} defaultValue - Default value jika tidak ditemukan
-     * @returns {*} Environment variable value
+     * Check apakah environment adalah production
+     * @returns {boolean} True jika production
      */
-    get(key, defaultValue = null) {
-        return this.env[key] !== undefined ? this.env[key] : defaultValue;
+    isProduction() {
+        return this.currentEnvironment === 'production';
     }
 
     /**
-     * Get semua environment variables
-     * @returns {Object} All environment variables
+     * Check apakah environment adalah development
+     * @returns {boolean} True jika development
      */
-    getAll() {
-        return { ...this.env };
+    isDevelopment() {
+        return this.currentEnvironment === 'development';
     }
 
     /**
-     * Save environment variables ke localStorage
+     * Reload environment variables
      */
-    saveToLocalStorage() {
-        try {
-            localStorage.setItem('__ENV__', JSON.stringify(this.env));
-            console.log('✅ Environment variables saved to localStorage');
-        } catch (error) {
-            console.warn('⚠️ Failed to save environment to localStorage:', error);
-        }
-    }
-
-    /**
-     * Update environment variable secara dinamis
-     * @param {string} key - Environment variable key
-     * @param {*} value - Environment variable value
-     */
-    updateEnv(key, value) {
-        this.env[key] = value;
-        this.updateMetaTag(key, value);
-        this.saveToLocalStorage();
-        console.log(`✅ Environment variable ${key} updated to ${value}`);
-    }
-
-    /**
-     * Log environment variables (hanya di development)
-     */
-    logEnvironment() {
-        if (this.env.ENVIRONMENT === 'development' && this.env.DEBUG === 'true') {
-            console.log('🌍 Environment Variables (Meta Tags):', this.env);
-        }
+    reload() {
+        this.updateEnvironmentVariables();
     }
 }
 
-// Create global instance
+// Initialize EnvUpdater
 window.envUpdater = new EnvUpdater();
-
-// Log environment di development
-window.envUpdater.logEnvironment();
 
 // Export untuk module systems
 if (typeof module !== 'undefined' && module.exports) {
