@@ -228,6 +228,80 @@ Setelah migration berhasil dijalankan:
 - **Performance**: Menghindari file cache yang tidak diperlukan
 - **Maintenance**: Memudahkan maintenance dan deployment
 
+### 🌱 **Seeder Data Real untuk Database**
+
+#### 📊 **Data Mahasiswa Real (15 records)**
+Seeder dibuat dengan data mahasiswa yang realistis:
+
+| NIM | Nama | Program Studi | IPK | SKS | Persen DEK |
+|-----|------|---------------|-----|-----|------------|
+| 2021001 | Ahmad Rizki | Teknik Informatika | 3.85 | 120 | 5.2% |
+| 2021002 | Siti Nurhaliza | Sistem Informasi | 3.92 | 132 | 2.1% |
+| 2021003 | Budi Santoso | Teknik Informatika | 3.45 | 108 | 8.5% |
+| 2021004 | Dewi Sartika | Sistem Informasi | 3.78 | 126 | 4.3% |
+| 2021005 | Muhammad Fajar | Teknik Informatika | 3.12 | 96 | 12.8% |
+| 2021006 | Nina Safitri | Sistem Informasi | 3.65 | 114 | 6.7% |
+| 2021007 | Rendi Pratama | Teknik Informatika | 2.98 | 90 | 15.2% |
+| 2021008 | Lina Marlina | Sistem Informasi | 3.88 | 138 | 1.8% |
+| 2021009 | Doni Kusuma | Teknik Informatika | 3.25 | 102 | 10.5% |
+| 2021010 | Rina Wati | Sistem Informasi | 3.55 | 120 | 7.3% |
+| 2021011 | Eko Prasetyo | Teknik Informatika | 3.72 | 126 | 3.9% |
+| 2021012 | Yuni Safitri | Sistem Informasi | 3.18 | 96 | 11.4% |
+| 2021013 | Agus Setiawan | Teknik Informatika | 3.95 | 144 | 0.8% |
+| 2021014 | Maya Indah | Sistem Informasi | 3.33 | 108 | 9.6% |
+| 2021015 | Joko Widodo | Teknik Informatika | 3.68 | 120 | 5.1% |
+
+#### 📚 **Data Nilai Real (152 records)**
+- **15 Mata Kuliah**: Mata kuliah umum informatika yang realistis
+- **Distribusi Nilai**: Berdasarkan IPK mahasiswa dengan logika real
+- **Semester**: 1-8, Tahun 2021-2024
+- **Nilai**: A, A-, B+, B, B-, C+, C, D, E, K
+
+#### 🎯 **Logika Distribusi Nilai Real**
+1. **IPK Sangat Tinggi** (3.90+): Lebih banyak nilai A (50%) dan A- (30%)
+2. **IPK Tinggi** (3.80-3.89): Lebih banyak nilai A (40%) dan A- (40%)
+3. **IPK Menengah-Tinggi** (3.70-3.79): Lebih banyak nilai A- (30-40%) dan B+ (20-30%)
+4. **IPK Menengah** (3.30-3.69): Lebih banyak nilai B+ (30-40%) dan B (20-30%)
+5. **IPK Menengah-Rendah** (3.10-3.29): Lebih banyak nilai B (40%) dan B- (20%)
+6. **IPK Rendah** (<3.10): Lebih banyak nilai B (30%), B- (30%), dan C+ (20%)
+
+#### 🔧 **File Seeder yang Dibuat**
+- `src/backend/seeders.py` - File utama seeder dengan data real
+- `src/backend/run_seeder.py` - Script untuk menjalankan seeder
+- `src/backend/README_SEEDER.md` - Dokumentasi lengkap seeder
+- Migration `d6825691d7a1` - Diupdate dengan seeder data real
+
+#### 🚀 **Cara Penggunaan Seeder**
+```bash
+# Otomatis dengan migration
+docker exec -it spk-backend-1 alembic upgrade head
+
+# Manual dengan script
+docker exec -it spk-backend-1 python run_seeder.py
+
+# Manual dengan Python
+docker exec -it spk-backend-1 python -c "from seeders import run_all_seeders; run_all_seeders()"
+```
+
+#### ✅ **Verifikasi Data Real**
+```bash
+# Cek jumlah data
+docker exec -it spk-backend-1 python -c "
+from database import engine
+result = engine.execute('SELECT COUNT(*) FROM mahasiswa')
+print('Total Mahasiswa:', result.fetchone()[0])
+result = engine.execute('SELECT COUNT(*) FROM nilai')
+print('Total Nilai:', result.fetchone()[0])
+"
+```
+
+#### 🎉 **Manfaat Seeder Data Real**
+- **Testing Realistis**: Data yang realistis untuk testing aplikasi
+- **Demo Aplikasi**: Data siap untuk demo dan presentasi
+- **Development**: Memudahkan development dengan data yang masuk akal
+- **Consistency**: Distribusi nilai yang konsisten dengan IPK mahasiswa
+- **Migration Integration**: Otomatis ter-insert saat migration
+
 ---
 
 ## Kamis, 18 Juli 2025
