@@ -131,22 +131,52 @@ function initializeMahasiswaDropdown() {
         dataSource: {
             transport: {
                 read: {
-                    url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA),
-                    dataType: "json"
+                    url: function() {
+                        return CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA + "/search");
+                    },
+                    dataType: "json",
+                    data: function() {
+                        return {
+                            q: $("#mahasiswaDropdown").data("kendoDropDownList").filterInput.val() || "",
+                            limit: 20
+                        };
+                    }
                 }
             },
             schema: {
-                data: "data"
+                data: function(response) {
+                    return response || [];
+                }
+            },
+            serverFiltering: true,
+            filter: {
+                field: "nama",
+                operator: "contains",
+                value: ""
             }
         },
         dataTextField: "nama",
         dataValueField: "nim",
-        optionLabel: "Pilih Mahasiswa...",
+        optionLabel: "Ketik minimal 3 karakter untuk mencari mahasiswa...",
         filter: "contains",
+        minLength: 3,
+        delay: 300,
+        template: "#: nim # - #: nama #",
         virtual: {
             itemHeight: 26,
             valueMapper: function(options) {
                 options.success([options.value]);
+            }
+        },
+        filterInput: {
+            placeholder: "Ketik minimal 3 karakter..."
+        },
+        filter: function(e) {
+            var filterValue = e.filter.value;
+            if (filterValue.length < 3) {
+                e.preventDefault();
+                this.dataSource.data([]);
+                return;
             }
         }
     });

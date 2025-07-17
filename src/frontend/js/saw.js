@@ -145,31 +145,56 @@ function loadMahasiswaDropdown() {
     // Show loading for dropdown
     showSAWDropdownLoading();
     
-    $.ajax({
-        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA + '?limit=1000'),
-        type: 'GET',
-        success: function(data) {
-            hideSAWDropdownLoading();
-            const mahasiswaData = data.data || [];
-            
-            $("#mahasiswaDropdownSAW").kendoDropDownList({
-                dataTextField: "display",
-                dataValueField: "nim",
-                optionLabel: "Pilih Mahasiswa...",
-                dataSource: mahasiswaData.map(m => ({
-                    nim: m.nim,
-                    display: `${m.nim} - ${m.nama}`
-                })),
-                filter: "contains",
-                height: 300
-            });
+    $("#mahasiswaDropdownSAW").kendoDropDownList({
+        dataSource: {
+            transport: {
+                read: {
+                    url: function() {
+                        return CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA + "/search");
+                    },
+                    dataType: "json",
+                    data: function() {
+                        return {
+                            q: $("#mahasiswaDropdownSAW").data("kendoDropDownList").filterInput.val() || "",
+                            limit: 20
+                        };
+                    }
+                }
+            },
+            schema: {
+                data: function(response) {
+                    return response || [];
+                }
+            },
+            serverFiltering: true,
+            filter: {
+                field: "nama",
+                operator: "contains",
+                value: ""
+            }
         },
-        error: function(xhr, status, error) {
-            hideSAWDropdownLoading();
-            console.error('Error loading mahasiswa:', error);
-            showNotification("Error", "Gagal memuat data mahasiswa", "error");
+        dataTextField: "nama",
+        dataValueField: "nim",
+        optionLabel: "Ketik minimal 3 karakter untuk mencari mahasiswa...",
+        filter: "contains",
+        minLength: 3,
+        delay: 300,
+        template: "#: nim # - #: nama #",
+        height: 300,
+        filterInput: {
+            placeholder: "Ketik minimal 3 karakter..."
+        },
+        filter: function(e) {
+            var filterValue = e.filter.value;
+            if (filterValue.length < 3) {
+                e.preventDefault();
+                this.dataSource.data([]);
+                return;
+            }
         }
     });
+    
+    hideSAWDropdownLoading();
 }
 
 function calculateSAW(nim) {

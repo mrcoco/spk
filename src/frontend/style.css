@@ -1018,7 +1018,62 @@ body.drawer-expanded .content-wrapper {
 
 #mahasiswaDropdown {
     width: 100%;
-    max-width: 400px;
+    margin-bottom: 15px;
+}
+
+#mahasiswaDropdownSAW {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+/* Styling untuk dropdown dengan pencarian */
+.k-dropdown .k-input {
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.k-dropdown .k-input::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+.k-dropdown .k-filter-input {
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.k-dropdown .k-filter-input::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+/* Pesan ketika karakter kurang dari 3 */
+.k-dropdown .k-list-container .k-no-data {
+    padding: 10px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+/* Loading indicator untuk dropdown */
+.dropdown-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    color: #666;
+}
+
+.dropdown-loading i {
+    margin-right: 8px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 #btnKlasifikasi {

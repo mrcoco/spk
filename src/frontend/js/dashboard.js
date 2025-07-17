@@ -793,27 +793,48 @@ function initializeFISForm() {
         dataSource: {
             transport: {
                 read: {
-                    url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA),
-                    dataType: "json"
-                },
-                parameterMap: function(data, type) {
-                    if (type === "read") {
+                    url: function() {
+                        return CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA + "/search");
+                    },
+                    dataType: "json",
+                    data: function() {
                         return {
-                            skip: 0,
-                            limit: 1000 // Ambil semua data mahasiswa
+                            q: $("#mahasiswaDropdown").data("kendoDropDownList").filterInput.val() || "",
+                            limit: 20
                         };
                     }
                 }
             },
             schema: {
-                data: "data"
+                data: function(response) {
+                    return response || [];
+                }
+            },
+            serverFiltering: true,
+            filter: {
+                field: "nama",
+                operator: "contains",
+                value: ""
             }
         },
         dataTextField: "nama",
         dataValueField: "nim",
-        optionLabel: "Pilih Mahasiswa...",
+        optionLabel: "Ketik minimal 3 karakter untuk mencari mahasiswa...",
         filter: "contains",
-        template: "#: data.nim # - #: data.nama #"
+        minLength: 3,
+        delay: 300,
+        template: "#: nim # - #: nama #",
+        filterInput: {
+            placeholder: "Ketik minimal 3 karakter..."
+        },
+        filter: function(e) {
+            var filterValue = e.filter.value;
+            if (filterValue.length < 3) {
+                e.preventDefault();
+                this.dataSource.data([]);
+                return;
+            }
+        }
     });
 
     // Event handler untuk tombol Klasifikasi
