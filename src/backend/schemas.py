@@ -96,14 +96,14 @@ class NilaiBase(BaseModel):
         valid_nilai = [
             'A', 'A-',
             'B+', 'B', 'B-',
-            'C+', 'C',
-            'D',
+            'C+', 'C', 'C-',
+            'D+', 'D', 'D-',
             'E',
             'K',
             'TL'  # Tambahkan TL sebagai nilai yang valid
         ]
         if v.upper() not in valid_nilai:
-            raise ValueError('Nilai harus berupa: A, A-, B+, B, B-, C+, C, D, E, K, atau TL')
+            raise ValueError('Nilai harus berupa: A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E, K, atau TL')
         return v.upper()
 
 class NilaiCreate(NilaiBase):
@@ -122,14 +122,14 @@ class NilaiUpdate(BaseModel):
             valid_nilai = [
                 'A', 'A-',
                 'B+', 'B', 'B-',
-                'C+', 'C',
-                'D',
+                'C+', 'C', 'C-',
+                'D+', 'D', 'D-',
                 'E',
                 'K',
                 'TL'  # Tambahkan TL sebagai nilai yang valid
             ]
             if v.upper() not in valid_nilai:
-                raise ValueError('Nilai harus berupa: A, A-, B+, B, B-, C+, C, D, E, K, atau TL')
+                raise ValueError('Nilai harus berupa: A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E, K, atau TL')
             return v.upper()
         return v
 

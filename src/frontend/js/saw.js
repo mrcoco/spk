@@ -17,6 +17,9 @@ function initializeSAWSection() {
     // Initialize SAW page
     initializeSAWPage();
     
+    // Initialize SAW search handlers
+    initializeSAWSearchHandlers();
+    
     // Show initial loading state for stats
     showSAWStatsLoading();
     
@@ -1407,5 +1410,173 @@ function updateTotalRecordInfo(total, elementId) {
     const element = document.getElementById(elementId);
     if (element) {
         element.textContent = `Total: ${total || 0} record`;
+    }
+} 
+
+// Inisialisasi event handler untuk pencarian SAW
+function initializeSAWSearchHandlers() {
+    console.log('Initializing SAW search handlers...');
+    
+    // Event handler untuk tombol pencarian SAW
+    $("#btnSearchSAW").click(function() {
+        console.log('🔍 Tombol pencarian SAW diklik');
+        performSAWSearch();
+    });
+    
+    // Event handler untuk tombol clear pencarian SAW
+    $("#btnClearSearchSAW").click(function() {
+        console.log('🔍 Tombol clear pencarian SAW diklik');
+        clearSAWSearch();
+    });
+    
+    // Event handler untuk input pencarian SAW
+    $("#searchInputSAW").on('input', function() {
+        const searchTerm = $(this).val().trim();
+        if (searchTerm.length >= 3) {
+            // Auto search setelah 3 karakter
+            clearTimeout(window.sawSearchTimeout);
+            window.sawSearchTimeout = setTimeout(function() {
+                performSAWSearch();
+            }, 500);
+        } else if (searchTerm.length === 0) {
+            // Clear search jika input kosong
+            clearSAWSearch();
+        }
+    });
+    
+    // Event handler untuk enter key pada input pencarian SAW
+    $("#searchInputSAW").keypress(function(e) {
+        if (e.which === 13) { // Enter key
+            console.log('🔍 Enter key ditekan pada input pencarian SAW');
+            performSAWSearch();
+        }
+    });
+    
+    // Focus pada input pencarian saat halaman dimuat
+    $("#searchInputSAW").focus();
+}
+
+// Fungsi untuk mencari mahasiswa berdasarkan nama (sama seperti di nilai.js dan fis.js)
+function searchMahasiswaByName(nama) {
+    return new Promise((resolve, reject) => {
+        console.log('🔧 searchMahasiswaByName dipanggil dengan nama:', nama);
+        console.log('🔧 CONFIG.ENDPOINTS.MAHASISWA:', CONFIG?.ENDPOINTS?.MAHASISWA);
+        console.log('🔧 CONFIG.getApiUrl:', typeof CONFIG?.getApiUrl);
+        
+        const url = CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA) + "?search=" + encodeURIComponent(nama) + "&limit=1000";
+        console.log('🔧 URL request:', url);
+        
+        $.ajax({
+            url: url,
+            method: "GET",
+            success: function(response) {
+                console.log('🔧 Hasil pencarian mahasiswa:', response);
+                if (response.data && response.data.length > 0) {
+                    // Return array of NIMs
+                    const nims = response.data.map(mahasiswa => mahasiswa.nim);
+                    console.log('🔧 NIMs yang ditemukan:', nims);
+                    resolve(nims);
+                } else {
+                    console.log('🔧 Tidak ada mahasiswa ditemukan');
+                    resolve([]);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('🔧 Error mencari mahasiswa:', error);
+                console.error('🔧 XHR status:', xhr.status);
+                console.error('🔧 XHR response:', xhr.responseText);
+                reject(error);
+            }
+        });
+    });
+}
+
+// Fungsi untuk melakukan pencarian hasil klasifikasi SAW
+async function performSAWSearch() {
+    console.log('🔧 performSAWSearch dipanggil');
+    
+    const searchInput = $("#searchInputSAW").val().trim();
+    
+    if (!searchInput) {
+        console.log('🔧 Input pencarian kosong, tampilkan semua data');
+        $("#sawGrid").data("kendoGrid").dataSource.read();
+        updateSAWSearchInfo("Menampilkan semua data klasifikasi SAW", "info");
+        return;
+    }
+    
+    console.log('🔧 Memulai pencarian klasifikasi SAW untuk:', searchInput);
+    
+    try {
+        // Tampilkan loading
+        updateSAWSearchInfo("Sedang mencari data klasifikasi SAW...", "info");
+        
+        // Cari mahasiswa berdasarkan nama atau NIM
+        const nims = await searchMahasiswaByName(searchInput);
+        
+        if (nims.length === 0) {
+            updateSAWSearchInfo("Tidak ada mahasiswa ditemukan dengan kriteria tersebut", "warning");
+            return;
+        }
+        
+        // Filter grid berdasarkan NIM yang ditemukan
+        const grid = $("#sawGrid").data("kendoGrid");
+        const allData = grid.dataSource.data();
+        
+        // Filter data berdasarkan NIM
+        const filteredData = allData.filter(item => nims.includes(item.nim));
+        
+        if (filteredData.length === 0) {
+            updateSAWSearchInfo("Tidak ada hasil klasifikasi SAW ditemukan untuk mahasiswa tersebut", "warning");
+            return;
+        }
+        
+        // Update grid dengan data hasil pencarian
+        grid.dataSource.data(filteredData);
+        
+        // Update total record info
+        updateTotalRecordInfo(filteredData.length, "totalRecordTextSAW");
+        
+        updateSAWSearchInfo(`Ditemukan ${filteredData.length} data klasifikasi SAW untuk "${searchInput}"`, "success");
+        
+    } catch (error) {
+        console.error('🔧 Error dalam pencarian SAW:', error);
+        updateSAWSearchInfo("Terjadi kesalahan saat mencari data", "error");
+    }
+}
+
+// Fungsi untuk clear pencarian SAW
+function clearSAWSearch() {
+    $("#searchInputSAW").val("");
+    $("#sawGrid").data("kendoGrid").dataSource.read();
+    updateSAWSearchInfo("Pencarian telah dibersihkan", "info");
+}
+
+// Fungsi untuk update search info SAW
+function updateSAWSearchInfo(message, type) {
+    const searchInfo = $("#searchInfoSAW");
+    const searchResultText = $("#searchResultTextSAW");
+    
+    searchResultText.text(message);
+    
+    // Update icon berdasarkan type
+    const icon = searchInfo.find("i");
+    icon.removeClass("fa-info-circle fa-exclamation-triangle fa-check-circle fa-times-circle");
+    
+    switch(type) {
+        case "success":
+            icon.addClass("fa-check-circle");
+            searchInfo.css("color", "#28a745");
+            break;
+        case "warning":
+            icon.addClass("fa-exclamation-triangle");
+            searchInfo.css("color", "#ffc107");
+            break;
+        case "error":
+            icon.addClass("fa-times-circle");
+            searchInfo.css("color", "#dc3545");
+            break;
+        default:
+            icon.addClass("fa-info-circle");
+            searchInfo.css("color", "#17a2b8");
     }
 } 

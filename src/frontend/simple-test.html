@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test</title>
+    <script src="js/jquery/jquery-3.6.0.min.js"></script>
+    <script src="js/kendo.all.min.js"></script>
+</head>
+<body>
+    <h1>Simple Test</h1>
+    <div id="testGrid"></div>
+    
+    <script>
+        console.log('🚀 Simple test dimulai...');
+        
+        // Test jQuery
+        if (typeof $ !== 'undefined') {
+            console.log('✅ jQuery tersedia');
+        } else {
+            console.error('❌ jQuery tidak tersedia');
+        }
+        
+        // Test Kendo
+        if (typeof kendo !== 'undefined') {
+            console.log('✅ Kendo tersedia');
+        } else {
+            console.error('❌ Kendo tidak tersedia');
+        }
+        
+        // Load config
+        const configScript = document.createElement('script');
+        configScript.src = 'js/config.js';
+        configScript.onload = function() {
+            console.log('✅ Config loaded');
+            
+            // Test CONFIG
+            if (typeof CONFIG !== 'undefined') {
+                console.log('✅ CONFIG tersedia');
+                console.log('CONFIG:', CONFIG);
+            } else {
+                console.error('❌ CONFIG tidak tersedia');
+            }
+            
+            // Load nilai.js
+            const nilaiScript = document.createElement('script');
+            nilaiScript.src = 'js/nilai.js';
+            nilaiScript.onload = function() {
+                console.log('✅ Nilai.js loaded');
+            };
+            nilaiScript.onerror = function() {
+                console.error('❌ Error loading nilai.js');
+            };
+            document.head.appendChild(nilaiScript);
+        };
+        configScript.onerror = function() {
+            console.error('❌ Error loading config.js');
+        };
+        document.head.appendChild(configScript);
+    </script>
+</body>
+</html> 

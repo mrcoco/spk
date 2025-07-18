@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Nilai Debug</title>
+    
+    <!-- jQuery -->
+    <script src="js/jquery/jquery-3.6.0.min.js"></script>
+    
+    <!-- Kendo UI -->
+    <link href="styles/kendo.common-bootstrap.min.css" rel="stylesheet">
+    <link href="styles/kendo.bootstrap-v4.min.css" rel="stylesheet">
+    <script src="js/kendo.all.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="styles/font-awesome/all.min.css">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .debug-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .debug-log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-panel">
+        <h2>🔍 Debug Test - Nilai.js</h2>
+        <p>Halaman ini untuk testing apakah nilai.js dimuat dengan benar</p>
+        
+        <div>
+            <button class="test-button" onclick="testConfig()">Test CONFIG</button>
+            <button class="test-button" onclick="testGrid()">Test Grid</button>
+            <button class="test-button" onclick="testForm()">Test Form</button>
+            <button class="test-button" onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="debug-log" id="debugLog">
+            <div>🚀 Debug log dimulai...</div>
+        </div>
+    </div>
+    
+    <div id="nilaiGrid"></div>
+    <div id="nilaiForm" style="display: none;">
+        <div id="nilaiFormContent"></div>
+    </div>
+    
+    <!-- Notification element -->
+    <div id="notification"></div>
+
+    <script>
+        // Override console.log untuk capture ke debug panel
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addToLog(message, type = 'log') {
+            const logDiv = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#dc3545' : type === 'warn' ? '#ffc107' : '#28a745';
+            logDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToLog(args.join(' '), 'warn');
+        };
+        
+        function testConfig() {
+            console.log('🧪 Testing CONFIG...');
+            if (typeof CONFIG !== 'undefined') {
+                console.log('✅ CONFIG tersedia:', CONFIG);
+                console.log('🔗 API URL:', CONFIG.getApiUrl(CONFIG.ENDPOINTS.NILAI));
+            } else {
+                console.error('❌ CONFIG tidak tersedia');
+            }
+        }
+        
+        function testGrid() {
+            console.log('🧪 Testing Grid...');
+            const grid = $("#nilaiGrid").data("kendoGrid");
+            if (grid) {
+                console.log('✅ Grid tersedia:', grid);
+            } else {
+                console.error('❌ Grid tidak tersedia');
+            }
+        }
+        
+        function testForm() {
+            console.log('🧪 Testing Form...');
+            const form = $("#nilaiFormContent").data("kendoForm");
+            if (form) {
+                console.log('✅ Form tersedia:', form);
+            } else {
+                console.error('❌ Form tidak tersedia');
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('debugLog').innerHTML = '<div>🚀 Debug log dibersihkan...</div>';
+        }
+        
+        // Load scripts
+        function loadScripts() {
+            const scripts = [
+                'js/env-loader.js',
+                'js/env-updater.js',
+                'js/config.js',
+                'app.js',
+                'js/nilai.js'
+            ];
+            
+            function loadScript(index) {
+                if (index >= scripts.length) {
+                    console.log('✅ Semua script berhasil dimuat');
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = scripts[index];
+                script.onload = function() {
+                    console.log(`✅ Script loaded: ${scripts[index]}`);
+                    loadScript(index + 1);
+                };
+                script.onerror = function() {
+                    console.error(`❌ Error loading script: ${scripts[index]}`);
+                    loadScript(index + 1);
+                };
+                document.head.appendChild(script);
+            }
+            
+            loadScript(0);
+        }
+        
+        // Start loading when page is ready
+        $(document).ready(function() {
+            console.log('📄 Document ready di test page');
+            loadScripts();
+        });
+    </script>
+</body>
+</html> 

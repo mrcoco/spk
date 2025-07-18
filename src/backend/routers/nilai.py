@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from typing import List, Optional
 from database import get_db
-from models import Nilai
+from models import Nilai, Mahasiswa
 from schemas import NilaiCreate, NilaiUpdate, NilaiResponse
 
 router = APIRouter()
@@ -12,31 +13,47 @@ def get_nilai(
     skip: int = Query(0, ge=0),
     take: int = Query(10, ge=1),
     filter: Optional[str] = None,
+    nim: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """
     Mengambil daftar nilai dengan pagination dan filter.
     """
-    query = db.query(Nilai)
+    # Query dengan join ke tabel mahasiswa untuk mendapatkan nama
+    query = db.query(Nilai, Mahasiswa.nama).join(Mahasiswa, Nilai.nim == Mahasiswa.nim)
     
-    # Terapkan filter jika ada
+    # Terapkan filter berdasarkan NIM jika ada
+    if nim:
+        # Split NIM jika ada multiple NIM (dipisahkan dengan &)
+        nim_list = nim.split('&')
+        # Buat filter untuk multiple NIM
+        nim_filters = [Nilai.nim == n.strip() for n in nim_list if n.strip()]
+        if nim_filters:
+            query = query.filter(or_(*nim_filters))
+    
+    # Terapkan filter umum jika ada
     if filter:
         filter = f"%{filter}%"
         query = query.filter(
             (Nilai.nim.ilike(filter)) |
             (Nilai.kode_matakuliah.ilike(filter)) |
             (Nilai.nama_matakuliah.ilike(filter)) |
-            (Nilai.nilai.ilike(filter))
+            (Nilai.nilai.ilike(filter)) |
+            (Mahasiswa.nama.ilike(filter))
         )
     
     # Hitung total data
     total = query.count()
     
     # Terapkan pagination
-    nilai_list = query.offset(skip).limit(take).all()
+    results = query.offset(skip).limit(take).all()
     
-    # Konversi ke response model
-    response_data = [nilai.to_dict() for nilai in nilai_list]
+    # Konversi ke response model dengan nama mahasiswa
+    response_data = []
+    for nilai, nama_mahasiswa in results:
+        nilai_dict = nilai.to_dict()
+        nilai_dict["nama_mahasiswa"] = nama_mahasiswa
+        response_data.append(nilai_dict)
     
     return {"data": response_data, "total": total}
 

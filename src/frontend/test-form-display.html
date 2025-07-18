@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Form Display</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-area { background: #f9f9f9; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        
+        /* Form Overlay Styles */
+        .form-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 1px solid #e9ecef;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .form-body {
+            padding: 25px;
+        }
+        
+        .form-footer {
+            padding: 20px 25px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: #f8f9fa;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Form Display</h1>
+    
+    <div class="test-area">
+        <h3>Test Form Display:</h3>
+        <button onclick="showForm()">Show Form</button>
+        <button onclick="hideForm()">Hide Form</button>
+        <button onclick="showFormManual()">Show Form Manual</button>
+        <button onclick="checkFormStatus()">Check Form Status</button>
+    </div>
+    
+    <!-- Form -->
+    <div id="nilaiForm" style="display: none;">
+        <div class="form-overlay">
+            <div class="form-card">
+                <div class="form-header">
+                    <h3><i class="fas fa-plus"></i> Test Form</h3>
+                    <button type="button" class="close-btn" onclick="hideForm()">
+                        <i class="fas fa-times">×</i>
+                    </button>
+                </div>
+                <div class="form-body">
+                    <p>Ini adalah test form untuk memverifikasi apakah form dapat ditampilkan dengan benar.</p>
+                    <p>Jika Anda dapat melihat form ini, berarti CSS dan JavaScript berfungsi dengan baik.</p>
+                </div>
+                <div class="form-footer">
+                    <button onclick="hideForm()">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showForm() {
+            console.log('Showing form with slideDown...');
+            const form = document.getElementById('nilaiForm');
+            if (form) {
+                form.style.display = 'block';
+                console.log('Form displayed');
+            } else {
+                console.error('Form not found');
+            }
+        }
+        
+        function hideForm() {
+            console.log('Hiding form...');
+            const form = document.getElementById('nilaiForm');
+            if (form) {
+                form.style.display = 'none';
+                console.log('Form hidden');
+            } else {
+                console.error('Form not found');
+            }
+        }
+        
+        function showFormManual() {
+            console.log('Showing form manually...');
+            const form = document.getElementById('nilaiForm');
+            if (form) {
+                form.style.display = 'block';
+                form.style.visibility = 'visible';
+                form.style.opacity = '1';
+                console.log('Form displayed manually');
+            } else {
+                console.error('Form not found');
+            }
+        }
+        
+        function checkFormStatus() {
+            const form = document.getElementById('nilaiForm');
+            if (form) {
+                const computedStyle = window.getComputedStyle(form);
+                console.log('Form status:');
+                console.log('- display:', computedStyle.display);
+                console.log('- visibility:', computedStyle.visibility);
+                console.log('- opacity:', computedStyle.opacity);
+                console.log('- position:', computedStyle.position);
+                console.log('- z-index:', computedStyle.zIndex);
+            } else {
+                console.error('Form not found');
+            }
+        }
+        
+        // Test on page load
+        window.addEventListener('load', function() {
+            console.log('Page loaded, checking form...');
+            checkFormStatus();
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Nilai Test</title>
+    <script src="js/jquery/jquery-3.6.0.min.js"></script>
+    <script src="js/kendo.all.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-area { background: #f9f9f9; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+        
+        /* Form Overlay Styles */
+        .form-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 1px solid #e9ecef;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .form-body {
+            padding: 25px;
+        }
+        
+        .form-footer {
+            padding: 20px 25px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: #f8f9fa;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Nilai Test</h1>
+    
+    <div class="test-area">
+        <h3>Test Functions:</h3>
+        <button onclick="testShowAddForm()">Test showAddNilaiForm()</button>
+        <button onclick="testShowEditForm()">Test showEditNilaiForm()</button>
+        <button onclick="testHideForm()">Test hideNilaiForm()</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="log" id="log">Log akan muncul di sini...</div>
+    
+    <div id="nilaiGrid"></div>
+    <div id="nilaiForm" style="display: none;">
+        <div class="form-overlay">
+            <div class="form-card">
+                <div class="form-header">
+                    <h3 id="nilaiFormTitle"><i class="fas fa-plus"></i> Test Form</h3>
+                    <button type="button" class="close-btn" onclick="hideNilaiForm()">
+                        <i class="fas fa-times">×</i>
+                    </button>
+                </div>
+                <div class="form-body">
+                    <div id="nilaiFormContent">
+                        <p>Ini adalah test form untuk memverifikasi fungsi nilai.js</p>
+                        <p>Form ini akan diisi oleh Kendo Form jika berfungsi dengan benar.</p>
+                    </div>
+                </div>
+                <div class="form-footer">
+                    <button onclick="hideNilaiForm()">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple logging
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = 'Log dibersihkan...<br>';
+        }
+        
+        // Mock CONFIG untuk testing
+        window.CONFIG = {
+            getApiUrl: function(endpoint) {
+                return 'http://localhost:8000' + endpoint;
+            },
+            ENDPOINTS: {
+                NILAI: '/api/nilai'
+            }
+        };
+        
+        // Mock showNotification
+        window.showNotification = function(title, message, type) {
+            log(`[${type.toUpperCase()}] ${title}: ${message}`);
+        };
+        
+        function testShowAddForm() {
+            log('Testing showAddNilaiForm...');
+            if (typeof showAddNilaiForm === 'function') {
+                showAddNilaiForm();
+            } else {
+                log('❌ showAddNilaiForm function not found');
+            }
+        }
+        
+        function testShowEditForm() {
+            log('Testing showEditNilaiForm...');
+            if (typeof showEditNilaiForm === 'function') {
+                const testData = {
+                    id: 1,
+                    nim: '123456',
+                    tahun: 2024,
+                    semester: 1,
+                    kode_matakuliah: 'TEST001',
+                    nama_matakuliah: 'Test Matakuliah',
+                    nilai: 'A'
+                };
+                showEditNilaiForm(testData);
+            } else {
+                log('❌ showEditNilaiForm function not found');
+            }
+        }
+        
+        function testHideForm() {
+            log('Testing hideNilaiForm...');
+            if (typeof hideNilaiForm === 'function') {
+                hideNilaiForm();
+            } else {
+                log('❌ hideNilaiForm function not found');
+            }
+        }
+        
+        // Load nilai.js directly
+        function loadNilaiJS() {
+            log('Loading nilai.js...');
+            
+            const script = document.createElement('script');
+            script.src = 'js/nilai.js';
+            script.onload = function() {
+                log('✅ nilai.js loaded successfully');
+                setTimeout(() => {
+                    log('Checking functions...');
+                    if (typeof showAddNilaiForm === 'function') {
+                        log('✅ showAddNilaiForm is available');
+                    }
+                    if (typeof showEditNilaiForm === 'function') {
+                        log('✅ showEditNilaiForm is available');
+                    }
+                    if (typeof hideNilaiForm === 'function') {
+                        log('✅ hideNilaiForm is available');
+                    }
+                }, 1000);
+            };
+            script.onerror = function() {
+                log('❌ Error loading nilai.js');
+            };
+            document.head.appendChild(script);
+        }
+        
+        // Start when page is ready
+        $(document).ready(function() {
+            log('Document ready');
+            loadNilaiJS();
+        });
+    </script>
+</body>
+</html> 

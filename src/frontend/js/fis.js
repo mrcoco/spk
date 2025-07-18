@@ -1,6 +1,7 @@
 // Inisialisasi komponen FIS saat dokumen siap
 $(document).ready(function() {
     initializeFISComponents();
+    initializeFISSearchHandlers();
 });
 
 function initializeFISComponents() {
@@ -10,6 +11,187 @@ function initializeFISComponents() {
     initializeButtons();
     loadInitialFISBatchResults();
     console.log('FIS components initialized successfully');
+}
+
+// Inisialisasi event handler untuk pencarian FIS
+function initializeFISSearchHandlers() {
+    console.log('Initializing FIS search handlers...');
+    
+    // Event handler untuk tombol pencarian FIS
+    $("#btnSearchFIS").click(function() {
+        console.log('🔍 Tombol pencarian FIS diklik');
+        performFISSearch();
+    });
+    
+    // Event handler untuk tombol clear pencarian FIS
+    $("#btnClearSearchFIS").click(function() {
+        console.log('🔍 Tombol clear pencarian FIS diklik');
+        clearFISSearch();
+    });
+    
+    // Event handler untuk input pencarian FIS
+    $("#searchInputFIS").on('input', function() {
+        const searchTerm = $(this).val().trim();
+        if (searchTerm.length >= 3) {
+            // Auto search setelah 3 karakter
+            clearTimeout(window.fisSearchTimeout);
+            window.fisSearchTimeout = setTimeout(function() {
+                performFISSearch();
+            }, 500);
+        } else if (searchTerm.length === 0) {
+            // Clear search jika input kosong
+            clearFISSearch();
+        }
+    });
+    
+    // Event handler untuk enter key pada input pencarian FIS
+    $("#searchInputFIS").keypress(function(e) {
+        if (e.which === 13) { // Enter key
+            console.log('🔍 Enter key ditekan pada input pencarian FIS');
+            performFISSearch();
+        }
+    });
+    
+    // Focus pada input pencarian saat halaman dimuat
+    $("#searchInputFIS").focus();
+}
+
+// Fungsi untuk mencari mahasiswa berdasarkan nama (sama seperti di nilai.js)
+function searchMahasiswaByName(nama) {
+    return new Promise((resolve, reject) => {
+        console.log('🔧 searchMahasiswaByName dipanggil dengan nama:', nama);
+        console.log('🔧 CONFIG.ENDPOINTS.MAHASISWA:', CONFIG?.ENDPOINTS?.MAHASISWA);
+        console.log('🔧 CONFIG.getApiUrl:', typeof CONFIG?.getApiUrl);
+        
+        const url = CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA) + "?search=" + encodeURIComponent(nama) + "&limit=1000";
+        console.log('🔧 URL request:', url);
+        
+        $.ajax({
+            url: url,
+            method: "GET",
+            success: function(response) {
+                console.log('🔧 Hasil pencarian mahasiswa:', response);
+                if (response.data && response.data.length > 0) {
+                    // Return array of NIMs
+                    const nims = response.data.map(mahasiswa => mahasiswa.nim);
+                    console.log('🔧 NIMs yang ditemukan:', nims);
+                    resolve(nims);
+                } else {
+                    console.log('🔧 Tidak ada mahasiswa ditemukan');
+                    resolve([]);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('🔧 Error mencari mahasiswa:', error);
+                console.error('🔧 XHR status:', xhr.status);
+                console.error('🔧 XHR response:', xhr.responseText);
+                reject(error);
+            }
+        });
+    });
+}
+
+// Fungsi untuk melakukan pencarian hasil klasifikasi FIS
+async function performFISSearch() {
+    console.log('🔧 performFISSearch dipanggil');
+    
+    const searchInput = $("#searchInputFIS").val().trim();
+    
+    if (!searchInput) {
+        console.log('🔧 Input pencarian kosong, tampilkan semua data');
+        $("#fisGrid").data("kendoGrid").dataSource.read();
+        updateFISSearchInfo("Menampilkan semua data klasifikasi FIS", "info");
+        return;
+    }
+    
+    console.log('🔧 Memulai pencarian klasifikasi FIS untuk:', searchInput);
+    
+    try {
+        // Tampilkan loading pada grid
+        kendo.ui.progress($("#fisGrid"), true);
+        updateFISSearchInfo("Sedang mencari data klasifikasi FIS...", "info");
+        
+        // Cari mahasiswa berdasarkan nama atau NIM
+        const nims = await searchMahasiswaByName(searchInput);
+        
+        if (nims.length === 0) {
+            kendo.ui.progress($("#fisGrid"), false);
+            updateFISSearchInfo("Tidak ada mahasiswa ditemukan dengan kriteria tersebut", "warning");
+            return;
+        }
+        
+        // Filter grid berdasarkan NIM yang ditemukan
+        const grid = $("#fisGrid").data("kendoGrid");
+        const allData = grid.dataSource.data();
+        
+        // Filter data berdasarkan NIM
+        const filteredData = allData.filter(item => nims.includes(item.nim));
+        
+        if (filteredData.length === 0) {
+            kendo.ui.progress($("#fisGrid"), false);
+            updateFISSearchInfo("Tidak ada hasil klasifikasi FIS ditemukan untuk mahasiswa tersebut", "warning");
+            return;
+        }
+        
+        // Update grid dengan data hasil pencarian
+        grid.dataSource.data(filteredData);
+        
+        // Update total record info
+        updateTotalRecordInfo(filteredData.length, "totalRecordTextFIS");
+        
+        // Sembunyikan loading
+        kendo.ui.progress($("#fisGrid"), false);
+        updateFISSearchInfo(`Ditemukan ${filteredData.length} data klasifikasi FIS untuk "${searchInput}"`, "success");
+        
+    } catch (error) {
+        console.error('🔧 Error dalam pencarian FIS:', error);
+        kendo.ui.progress($("#fisGrid"), false);
+        updateFISSearchInfo("Terjadi kesalahan saat mencari data", "error");
+    }
+}
+
+// Fungsi untuk clear pencarian FIS
+function clearFISSearch() {
+    $("#searchInputFIS").val("");
+    
+    // Tampilkan loading saat memuat ulang data
+    kendo.ui.progress($("#fisGrid"), true);
+    updateFISSearchInfo("Sedang memuat ulang data klasifikasi FIS...", "info");
+    
+    // Reload data dari server
+    $("#fisGrid").data("kendoGrid").dataSource.read();
+    
+    // Pesan akan diupdate oleh requestEnd event handler
+}
+
+// Fungsi untuk update search info FIS
+function updateFISSearchInfo(message, type) {
+    const searchInfo = $("#searchInfoFIS");
+    const searchResultText = $("#searchResultTextFIS");
+    
+    searchResultText.text(message);
+    
+    // Update icon berdasarkan type
+    const icon = searchInfo.find("i");
+    icon.removeClass("fa-info-circle fa-exclamation-triangle fa-check-circle fa-times-circle");
+    
+    switch(type) {
+        case "success":
+            icon.addClass("fa-check-circle");
+            searchInfo.css("color", "#28a745");
+            break;
+        case "warning":
+            icon.addClass("fa-exclamation-triangle");
+            searchInfo.css("color", "#ffc107");
+            break;
+        case "error":
+            icon.addClass("fa-times-circle");
+            searchInfo.css("color", "#dc3545");
+            break;
+        default:
+            icon.addClass("fa-info-circle");
+            searchInfo.css("color", "#17a2b8");
+    }
 }
 
 function initializeFISGrid() {
@@ -27,7 +209,34 @@ function initializeFISGrid() {
             },
             pageSize: 10,
             serverPaging: true,
-            serverSorting: true
+            serverSorting: true,
+            requestStart: function(e) {
+                console.log('🔄 FIS Grid: Request started');
+                // Tampilkan loading indicator
+                kendo.ui.progress($("#fisGrid"), true);
+                // Tampilkan pesan loading
+                updateFISSearchInfo("Sedang memuat data klasifikasi FIS...", "info");
+            },
+            requestEnd: function(e) {
+                console.log('✅ FIS Grid: Request ended');
+                // Sembunyikan loading indicator
+                kendo.ui.progress($("#fisGrid"), false);
+                // Update pesan berdasarkan hasil
+                if (e.type === "read") {
+                    if (e.response && e.response.data) {
+                        updateFISSearchInfo(`Berhasil memuat ${e.response.data.length} data klasifikasi FIS`, "success");
+                    } else {
+                        updateFISSearchInfo("Tidak ada data klasifikasi FIS yang ditemukan", "warning");
+                    }
+                }
+            },
+            error: function(e) {
+                console.error('❌ FIS Grid: Request error', e);
+                // Sembunyikan loading indicator
+                kendo.ui.progress($("#fisGrid"), false);
+                // Tampilkan pesan error
+                updateFISSearchInfo("Terjadi kesalahan saat memuat data klasifikasi FIS", "error");
+            }
         },
         height: 550,
         // sortable: true,
@@ -557,6 +766,10 @@ function displayFISBatchResults(data) {
 function loadInitialFISBatchResults() {
     console.log('Loading initial FIS batch results...');
     
+    // Tampilkan loading indicator
+    kendo.ui.progress($("#fisSection"), true);
+    updateFISSearchInfo("Sedang memuat data distribusi klasifikasi FIS...", "info");
+    
     // Panggil API untuk mendapatkan distribusi klasifikasi FIS
     $.ajax({
         url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY) + "/distribution",
@@ -584,6 +797,10 @@ function loadInitialFISBatchResults() {
             // Fallback ke endpoint results jika distribution error
             console.log('Falling back to results endpoint...');
             loadFISResultsAsFallback();
+        },
+        complete: function() {
+            // Sembunyikan loading indicator
+            kendo.ui.progress($("#fisSection"), false);
         }
     });
 }
@@ -591,6 +808,10 @@ function loadInitialFISBatchResults() {
 // Fungsi fallback untuk memuat data dari endpoint results
 function loadFISResultsAsFallback() {
     console.log('Loading FIS results as fallback...');
+    
+    // Tampilkan loading indicator
+    kendo.ui.progress($("#fisSection"), true);
+    updateFISSearchInfo("Sedang memuat data klasifikasi FIS...", "info");
     
     $.ajax({
         url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY_RESULT),
@@ -644,6 +865,10 @@ function loadFISResultsAsFallback() {
                 "Error Loading Data",
                 errorMessage
             );
+        },
+        complete: function() {
+            // Sembunyikan loading indicator
+            kendo.ui.progress($("#fisSection"), false);
         }
     });
 }

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Nilai Simple</title>
+    <script src="js/jquery/jquery-3.6.0.min.js"></script>
+    <script src="js/kendo.all.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-area { background: #f9f9f9; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Nilai.js Simple</h1>
+    
+    <div class="test-area">
+        <h3>Test Functions:</h3>
+        <button onclick="testDirectCall()">Test Direct Function Call</button>
+        <button onclick="testShowForm()">Test Show Form</button>
+        <button onclick="testHideForm()">Test Hide Form</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="log" id="log">Log akan muncul di sini...</div>
+    
+    <div id="nilaiGrid"></div>
+    <div id="nilaiForm" style="display: none;">
+        <div id="nilaiFormContent"></div>
+    </div>
+    
+    <!-- Notification element -->
+    <div id="notification"></div>
+
+    <script>
+        // Simple logging
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = 'Log dibersihkan...<br>';
+        }
+        
+        function testDirectCall() {
+            log('Testing direct function call...');
+            
+            // Test if functions exist
+            if (typeof showAddNilaiForm === 'function') {
+                log('✅ showAddNilaiForm function exists');
+                try {
+                    showAddNilaiForm();
+                    log('✅ showAddNilaiForm called successfully');
+                } catch (error) {
+                    log('❌ Error calling showAddNilaiForm: ' + error.message);
+                }
+            } else {
+                log('❌ showAddNilaiForm function does not exist');
+            }
+            
+            if (typeof showEditNilaiForm === 'function') {
+                log('✅ showEditNilaiForm function exists');
+            } else {
+                log('❌ showEditNilaiForm function does not exist');
+            }
+            
+            if (typeof hideNilaiForm === 'function') {
+                log('✅ hideNilaiForm function exists');
+            } else {
+                log('❌ hideNilaiForm function does not exist');
+            }
+        }
+        
+        function testShowForm() {
+            log('Testing show form...');
+            const form = document.getElementById('nilaiForm');
+            if (form) {
+                form.style.display = 'block';
+                log('✅ Form shown manually');
+            } else {
+                log('❌ Form element not found');
+            }
+        }
+        
+        function testHideForm() {
+            log('Testing hide form...');
+            const form = document.getElementById('nilaiForm');
+            if (form) {
+                form.style.display = 'none';
+                log('✅ Form hidden manually');
+            } else {
+                log('❌ Form element not found');
+            }
+        }
+        
+        // Load nilai.js directly
+        function loadNilaiJS() {
+            log('Loading scripts...');
+            
+            const scripts = [
+                'js/env-loader.js',
+                'js/env-updater.js',
+                'js/config.js',
+                'js/router.js',
+                'app.js',
+                'js/nilai.js'
+            ];
+            
+            function loadScript(index) {
+                if (index >= scripts.length) {
+                    log('✅ All scripts loaded');
+                    setTimeout(() => {
+                        testDirectCall();
+                    }, 1000);
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = scripts[index];
+                script.onload = function() {
+                    log(`✅ Script loaded: ${scripts[index]}`);
+                    loadScript(index + 1);
+                };
+                script.onerror = function() {
+                    log(`❌ Error loading script: ${scripts[index]}`);
+                    loadScript(index + 1);
+                };
+                document.head.appendChild(script);
+            }
+            
+            loadScript(0);
+        }
+        
+        // Start when page is ready
+        $(document).ready(function() {
+            log('Document ready');
+            loadNilaiJS();
+        });
+    </script>
+</body>
+</html> 

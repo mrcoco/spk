@@ -135,7 +135,40 @@ function initializeMahasiswaDataSource() {
     pageSize: 10,
     serverPaging: true,
     serverSorting: true,
+    requestStart: function(e) {
+        console.log('🔄 Mahasiswa Grid: Request started');
+        // Tampilkan loading indicator
+        kendo.ui.progress($("#mahasiswaGrid"), true);
+        // Update search info jika ada
+        const searchInfo = document.getElementById('searchResultText');
+        if (searchInfo) {
+            searchInfo.textContent = "Sedang memuat data mahasiswa...";
+        }
+    },
+    requestEnd: function(e) {
+        console.log('✅ Mahasiswa Grid: Request ended');
+        // Sembunyikan loading indicator
+        kendo.ui.progress($("#mahasiswaGrid"), false);
+        // Update search info berdasarkan hasil
+        const searchInfo = document.getElementById('searchResultText');
+        if (searchInfo && e.type === "read") {
+            if (e.response && e.response.data) {
+                searchInfo.textContent = `Berhasil memuat ${e.response.data.length} data mahasiswa`;
+            } else {
+                searchInfo.textContent = "Tidak ada data mahasiswa yang ditemukan";
+            }
+        }
+    },
     error: function(e) {
+        console.error('❌ Mahasiswa Grid: Request error', e);
+        // Sembunyikan loading indicator
+        kendo.ui.progress($("#mahasiswaGrid"), false);
+        // Update search info dengan pesan error
+        const searchInfo = document.getElementById('searchResultText');
+        if (searchInfo) {
+            searchInfo.textContent = "Terjadi kesalahan saat memuat data mahasiswa";
+        }
+        
         let errorMessage = "Terjadi kesalahan";
         try {
             if (e && e.xhr && e.xhr.responseJSON && e.xhr.responseJSON.detail) {
@@ -189,6 +222,9 @@ function initializeSearchFilter() {
         // Tampilkan loading state
         searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mencari...';
         searchBtn.disabled = true;
+        
+        // Tampilkan loading indicator pada grid
+        kendo.ui.progress($("#mahasiswaGrid"), true);
         
         if (!searchTerm) {
             // Jika kosong, reset search parameter dan reload data

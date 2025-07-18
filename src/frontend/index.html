@@ -46,12 +46,12 @@
             'js/env-updater.js',
             'js/config.js',
             'js/router.js',
+            'app.js',
             'js/dashboard.js',
             'js/mahasiswa.js',
             'js/nilai.js',
             'js/fis.js',
-            'js/saw.js',
-            'app.js'
+            'js/saw.js'
         ];
         // Load CSS
         cssFiles.forEach(href => {
@@ -274,13 +274,65 @@
                         <div class="section-header">
                             <h2>Data Nilai</h2>
                         </div>
+                        
+                        <!-- Filter Pencarian Nilai -->
+                        <div class="search-filter-container">
+                            <div>
+                                <div class="search-input-group">
+                                    <label for="searchInputNilai">
+                                        <i class="fas fa-search"></i> Cari Nilai Mahasiswa:
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="searchInputNilai" 
+                                        placeholder="Masukkan NIM atau nama mahasiswa..."
+                                    >
+                                </div>
+                                <div class="search-button-group">
+                                    <button id="btnSearchNilai" class="k-button k-primary">
+                                        <i class="fas fa-search"></i> Cari
+                                    </button>
+                                    <button id="btnClearSearchNilai" class="k-button">
+                                        <i class="fas fa-times"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="searchInfoNilai">
+                                <i class="fas fa-info-circle"></i> 
+                                <span id="searchResultTextNilai">Menampilkan hasil pencarian...</span>
+                            </div>
+                        </div>
+                        
                         <div id="nilaiGrid"></div>
                         <!-- Total Record Info -->
                         <div id="totalRecordInfoNilai" class="total-record-info">
                             <i class="fas fa-database"></i>
                             <span id="totalRecordTextNilai">Total: 0 record</span>
                         </div>
-                        <div id="nilaiForm" style="display: none;"></div>
+                        <!-- Form Tambah Nilai -->
+                        <div id="nilaiForm" style="display: none;">
+                            <div class="form-overlay">
+                                <div class="form-card">
+                                    <div class="form-header">
+                                        <h3 id="nilaiFormTitle"><i class="fas fa-plus"></i> Tambah Data Nilai</h3>
+                                        <button type="button" class="close-btn" onclick="hideNilaiForm()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-body">
+                                        <div id="nilaiFormContent"></div>
+                                    </div>
+                                    <div class="form-footer">
+                                        <button type="button" class="k-button k-button-md k-rounded-md k-button-solid custom-button-cancel" onclick="hideNilaiForm()">
+                                            <i class="fas fa-times"></i> Batal
+                                        </button>
+                                        <button type="button" class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync" id="submitNilaiBtn">
+                                            <i class="fas fa-save"></i> Simpan
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -389,6 +441,35 @@
                                 <!-- Hasil Grid Card -->
                                 <div class="fis-card fis-grid-container">
                                     <h3><i class="fas fa-table"></i> Hasil Klasifikasi</h3>
+                                    
+                                    <!-- Filter Pencarian FIS -->
+                                    <div class="search-filter-container">
+                                        <div>
+                                            <div class="search-input-group">
+                                                <label for="searchInputFIS">
+                                                    <i class="fas fa-search"></i> Cari Hasil Klasifikasi:
+                                                </label>
+                                                <input 
+                                                    type="text" 
+                                                    id="searchInputFIS" 
+                                                    placeholder="Masukkan NIM atau nama mahasiswa..."
+                                                >
+                                            </div>
+                                            <div class="search-button-group">
+                                                <button id="btnSearchFIS" class="k-button k-primary">
+                                                    <i class="fas fa-search"></i> Cari
+                                                </button>
+                                                <button id="btnClearSearchFIS" class="k-button">
+                                                    <i class="fas fa-times"></i> Clear
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="searchInfoFIS">
+                                            <i class="fas fa-info-circle"></i> 
+                                            <span id="searchResultTextFIS">Menampilkan hasil pencarian...</span>
+                                        </div>
+                                    </div>
+                                    
                                     <div id="fisGrid"></div>
                                     <!-- Total Record Info -->
                                     <div id="totalRecordInfoFIS" class="total-record-info">
@@ -652,6 +733,35 @@
                                 <!-- Hasil Grid Card -->
                                 <div class="saw-card saw-grid-container">
                                     <h3><i class="fas fa-table"></i> Hasil Klasifikasi</h3>
+                                    
+                                    <!-- Filter Pencarian SAW -->
+                                    <div class="search-filter-container">
+                                        <div>
+                                            <div class="search-input-group">
+                                                <label for="searchInputSAW">
+                                                    <i class="fas fa-search"></i> Cari Hasil Klasifikasi:
+                                                </label>
+                                                <input 
+                                                    type="text" 
+                                                    id="searchInputSAW" 
+                                                    placeholder="Masukkan NIM atau nama mahasiswa..."
+                                                >
+                                            </div>
+                                            <div class="search-button-group">
+                                                <button id="btnSearchSAW" class="k-button k-primary">
+                                                    <i class="fas fa-search"></i> Cari
+                                                </button>
+                                                <button id="btnClearSearchSAW" class="k-button">
+                                                    <i class="fas fa-times"></i> Clear
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="searchInfoSAW">
+                                            <i class="fas fa-info-circle"></i> 
+                                            <span id="searchResultTextSAW">Menampilkan hasil pencarian...</span>
+                                        </div>
+                                    </div>
+                                    
                                     <div id="sawGrid"></div>
                                     <!-- Total Record Info -->
                                     <div id="totalRecordInfoSAW" class="total-record-info">
