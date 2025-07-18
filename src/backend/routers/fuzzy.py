@@ -2,6 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List
+import numpy as np
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
+from sklearn.model_selection import train_test_split
+import time
 
 from database import get_db
 from models import Mahasiswa, KlasifikasiKelulusan
@@ -239,4 +243,132 @@ def get_fuzzy_result(nim: str, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=500,
             detail=f"Terjadi kesalahan saat menghitung klasifikasi: {str(e)}"
+        ) 
+
+@router.post("/evaluate", description="Menghitung confusion matrix dan evaluation metrics")
+def evaluate_fuzzy_system(
+    test_size: float = 0.3,
+    random_state: int = 42,
+    db: Session = Depends(get_db)
+):
+    try:
+        start_time = time.time()
+        
+        # Ambil semua data mahasiswa
+        mahasiswa_list = db.query(Mahasiswa).all()
+        
+        if len(mahasiswa_list) < 10:
+            raise HTTPException(
+                status_code=400,
+                detail="Data tidak cukup untuk evaluasi. Minimal 10 data diperlukan."
+            )
+        
+        # Persiapkan data untuk evaluasi
+        X = []  # Features (IPK, SKS, Persen DEK)
+        y_true = []  # True labels (kategori yang seharusnya)
+        y_pred = []  # Predicted labels (kategori hasil FIS)
+        
+        # Mapping kategori ke angka untuk confusion matrix
+        kategori_mapping = {
+            "Peluang Lulus Tinggi": 0,
+            "Peluang Lulus Sedang": 1,
+            "Peluang Lulus Kecil": 2
+        }
+        
+        reverse_mapping = {v: k for k, v in kategori_mapping.items()}
+        
+        # Generate true labels berdasarkan kriteria sederhana
+        for mahasiswa in mahasiswa_list:
+            # Features
+            features = [mahasiswa.ipk, mahasiswa.sks, mahasiswa.persen_dek]
+            X.append(features)
+            
+            # True label berdasarkan kriteria sederhana
+            if mahasiswa.ipk >= 3.5 and mahasiswa.sks >= 120 and mahasiswa.persen_dek >= 80:
+                true_label = "Peluang Lulus Tinggi"
+            elif mahasiswa.ipk >= 3.0 and mahasiswa.sks >= 100 and mahasiswa.persen_dek >= 70:
+                true_label = "Peluang Lulus Sedang"
+            else:
+                true_label = "Peluang Lulus Kecil"
+            
+            y_true.append(kategori_mapping[true_label])
+            
+            # Predicted label menggunakan FIS
+            kategori_pred, _, _, _, _ = fuzzy_system.calculate_graduation_chance(
+                mahasiswa.ipk,
+                mahasiswa.sks,
+                mahasiswa.persen_dek
+            )
+            y_pred.append(kategori_mapping[kategori_pred])
+        
+        # Split data untuk training dan testing
+        X_train, X_test, y_true_train, y_true_test, y_pred_train, y_pred_test = train_test_split(
+            X, y_true, y_pred, test_size=test_size, random_state=random_state, stratify=y_true
+        )
+        
+        # Hitung confusion matrix untuk test data
+        cm = confusion_matrix(y_true_test, y_pred_test, labels=[0, 1, 2])
+        
+        # Hitung metrics
+        accuracy = accuracy_score(y_true_test, y_pred_test)
+        
+        # Classification report untuk mendapatkan precision, recall, f1-score
+        report = classification_report(y_true_test, y_pred_test, labels=[0, 1, 2], 
+                                     target_names=["Peluang Lulus Tinggi", "Peluang Lulus Sedang", "Peluang Lulus Kecil"],
+                                     output_dict=True)
+        
+        # Extract metrics
+        precision = [
+            report["Peluang Lulus Tinggi"]["precision"],
+            report["Peluang Lulus Sedang"]["precision"],
+            report["Peluang Lulus Kecil"]["precision"]
+        ]
+        
+        recall = [
+            report["Peluang Lulus Tinggi"]["recall"],
+            report["Peluang Lulus Sedang"]["recall"],
+            report["Peluang Lulus Kecil"]["recall"]
+        ]
+        
+        f1 = [
+            report["Peluang Lulus Tinggi"]["f1-score"],
+            report["Peluang Lulus Sedang"]["f1-score"],
+            report["Peluang Lulus Kecil"]["f1-score"]
+        ]
+        
+        # Macro averages
+        precision_macro = report["macro avg"]["precision"]
+        recall_macro = report["macro avg"]["recall"]
+        f1_macro = report["macro avg"]["f1-score"]
+        
+        execution_time = time.time() - start_time
+        
+        return {
+            "confusion_matrix": cm.tolist(),
+            "metrics": {
+                "accuracy": accuracy,
+                "precision": precision,
+                "recall": recall,
+                "f1": f1,
+                "precision_macro": precision_macro,
+                "recall_macro": recall_macro,
+                "f1_macro": f1_macro
+            },
+            "summary": {
+                "total_data": len(mahasiswa_list),
+                "training_data": len(X_train),
+                "test_data": len(X_test),
+                "execution_time": round(execution_time, 3)
+            },
+            "kategori_mapping": {
+                "0": "Peluang Lulus Tinggi",
+                "1": "Peluang Lulus Sedang", 
+                "2": "Peluang Lulus Kecil"
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat evaluasi: {str(e)}"
         ) 

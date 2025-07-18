@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluasi FIS - SPK Monitoring Masa Studi</title>
+    
+    <!-- Environment Variables -->
+    <meta name="env-API_BASE_URL" content="http://localhost:8000">
+    <meta name="env-API_PREFIX" content="/api">
+    <meta name="env-API_VERSION" content="v1">
+    <meta name="env-APP_NAME" content="SPK Monitoring Masa Studi">
+    <meta name="env-APP_VERSION" content="1.0.0">
+    <meta name="env-ENVIRONMENT" content="development">
+    <meta name="env-DEBUG" content="true">
+    
+    <!-- jQuery -->
+    <script src="js/jquery/jquery-3.6.0.min.js"></script>
+    
+    <!-- Kendo UI -->
+    <link href="styles/kendo.common-bootstrap.min.css" rel="stylesheet">
+    <link href="styles/kendo.bootstrap-v4.min.css" rel="stylesheet">
+    <script src="js/kendo.all.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="styles/font-awesome/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Custom JS -->
+    <script src="js/env-loader.js"></script>
+    <script src="js/env-updater.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/evaluation.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1>
+                <i class="fas fa-chart-line"></i>
+                Evaluasi Metode FIS
+            </h1>
+            <a href="index.html" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+                Kembali ke Dashboard
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="content-wrapper">
+            <div class="content-container">
+                
+                <!-- Loading Indicator -->
+                <div id="loadingIndicator" class="loading-container" style="display: none;">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <p>Sedang menghitung evaluasi...</p>
+                </div>
+
+                <!-- Control Panel -->
+                <div class="control-panel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-cogs"></i> Pengaturan Evaluasi</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="testSize">Ukuran Data Test (%):</label>
+                                    <input type="number" id="testSize" value="30" min="10" max="50" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="randomState">Random State:</label>
+                                    <input type="number" id="randomState" value="42" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <button id="calculateBtn" class="btn btn-primary">
+                                        <i class="fas fa-calculator"></i>
+                                        Hitung Evaluasi
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confusion Matrix Section -->
+                <div class="evaluation-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-table"></i> Confusion Matrix</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="confusionMatrixContainer">
+                                <div class="confusion-matrix">
+                                    <table class="confusion-table">
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th colspan="4">Predicted</th>
+                                            </tr>
+                                            <tr>
+                                                <th>Actual</th>
+                                                <th>Sangat Baik</th>
+                                                <th>Baik</th>
+                                                <th>Cukup</th>
+                                                <th>Kurang</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="confusionMatrixBody">
+                                            <tr>
+                                                <td><strong>Sangat Baik</strong></td>
+                                                <td id="cm-0-0">-</td>
+                                                <td id="cm-0-1">-</td>
+                                                <td id="cm-0-2">-</td>
+                                                <td id="cm-0-3">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Baik</strong></td>
+                                                <td id="cm-1-0">-</td>
+                                                <td id="cm-1-1">-</td>
+                                                <td id="cm-1-2">-</td>
+                                                <td id="cm-1-3">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Cukup</strong></td>
+                                                <td id="cm-2-0">-</td>
+                                                <td id="cm-2-1">-</td>
+                                                <td id="cm-2-2">-</td>
+                                                <td id="cm-2-3">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Kurang</strong></td>
+                                                <td id="cm-3-0">-</td>
+                                                <td id="cm-3-1">-</td>
+                                                <td id="cm-3-2">-</td>
+                                                <td id="cm-3-3">-</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evaluation Metrics Section -->
+                <div class="evaluation-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-bar"></i> Evaluation Metrics</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="metrics-grid">
+                                <!-- Overall Metrics -->
+                                <div class="metrics-card overall">
+                                    <h4>Overall Metrics</h4>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Accuracy:</span>
+                                        <span class="metric-value" id="accuracy">-</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Precision (Macro):</span>
+                                        <span class="metric-value" id="precision-macro">-</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Recall (Macro):</span>
+                                        <span class="metric-value" id="recall-macro">-</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">F1-Score (Macro):</span>
+                                        <span class="metric-value" id="f1-macro">-</span>
+                                    </div>
+                                </div>
+
+                                <!-- Per-Class Metrics -->
+                                <div class="metrics-card per-class">
+                                    <h4>Per-Class Metrics</h4>
+                                    <div class="class-metrics">
+                                        <div class="class-metric">
+                                            <h5>Sangat Baik</h5>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Precision:</span>
+                                                <span class="metric-value" id="precision-0">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Recall:</span>
+                                                <span class="metric-value" id="recall-0">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">F1-Score:</span>
+                                                <span class="metric-value" id="f1-0">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="class-metric">
+                                            <h5>Baik</h5>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Precision:</span>
+                                                <span class="metric-value" id="precision-1">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Recall:</span>
+                                                <span class="metric-value" id="recall-1">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">F1-Score:</span>
+                                                <span class="metric-value" id="f1-1">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="class-metric">
+                                            <h5>Cukup</h5>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Precision:</span>
+                                                <span class="metric-value" id="precision-2">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Recall:</span>
+                                                <span class="metric-value" id="recall-2">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">F1-Score:</span>
+                                                <span class="metric-value" id="f1-2">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="class-metric">
+                                            <h5>Kurang</h5>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Precision:</span>
+                                                <span class="metric-value" id="precision-3">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Recall:</span>
+                                                <span class="metric-value" id="recall-3">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">F1-Score:</span>
+                                                <span class="metric-value" id="f1-3">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visualization Section -->
+                <div class="evaluation-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-pie"></i> Visualisasi Hasil</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="charts-container">
+                                <div class="chart-wrapper">
+                                    <h4>Confusion Matrix Heatmap</h4>
+                                    <canvas id="confusionMatrixChart" width="400" height="300"></canvas>
+                                </div>
+                                <div class="chart-wrapper">
+                                    <h4>Metrics Comparison</h4>
+                                    <canvas id="metricsChart" width="400" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Results Section -->
+                <div class="evaluation-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-list"></i> Hasil Detail Evaluasi</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="detailedResults">
+                                <div class="results-summary">
+                                    <div class="summary-item">
+                                        <span class="summary-label">Total Data:</span>
+                                        <span class="summary-value" id="totalData">-</span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <span class="summary-label">Training Data:</span>
+                                        <span class="summary-value" id="trainingData">-</span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <span class="summary-label">Test Data:</span>
+                                        <span class="summary-value" id="testData">-</span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <span class="summary-label">Waktu Eksekusi:</span>
+                                        <span class="summary-value" id="executionTime">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
+
+    <script>
+        // Initialize evaluation page
+        $(document).ready(function() {
+            console.log('🚀 Evaluation page loaded');
+            
+            // Initialize evaluation functionality
+            if (typeof initializeEvaluation === 'function') {
+                initializeEvaluation();
+            } else {
+                console.error('❌ initializeEvaluation function not found');
+            }
+        });
+    </script>
+</body>
+</html> 
