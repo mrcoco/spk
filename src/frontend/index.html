@@ -253,15 +253,25 @@
                             <span id="totalRecordText">Total: 0 record</span>
                         </div>
                         <div id="mahasiswaForm" style="display: none;">
-                            <div class="mahasiswa-form-card">
-                                <div class="form-header">
-                                    <h3><i class="fas fa-user-plus"></i> Tambah Data Mahasiswa</h3>
-                                    <button class="close-form-btn" onclick="hideMahasiswaForm()">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <div class="form-content">
-                                    <!-- Form akan diinisialisasi oleh JavaScript -->
+                            <div class="form-overlay">
+                                <div class="form-card">
+                                    <div class="form-header">
+                                        <h3 id="mahasiswaFormTitle"><i class="fas fa-plus"></i> Tambah Data Mahasiswa</h3>
+                                        <button type="button" class="close-btn" onclick="hideMahasiswaForm()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-body">
+                                        <div id="mahasiswaFormContent"></div>
+                                    </div>
+                                    <div class="form-footer">
+                                        <button type="button" class="k-button k-button-md k-rounded-md k-button-solid custom-button-cancel" onclick="hideMahasiswaForm()">
+                                            <i class="fas fa-times"></i> Batal
+                                        </button>
+                                        <button type="button" class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync" id="submitMahasiswaBtn">
+                                            <i class="fas fa-save"></i> Simpan
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

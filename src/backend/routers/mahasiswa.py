@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import func
 
 from database import get_db
-from models import Mahasiswa, KlasifikasiKelulusan, Nilai
+from models import Mahasiswa, KlasifikasiKelulusan, Nilai, SAWResults, SAWFinalResults
 from schemas import (
     MahasiswaCreate, MahasiswaUpdate, MahasiswaResponse, MahasiswaSearchResponse,
     GridResponse
@@ -133,13 +133,60 @@ def update_mahasiswa(nim: str, mahasiswa: MahasiswaUpdate, db: Session = Depends
 
 @router.delete("/{nim}")
 def delete_mahasiswa(nim: str, db: Session = Depends(get_db)):
-    mahasiswa = db.query(Mahasiswa).filter(Mahasiswa.nim == nim).first()
-    if not mahasiswa:
-        raise HTTPException(status_code=404, detail="Mahasiswa tidak ditemukan")
-    
-    db.delete(mahasiswa)
-    db.commit()
-    return {"message": "Mahasiswa berhasil dihapus"}
+    try:
+        print(f"Attempting to delete mahasiswa with NIM: {nim}")
+        
+        # Cek apakah mahasiswa ada
+        mahasiswa = db.query(Mahasiswa).filter(Mahasiswa.nim == nim).first()
+        if not mahasiswa:
+            print(f"Mahasiswa with NIM {nim} not found")
+            raise HTTPException(status_code=404, detail="Mahasiswa tidak ditemukan")
+        
+        print(f"Found mahasiswa: {mahasiswa.nama} ({mahasiswa.nim})")
+        
+        # Hapus data terkait secara manual untuk menghindari constraint violation
+        try:
+            # Hapus data klasifikasi yang rusak (nim NULL)
+            db.query(KlasifikasiKelulusan).filter(
+                (KlasifikasiKelulusan.nim == nim) | 
+                (KlasifikasiKelulusan.nim.is_(None))
+            ).delete()
+            
+            # Hapus data SAW results
+            db.query(SAWResults).filter(SAWResults.nim == nim).delete()
+            db.query(SAWFinalResults).filter(SAWFinalResults.nim == nim).delete()
+            
+            # Hapus data nilai
+            db.query(Nilai).filter(Nilai.nim == nim).delete()
+            
+            print(f"Related data cleaned up for NIM {nim}")
+        except Exception as cleanup_error:
+            print(f"Warning: Error during cleanup: {cleanup_error}")
+            # Lanjutkan meski ada error cleanup
+        
+        # Hapus mahasiswa
+        db.delete(mahasiswa)
+        db.commit()
+        
+        print(f"Successfully deleted mahasiswa {nim}")
+        return {
+            "message": f"Mahasiswa {mahasiswa.nama} ({nim}) berhasil dihapus",
+            "deleted_data": {
+                "mahasiswa": True,
+                "related_data_cleaned": True
+            }
+        }
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        print(f"Error deleting mahasiswa {nim}: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Terjadi kesalahan saat menghapus mahasiswa: {str(e)}"
+        )
 
 @router.post("/sync-all-nilai")
 def sync_semua_nilai(db: Session = Depends(get_db)):

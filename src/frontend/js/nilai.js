@@ -271,19 +271,98 @@ function initializeNilaiGrid() {
             // Get the data item
             var dataItem = e.model;
             
-            // Show confirmation dialog
-            if (confirm("Apakah Anda yakin ingin menghapus data nilai ini?")) {
-                // Call the destroy method manually
-                var grid = $("#nilaiGrid").data("kendoGrid");
-                grid.dataSource.remove(dataItem);
-                grid.dataSource.sync();
-                
-                showNotification(
-                    "Sukses",
-                    "Data nilai berhasil dihapus",
-                    "success"
-                );
-            }
+            // Buat dialog konfirmasi yang menarik
+            const confirmDialog = $("<div>")
+                .append(`
+                    <div style="padding: 20px; text-align: center;">
+                        <div style="margin-bottom: 20px;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #ff9800;"></i>
+                        </div>
+                        <h3 style="color: #333; margin-bottom: 15px;">Konfirmasi Hapus Data Nilai</h3>
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: left;">
+                            <p style="margin: 5px 0; color: #666;">
+                                <strong>NIM:</strong> ${dataItem.nim}
+                            </p>
+                            <p style="margin: 5px 0; color: #666;">
+                                <strong>Nama:</strong> ${dataItem.nama_mahasiswa}
+                            </p>
+                            <p style="margin: 5px 0; color: #666;">
+                                <strong>Mata Kuliah:</strong> ${dataItem.nama_matakuliah}
+                            </p>
+                            <p style="margin: 5px 0; color: #666;">
+                                <strong>Nilai:</strong> <span style="font-weight: bold; color: #333;">${dataItem.nilai}</span>
+                            </p>
+                            <p style="margin: 5px 0; color: #666;">
+                                <strong>Semester:</strong> ${dataItem.semester} (${dataItem.tahun})
+                            </p>
+                        </div>
+                        <p style="color: #dc3545; font-weight: bold; margin-bottom: 0;">
+                            <i class="fas fa-info-circle"></i> 
+                            Data yang dihapus tidak dapat dikembalikan!
+                        </p>
+                    </div>
+                `)
+                .kendoDialog({
+                    width: "450px",
+                    title: "Hapus Data Nilai",
+                    closable: true,
+                    modal: true,
+                    actions: [
+                        {
+                            text: "Batal",
+                            primary: false,
+                            cssClass: "k-button-solid-base",
+                            action: function() {
+                                // Dialog akan tertutup otomatis
+                            }
+                        },
+                        {
+                            text: "Ya, Hapus Data",
+                            primary: true,
+                            cssClass: "k-button-solid-error",
+                            action: function() {
+                                // Tampilkan loading dialog
+                                const loadingDialog = $("<div>")
+                                    .append(`
+                                        <div style="padding: 20px; text-align: center;">
+                                            <div style="margin-bottom: 15px;">
+                                                <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #007bff;"></i>
+                                            </div>
+                                            <p style="color: #333; margin: 0;">Sedang menghapus data nilai...</p>
+                                        </div>
+                                    `)
+                                    .kendoDialog({
+                                        width: "300px",
+                                        title: "Menghapus Data",
+                                        closable: false,
+                                        modal: true
+                                    });
+                                
+                                loadingDialog.data("kendoDialog").open();
+                                
+                                // Call the destroy method manually
+                                var grid = $("#nilaiGrid").data("kendoGrid");
+                                grid.dataSource.remove(dataItem);
+                                grid.dataSource.sync();
+                                
+                                // Tutup loading dialog setelah sync selesai
+                                setTimeout(function() {
+                                    loadingDialog.data("kendoDialog").close();
+                                    
+                                    // Tampilkan notifikasi sukses
+                                    showNotification(
+                                        "Sukses",
+                                        "Data nilai berhasil dihapus",
+                                        "success"
+                                    );
+                                }, 1000);
+                            }
+                        }
+                    ]
+                });
+            
+            // Buka dialog konfirmasi
+            confirmDialog.data("kendoDialog").open();
         },
         save: function(e) {
             if (e.model.isNew()) {
@@ -340,12 +419,22 @@ function initializeNilaiForm() {
                 field: "tahun",
                 label: "Tahun:",
                 editor: "NumericTextBox",
+                editorOptions: {
+                    format: "n0",
+                    decimals: 0,
+                    spinners: false
+                },
                 validation: { required: true, min: 2000, max: 2100 }
             },
             {
                 field: "semester",
                 label: "Semester:",
                 editor: "NumericTextBox",
+                editorOptions: {
+                    format: "n0",
+                    decimals: 0,
+                    spinners: false
+                },
                 validation: { required: true, min: 1, max: 14 }
             },
             {
@@ -983,8 +1072,8 @@ $(document).ready(function() {
         return false;
     });
     
-    // Event handler untuk button delete
-    $(document).on('click', '#nilaiGrid .custom-button-delete', function(e) {
+    // Event handler untuk button delete - langsung menampilkan KendoDialog
+    $(document).off('click', '#nilaiGrid .custom-button-delete').on('click', '#nilaiGrid .custom-button-delete', function(e) {
         console.log('🔍 Event handler button delete dijalankan...');
         e.preventDefault();
         e.stopPropagation();
@@ -997,30 +1086,134 @@ $(document).ready(function() {
         console.log("Delete button clicked via direct handler", dataItem);
         
         if (dataItem) {
-            if (confirm("Apakah Anda yakin ingin menghapus data nilai ini?")) {
-                // Perform delete
-                $.ajax({
-                    url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.NILAI) + "/" + dataItem.id,
-                    method: "DELETE",
-                    success: function(response) {
-                        console.log("Delete successful:", response);
-                        grid.dataSource.read();
-                        showNotification(
-                            "Sukses",
-                            "Data nilai berhasil dihapus",
-                            "success"
-                        );
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("Delete failed:", error);
-                        showNotification(
-                            "Error",
-                            "Gagal menghapus data nilai",
-                            "error"
-                        );
-                    }
+            console.log('🔍 Menampilkan dialog konfirmasi hapus untuk data:', dataItem);
+            
+            // Buat dialog konfirmasi yang menarik
+            const confirmDialog = $("<div>")
+                .append(`
+                    <div style="padding: 20px; text-align: center;">
+                        <div style="margin-bottom: 20px;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #ff9800;"></i>
+                        </div>
+                        <h3 style="color: #333; margin-bottom: 15px;">Konfirmasi Hapus Data Nilai</h3>
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: left;">
+                            <p style="margin: 5px 0; color: #666;">
+                                <strong>NIM:</strong> ${dataItem.nim}
+                            </p>
+                            <p style="margin: 5px 0; color: #666;">
+                                <strong>Nama:</strong> ${dataItem.nama_mahasiswa}
+                            </p>
+                            <p style="margin: 5px 0; color: #666;">
+                                <strong>Mata Kuliah:</strong> ${dataItem.nama_matakuliah}
+                            </p>
+                            <p style="margin: 5px 0; color: #666;">
+                                <strong>Nilai:</strong> <span style="font-weight: bold; color: #333;">${dataItem.nilai}</span>
+                            </p>
+                            <p style="margin: 5px 0; color: #666;">
+                                <strong>Semester:</strong> ${dataItem.semester} (${dataItem.tahun})
+                            </p>
+                        </div>
+                        <p style="color: #dc3545; font-weight: bold; margin-bottom: 0;">
+                            <i class="fas fa-info-circle"></i> 
+                            Data yang dihapus tidak dapat dikembalikan!
+                        </p>
+                    </div>
+                `)
+                .kendoDialog({
+                    width: "450px",
+                    title: "Hapus Data Nilai",
+                    closable: true,
+                    modal: true,
+                    actions: [
+                        {
+                            text: "Batal",
+                            primary: false,
+                            cssClass: "k-button-solid-base",
+                            action: function() {
+                                console.log('🔍 Dialog dibatalkan');
+                                // Dialog akan tertutup otomatis
+                            }
+                        },
+                        {
+                            text: "Ya, Hapus Data",
+                            primary: true,
+                            cssClass: "k-button-solid-error",
+                            action: function() {
+                                console.log('🔍 Konfirmasi hapus diterima, memproses...');
+                                
+                                // Tampilkan loading dialog
+                                const loadingDialog = $("<div>")
+                                    .append(`
+                                        <div style="padding: 20px; text-align: center;">
+                                            <div style="margin-bottom: 15px;">
+                                                <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #007bff;"></i>
+                                            </div>
+                                            <p style="color: #333; margin: 0;">Sedang menghapus data nilai...</p>
+                                        </div>
+                                    `)
+                                    .kendoDialog({
+                                        width: "300px",
+                                        title: "Menghapus Data",
+                                        closable: false,
+                                        modal: true
+                                    });
+                                
+                                loadingDialog.data("kendoDialog").open();
+                                
+                                // Lakukan penghapusan dengan AJAX
+                                $.ajax({
+                                    url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.NILAI) + "/" + dataItem.id,
+                                    method: "DELETE",
+                                    success: function(response) {
+                                        console.log('🔍 Delete berhasil:', response);
+                                        
+                                        // Tutup loading dialog
+                                        loadingDialog.data("kendoDialog").close();
+                                        
+                                        // Refresh grid
+                                        grid.dataSource.read();
+                                        
+                                        // Tampilkan notifikasi sukses
+                                        showNotification(
+                                            "Sukses",
+                                            "Data nilai berhasil dihapus",
+                                            "success"
+                                        );
+                                    },
+                                    error: function(xhr, status, error) {
+                                        console.error('🔍 Delete gagal:', error);
+                                        
+                                        // Tutup loading dialog
+                                        loadingDialog.data("kendoDialog").close();
+                                        
+                                        let errorMessage = "Gagal menghapus data nilai";
+                                        if (xhr.responseJSON && xhr.responseJSON.detail) {
+                                            errorMessage += ": " + xhr.responseJSON.detail;
+                                        } else if (xhr.statusText) {
+                                            errorMessage += ": " + xhr.statusText;
+                                        }
+                                        
+                                        showNotification(
+                                            "Error",
+                                            errorMessage,
+                                            "error"
+                                        );
+                                    }
+                                });
+                            }
+                        }
+                    ]
                 });
-            }
+            
+            // Buka dialog konfirmasi
+            confirmDialog.data("kendoDialog").open();
+        } else {
+            console.error('🔍 Data item tidak valid untuk delete');
+            showNotification(
+                "Error",
+                "Data nilai tidak valid untuk dihapus",
+                "error"
+            );
         }
         
         return false;
