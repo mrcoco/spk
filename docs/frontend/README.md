@@ -12,6 +12,24 @@ Dokumentasi lengkap untuk frontend aplikasi SPK Monitoring Masa Studi yang mengg
 
 ### 📝 Development
 - **[Changelog](CHANGELOG.md)** - Riwayat perubahan frontend
+- **[Dropdown Search Improvement](DROPDOWN_SEARCH_IMPROVEMENT.md)** - Perbaikan dropdown mahasiswa dengan pencarian minimal 3 karakter
+- **[FIS Display Improvement](FIS_DISPLAY_IMPROVEMENT.md)** - Perbaikan tampilan hasil klasifikasi FIS dengan data lengkap mahasiswa
+- **[Cache Busting Implementation](CACHE_BUSTING_IMPLEMENTATION.md)** - Implementasi cache busting untuk file JS dan CSS
+- **[Notification Error Fix](NOTIFICATION_ERROR_FIX.md)** - Perbaikan error notification dengan fallback mechanism
+- **[Dashboard Classification Improvement](DASHBOARD_CLASSIFICATION_IMPROVEMENT.md)** - Perbaikan tampilan hasil klasifikasi dashboard dengan profile mahasiswa dan data raw
+- **[FIS Batch Analysis Improvement](FIS_BATCH_ANALYSIS_IMPROVEMENT.md)** - Perbaikan hasil analisis batch FIS agar konsisten dengan SAW
+- **[FIS Batch Response Fix](FIS_BATCH_RESPONSE_FIX.md)** - Perbaikan response batch FIS untuk menangani struktur data yang berbeda
+- **[FIS Error Handling Improvement](FIS_ERROR_HANDLING_IMPROVEMENT.md)** - Perbaikan error handling FIS dengan logging detail dan fallback mechanism
+- **[Toast Notification Improvement](TOAST_NOTIFICATION_IMPROVEMENT.md)** - Perbaikan toast notification dengan design modern seperti Toast.js
+- **[FIS Endpoint Fix](FIS_ENDPOINT_FIX.md)** - Perbaikan endpoint FIS untuk mengatasi error 404
+- **[FIS Endpoint Duplicate Fix](FIS_ENDPOINT_DUPLICATE_FIX.md)** - Perbaikan endpoint FIS yang duplikat
+- **[FIS Notification Fallback Fix](FIS_NOTIFICATION_FALLBACK_FIX.md)** - Perbaikan notification fallback di FIS
+- **[Script Loading Fix](SCRIPT_LOADING_FIX.md)** - Perbaikan loading script untuk mengatasi dependency error
+- **[Dashboard Config Dependency Fix](DASHBOARD_CONFIG_DEPENDENCY_FIX.md)** - Perbaikan dependency CONFIG di dashboard.js
+- **[Mahasiswa Config Dependency Fix](MAHASISWA_CONFIG_DEPENDENCY_FIX.md)** - Perbaikan dependency CONFIG di mahasiswa.js
+- **[Nilai Config Dependency Fix](NILAI_CONFIG_DEPENDENCY_FIX.md)** - Perbaikan dependency CONFIG di nilai.js
+- **[Config Global Scope Fix](CONFIG_GLOBAL_SCOPE_FIX.md)** - Perbaikan ekspos CONFIG ke global scope
+- **[Dropdown Styling Fix](DROPDOWN_STYLING_FIX.md)** - Perbaikan ukuran dropdown pencarian nama yang terlalu tinggi
 
 ## 🚀 Quick Start
 
@@ -125,8 +143,11 @@ src/frontend/
 
 ### Fuzzy Logic
 - **Classification** - Fuzzy classification interface
-- **Results** - Classification results
-- **Confidence** - Confidence levels display
+- **Results** - Classification results dengan data lengkap mahasiswa
+- **Student Information** - Informasi mahasiswa (NIM, nama, program studi)
+- **Raw Data Display** - Tampilan data raw (IPK, SKS, persen D/E/K)
+- **Membership Values** - Nilai keanggotaan fuzzy untuk setiap kriteria
+- **Visual Results** - Tampilan hasil dengan warna dan threshold info
 
 ### Comparison
 - **Method Comparison** - Compare SAW vs Fuzzy
@@ -270,6 +291,20 @@ npm run build
 2. **API Connection** - Verify backend is running
 3. **Styling Issues** - Check CSS loading
 4. **JavaScript Errors** - Check browser console
+
+### Error Handling
+- [FIS Notification Fallback Fix](FIS_NOTIFICATION_FALLBACK_FIX.md) - Perbaikan error notifikasi di FIS
+- [Dashboard Notification Fix](DASHBOARD_NOTIFICATION_FIX.md) - Perbaikan error showNotification di dashboard
+- [Kendo Notification Timing Fix](KENDO_NOTIFICATION_TIMING_FIX.md) - Perbaikan timing inisialisasi Kendo Notification
+- [Fuzzy Endpoint Fix](FUZZY_ENDPOINT_FIX.md) - Perbaikan endpoint fuzzy yang salah
+- [FIS Dropdown Validation Fix](FIS_DROPDOWN_VALIDATION_FIX.md) - Perbaikan validasi dropdown mahasiswa di FIS
+- [FIS Dropdown Reset Fix](FIS_DROPDOWN_RESET_FIX.md) - Perbaikan reset dropdown setelah klasifikasi FIS
+- [FIS Dropdown Search Fix](FIS_DROPDOWN_SEARCH_FIX.md) - Perbaikan error 422 pada dropdown search FIS
+- [FIS Button Troubleshooting](FIS_BUTTON_TROUBLESHOOTING.md) - Troubleshooting tombol klasifikasi FIS
+- [FIS Button Repeat Fix](FIS_BUTTON_REPEAT_FIX.md) - Perbaikan tombol klasifikasi FIS untuk klasifikasi berulang
+- [FIS Dropdown Select Fix](FIS_DROPDOWN_SELECT_FIX.md) - Perbaikan event handler select dropdown FIS
+- [FIS NIM Extraction Fix](FIS_NIM_EXTRACTION_FIX.md) - Perbaikan ekstraksi NIM dari dropdown FIS
+- [FIS Dashboard Sync Fix](FIS_DASHBOARD_SYNC_FIX.md) - Perbaikan sinkronisasi dashboard dengan halaman FIS
 
 ### Debug Mode
 ```javascript
