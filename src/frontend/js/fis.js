@@ -406,8 +406,8 @@ function executeBatchKlasifikasi() {
             // Refresh grid untuk menampilkan hasil terbaru
             $("#fisGrid").data("kendoGrid").dataSource.read();
             
-            // Tampilkan hasil analisis batch
-            displayFISBatchResults(response);
+            // Tampilkan hasil analisis batch menggunakan endpoint distribution
+            loadFISDistributionAfterBatch(response);
 
             showNotification(
                 "success",
@@ -429,6 +429,41 @@ function executeBatchKlasifikasi() {
         complete: function() {
             // Sembunyikan loading indicator
             kendo.ui.progress($("#fisSection"), false);
+        }
+    });
+}
+
+// Fungsi untuk memuat distribusi FIS setelah batch klasifikasi
+function loadFISDistributionAfterBatch(batchResponse) {
+    console.log('Loading FIS distribution after batch:', batchResponse);
+    
+    // Panggil API untuk mendapatkan distribusi terbaru
+    $.ajax({
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY) + "/distribution",
+        type: "GET",
+        timeout: 10000,
+        success: function(response) {
+            console.log('FIS distribution after batch:', response);
+            
+            if (response && response.distribusi) {
+                // Update statistik di halaman
+                displayFISDistributionResults(response);
+                // Tampilkan dialog result
+                displayFISBatchResultDialog(response);
+            } else {
+                // Fallback ke fungsi lama jika distribution tidak tersedia
+                displayFISBatchResults(batchResponse);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading FIS distribution after batch:', {
+                status: status,
+                error: error,
+                xhr: xhr
+            });
+            
+            // Fallback ke fungsi lama jika distribution error
+            displayFISBatchResults(batchResponse);
         }
     });
 }
@@ -509,13 +544,47 @@ function displayFISBatchResults(data) {
 function loadInitialFISBatchResults() {
     console.log('Loading initial FIS batch results...');
     
-    // Panggil API untuk mendapatkan data klasifikasi FIS
+    // Panggil API untuk mendapatkan distribusi klasifikasi FIS
     $.ajax({
-        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY_RESULT),
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY) + "/distribution",
         type: "GET",
         timeout: 10000, // 10 detik timeout
         success: function(response) {
-            console.log('FIS API response received:', response);
+            console.log('FIS distribution API response received:', response);
+            
+            if (response && response.distribusi) {
+                console.log('Valid FIS distribution data found, displaying results...');
+                displayFISDistributionResults(response);
+            } else {
+                console.warn('Invalid FIS distribution response structure:', response);
+                // Fallback ke endpoint results jika distribution tidak tersedia
+                loadFISResultsAsFallback();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading FIS distribution:', {
+                status: status,
+                error: error,
+                xhr: xhr
+            });
+            
+            // Fallback ke endpoint results jika distribution error
+            console.log('Falling back to results endpoint...');
+            loadFISResultsAsFallback();
+        }
+    });
+}
+
+// Fungsi fallback untuk memuat data dari endpoint results
+function loadFISResultsAsFallback() {
+    console.log('Loading FIS results as fallback...');
+    
+    $.ajax({
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY_RESULT),
+        type: "GET",
+        timeout: 10000,
+        success: function(response) {
+            console.log('FIS results API response received:', response);
             
             if (response && response.data && Array.isArray(response.data)) {
                 console.log('Valid FIS data found, displaying results...');
@@ -531,7 +600,7 @@ function loadInitialFISBatchResults() {
             }
         },
         error: function(xhr, status, error) {
-            console.error('Error loading FIS batch results:', {
+            console.error('Error loading FIS results:', {
                 status: status,
                 error: error,
                 xhr: xhr
@@ -564,6 +633,126 @@ function loadInitialFISBatchResults() {
             );
         }
     });
+}
+
+// Fungsi untuk menampilkan hasil distribusi FIS dari endpoint distribution
+function displayFISDistributionResults(data) {
+    console.log('Displaying FIS distribution results:', data);
+    
+    if (!data || !data.distribusi) {
+        console.error('Invalid FIS distribution data:', data);
+        return;
+    }
+    
+    const distribusi = data.distribusi;
+    const total = data.total_mahasiswa || 0;
+    const persentase = data.persentase || {};
+    
+    // Update display dengan data dari distribution endpoint
+    $("#batchTinggiFIS").text(distribusi['Peluang Lulus Tinggi'] || 0);
+    $("#batchSedangFIS").text(distribusi['Peluang Lulus Sedang'] || 0);
+    $("#batchKecilFIS").text(distribusi['Peluang Lulus Kecil'] || 0);
+    $("#batchTotalFIS").text(total);
+    
+    // Update persentase
+    $("#batchTinggiFISPercent").text((persentase['Peluang Lulus Tinggi'] || 0).toFixed(1) + '%');
+    $("#batchSedangFISPercent").text((persentase['Peluang Lulus Sedang'] || 0).toFixed(1) + '%');
+    $("#batchKecilFISPercent").text((persentase['Peluang Lulus Kecil'] || 0).toFixed(1) + '%');
+    
+    // Show results
+    $("#batchResultsFIS").show();
+    
+    console.log('FIS distribution results updated:', {
+        distribusi: distribusi,
+        total: total,
+        persentase: persentase
+    });
+    
+    // Tampilkan notifikasi sukses jika ada data
+    if (total > 0) {
+        showNotification(
+            "success",
+            "Data Loaded",
+            `Berhasil memuat distribusi klasifikasi untuk ${total} mahasiswa`
+        );
+    }
+}
+
+// Fungsi untuk menampilkan dialog result batch FIS
+function displayFISBatchResultDialog(data) {
+    console.log('Displaying FIS batch result dialog:', data);
+    
+    if (!data || !data.distribusi) {
+        console.error('Invalid FIS batch result data:', data);
+        return;
+    }
+    
+    const distribusi = data.distribusi;
+    const total = data.total_mahasiswa || 0;
+    const persentase = data.persentase || {};
+    
+    // Buat dialog untuk menampilkan hasil
+    const resultDialog = $("<div>")
+        .append(`
+            <div style="padding: 20px;">
+                <h3 style="color: #FF5722; margin-bottom: 20px; text-align: center;">
+                    <i class="fas fa-chart-pie"></i> Hasil Klasifikasi FIS Batch
+                </h3>
+                
+                <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                    <h4 style="color: #333; margin-bottom: 15px;">Ringkasan Hasil:</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                        <div style="text-align: center; padding: 15px; background: #e8f5e9; border-radius: 6px; border: 2px solid #28a745;">
+                            <div style="font-size: 24px; font-weight: bold; color: #28a745;">${distribusi['Peluang Lulus Tinggi'] || 0}</div>
+                            <div style="font-size: 14px; color: #333;">Peluang Tinggi</div>
+                            <div style="font-size: 12px; color: #666;">${persentase['Peluang Lulus Tinggi'] || 0}%</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: #fff3cd; border-radius: 6px; border: 2px solid #ffc107;">
+                            <div style="font-size: 24px; font-weight: bold; color: #ffc107;">${distribusi['Peluang Lulus Sedang'] || 0}</div>
+                            <div style="font-size: 14px; color: #333;">Peluang Sedang</div>
+                            <div style="font-size: 12px; color: #666;">${persentase['Peluang Lulus Sedang'] || 0}%</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: #ffebee; border-radius: 6px; border: 2px solid #dc3545;">
+                            <div style="font-size: 24px; font-weight: bold; color: #dc3545;">${distribusi['Peluang Lulus Kecil'] || 0}</div>
+                            <div style="font-size: 14px; color: #333;">Peluang Kecil</div>
+                            <div style="font-size: 12px; color: #666;">${persentase['Peluang Lulus Kecil'] || 0}%</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: #e3f2fd; border-radius: 6px; border: 2px solid #2196F3;">
+                            <div style="font-size: 24px; font-weight: bold; color: #2196F3;">${total}</div>
+                            <div style="font-size: 14px; color: #333;">Total Mahasiswa</div>
+                            <div style="font-size: 12px; color: #666;">100%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: #fff; border-radius: 8px; padding: 15px; border: 1px solid #e0e0e0;">
+                    <h4 style="color: #333; margin-bottom: 10px;">Detail Hasil:</h4>
+                    <p style="color: #666; margin: 0;">
+                        <i class="fas fa-info-circle"></i> 
+                        Klasifikasi FIS telah berhasil dilakukan untuk ${total} mahasiswa. 
+                        Hasil telah disimpan ke database dan dapat dilihat di grid FIS.
+                    </p>
+                </div>
+            </div>
+        `)
+        .kendoDialog({
+            width: "600px",
+            title: "Hasil Klasifikasi FIS Batch",
+            closable: true,
+            modal: true,
+            actions: [
+                {
+                    text: "Tutup",
+                    primary: true,
+                    action: function() {
+                        return true;
+                    }
+                }
+            ]
+        });
+    
+    // Buka dialog
+    resultDialog.data("kendoDialog").open();
 }
 
 // Fungsi helper untuk warna klasifikasi FIS

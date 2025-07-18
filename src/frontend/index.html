@@ -310,23 +310,58 @@
                                     
                                     <!-- Batch Results -->
                                     <div id="batchResultsFIS" style="display: none;">
-                                        <h4>Hasil Analisis Batch</h4>
-                                        <div class="batch-stats">
-                                            <div class="stat-item">
-                                                <div class="stat-value stat-tinggi" id="batchTinggiFIS">0</div>
-                                                <div class="stat-label">Peluang Tinggi</div>
+                                        <div class="batch-results-card">
+                                            <div class="batch-results-header">
+                                                <h4><i class="fas fa-chart-pie"></i> Hasil Analisis Batch FIS</h4>
+                                                <p class="batch-results-subtitle">Distribusi klasifikasi peluang kelulusan mahasiswa</p>
                                             </div>
-                                            <div class="stat-item">
-                                                <div class="stat-value stat-sedang" id="batchSedangFIS">0</div>
-                                                <div class="stat-label">Peluang Sedang</div>
+                                            <div class="batch-stats-grid">
+                                                <div class="stat-card stat-card-tinggi">
+                                                    <div class="stat-card-icon">
+                                                        <i class="fas fa-arrow-up"></i>
+                                                    </div>
+                                                    <div class="stat-card-content">
+                                                        <div class="stat-value" id="batchTinggiFIS">0</div>
+                                                        <div class="stat-label">Peluang Tinggi</div>
+                                                        <div class="stat-percentage" id="batchTinggiFISPercent">0%</div>
+                                                    </div>
+                                                </div>
+                                                <div class="stat-card stat-card-sedang">
+                                                    <div class="stat-card-icon">
+                                                        <i class="fas fa-minus"></i>
+                                                    </div>
+                                                    <div class="stat-card-content">
+                                                        <div class="stat-value" id="batchSedangFIS">0</div>
+                                                        <div class="stat-label">Peluang Sedang</div>
+                                                        <div class="stat-percentage" id="batchSedangFISPercent">0%</div>
+                                                    </div>
+                                                </div>
+                                                <div class="stat-card stat-card-kecil">
+                                                    <div class="stat-card-icon">
+                                                        <i class="fas fa-arrow-down"></i>
+                                                    </div>
+                                                    <div class="stat-card-content">
+                                                        <div class="stat-value" id="batchKecilFIS">0</div>
+                                                        <div class="stat-label">Peluang Kecil</div>
+                                                        <div class="stat-percentage" id="batchKecilFISPercent">0%</div>
+                                                    </div>
+                                                </div>
+                                                <div class="stat-card stat-card-total">
+                                                    <div class="stat-card-icon">
+                                                        <i class="fas fa-users"></i>
+                                                    </div>
+                                                    <div class="stat-card-content">
+                                                        <div class="stat-value" id="batchTotalFIS">0</div>
+                                                        <div class="stat-label">Total Mahasiswa</div>
+                                                        <div class="stat-percentage">100%</div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="stat-item">
-                                                <div class="stat-value stat-kecil" id="batchKecilFIS">0</div>
-                                                <div class="stat-label">Peluang Kecil</div>
-                                            </div>
-                                            <div class="stat-item">
-                                                <div class="stat-value stat-total" id="batchTotalFIS">0</div>
-                                                <div class="stat-label">Total Mahasiswa</div>
+                                            <div class="batch-results-footer">
+                                                <div class="batch-results-info">
+                                                    <i class="fas fa-info-circle"></i>
+                                                    <span>Data diperbarui secara real-time setelah klasifikasi batch</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

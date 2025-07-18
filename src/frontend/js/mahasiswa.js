@@ -308,20 +308,43 @@ $(document).ready(function() {
         // Kemudian inisialisasi Grid
         var grid = $("#mahasiswaGrid").kendoGrid({
             dataSource: mahasiswaDataSource,
-        height: 550,
-        toolbar: [
-            { name: "create", text: "Tambah Mahasiswa" },
-            { 
-                name: "syncAll", 
-                text: "Sync Semua Nilai",
-                template: '<button class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-primary" onclick="syncAllNilai()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">Sync Semua Nilai</span></button>'
+            height: 450,
+            pageable: {
+                refresh: true,
+                pageSizes: [10, 20, 50, 100],
+                buttonCount: 5,
+                info: true,
+                messages: {
+                    display: "Menampilkan {0} - {1} dari {2} data",
+                    empty: "Tidak ada data untuk ditampilkan",
+                    page: "Halaman",
+                    of: "dari {0}",
+                    itemsPerPage: "item per halaman",
+                    first: "Ke halaman pertama",
+                    previous: "Ke halaman sebelumnya",
+                    next: "Ke halaman berikutnya",
+                    last: "Ke halaman terakhir",
+                    refresh: "Refresh"
+                }
             },
-            {
-                name: "batchKlasifikasi",
-                text: "Klasifikasi Batch",
-                template: '<button class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-success" onclick="showBatchKlasifikasi()"><i class="fas fa-tasks"></i> <span class="k-button-text">Klasifikasi Batch</span></button>'
-            }
-        ],
+            toolbar: [
+                { name: "create", text: "Tambah Mahasiswa" },
+                { 
+                    name: "syncAll", 
+                    text: "Sync Semua Nilai",
+                    template: '<button id="syncAllNilai" class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-primary" onclick="syncAllNilai()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">Sync Nilai D/E/K</span></button>'
+                },
+                {
+                    name: "batchKlasifikasi",
+                    text: "Klasifikasi Batch Metode Fuzzy",
+                    template: '<button id="batchKlasifikasi" class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-success" onclick="showBatchKlasifikasi()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">FIS Batch</span></button>'
+                },
+                {
+                    name: "batchKlasifikasiSAW",
+                    text: "Klasifikasi Batch Metode SAW",
+                    template: '<button id="batchKlasifikasiSAW" class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-success" onclick="showBatchKlasifikasiSAW()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">SAW Batch</span></button>'
+                }
+            ],
         columns: [
             {
                 field: "nim",
@@ -390,20 +413,28 @@ $(document).ready(function() {
             },
             {
                 command: [
-                    { name: "edit", text: "Edit" },
-                    { name: "destroy", text: "Hapus" },
+                    { name: "edit", text: "" },
+                    { name: "destroy", text: "" },
                     { 
                         name: "syncNilai",
                         text: "Sync",
                         click: syncNilai,
-                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-primary" href="\\#" onclick="syncNilai(event, this);"><i class="fas fa-sync-alt"></i> <span class="k-button-text">Sync</span></a>'
+                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-primary" href="\\#" onclick="syncNilai(event, this);"><i class="fas fa-sync-alt"></i> <span class="k-button-text">D/E/K</span></a>'
                     },
                     { 
                         name: "klasifikasi",
                         text: "Klasifikasi",
                         click: showKlasifikasi,
-                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-success" href="\\#" onclick="showKlasifikasi(event, this);"><i class="fas fa-chart-line"></i> <span class="k-button-text">Klasifikasi</span></a>'
+                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-success" href="\\#" onclick="showKlasifikasi(event, this);"><i class="fas fa-chart-line"></i> <span class="k-button-text">FIS</span></a>'
                     }
+                    ,
+                    { 
+                        name: "klasifikasiSAW",
+                        text: "Klasifikasi SAW",
+                        click: showKlasifikasiSAW,
+                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-success" href="\\#" onclick="showKlasifikasiSAW(event, this);"><i class="fas fa-chart-line"></i> <span class="k-button-text">SAW</span></a>'
+                    }
+                    
                 ],
                 title: "Aksi",
                 width: 350,
@@ -697,7 +728,7 @@ function syncAllNilai() {
     var grid = $("#mahasiswaGrid").data("kendoGrid");
     
     // Tambahkan class spin ke icon
-    $('.k-toolbar').find('.fa-sync-alt').addClass('fa-spin');
+    $('#syncAllNilai').find('.fa-sync-alt').addClass('fa-spin');
     
     // Tampilkan loading
     kendo.ui.progress(grid.element, true);
@@ -726,7 +757,176 @@ function syncAllNilai() {
 
 // showNotification function is defined in app.js 
 
-// Fungsi untuk menampilkan window klasifikasi
+// Fungsi untuk menampilkan window klasifikasi SAW
+function showKlasifikasiSAW(e, element) {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di showKlasifikasiSAW');
+        showNotification("Error", "Konfigurasi aplikasi belum siap", "error");
+        return;
+    }
+
+    e.preventDefault();
+    var grid = $("#mahasiswaGrid").data("kendoGrid");
+    var dataItem = grid.dataItem($(element).closest("tr"));
+    
+    // Tampilkan loading
+    $(element).find('.fa-chart-line').addClass('fa-spin');
+    
+    // Ambil data klasifikasi SAW dari server
+    $.ajax({
+        url: `${CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW)}/calculate/${dataItem.nim}`,
+        type: "GET",
+        success: function(response) {
+            // Debug: Log response untuk troubleshooting
+            console.log('SAW API Response:', response);
+            
+            // Fungsi untuk mendapatkan warna klasifikasi
+            function getClassificationColor(classification) {
+                if (!classification || typeof classification !== 'string') {
+                    return '#6c757d';
+                }
+                if (classification.includes('Tinggi')) return '#28a745';
+                if (classification.includes('Sedang')) return '#ffc107';
+                if (classification.includes('Kecil')) return '#dc3545';
+                return '#6c757d';
+            }
+            
+            // Fungsi untuk mendapatkan threshold klasifikasi
+            function getClassificationThreshold(classification) {
+                if (!classification || typeof classification !== 'string') {
+                    return '';
+                }
+                if (classification.includes('Tinggi')) return 'Skor ≥ 0.7';
+                if (classification.includes('Sedang')) return '0.45 ≤ Skor < 0.7';
+                if (classification.includes('Kecil')) return 'Skor < 0.45';
+                return '';
+            }
+            
+            const classificationColor = getClassificationColor(response.klasifikasi);
+            
+            // Buat window untuk menampilkan hasil klasifikasi SAW identik dengan halaman SAW
+            var windowContent = `
+                <div class="k-content k-window-content k-dialog-content" style="padding: 20px;">
+                    <div id="hasilKlasifikasiSAW" style="display: block; margin-top: 0;">
+                        <h3>Hasil Klasifikasi</h3>
+                        <div id="hasilDetailSAW">
+                            <div class="saw-result">
+                                <div class="result-header">
+                                    <h4>Hasil untuk ${response.nama || 'N/A'} (${response.nim || 'N/A'})</h4>
+                                </div>
+                                
+                                <div class="result-section">
+                                    <h5>Informasi Mahasiswa</h5>
+                                    <div class="info-grid">
+                                        <div class="info-item">
+                                            <span class="label">NIM:</span>
+                                            <span class="value">${response.nim || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="label">Nama:</span>
+                                            <span class="value">${response.nama || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="label">Program Studi:</span>
+                                            <span class="value">${dataItem.program_studi || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="result-section">
+                                    <h5>Nilai Kriteria</h5>
+                                    <div class="criteria-grid">
+                                        <div class="criteria-item">
+                                            <div class="criteria-header">
+                                                <strong>IPK</strong>
+                                                <span class="weight">(Bobot: 35%)</span>
+                                            </div>
+                                            <div class="criteria-values">
+                                                <div>Nilai: <strong>${response.ipk?.toFixed(2) || 'N/A'}</strong></div>
+                                                <div>Normalisasi: <strong>${response.normalized_values?.IPK?.toFixed(4) || 'N/A'}</strong></div>
+                                                <div>Terbobot: <strong>${response.weighted_values?.IPK?.toFixed(4) || 'N/A'}</strong></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="criteria-item">
+                                            <div class="criteria-header">
+                                                <strong>SKS</strong>
+                                                <span class="weight">(Bobot: 37.5%)</span>
+                                            </div>
+                                            <div class="criteria-values">
+                                                <div>Nilai: <strong>${response.sks || 'N/A'}</strong></div>
+                                                <div>Normalisasi: <strong>${response.normalized_values?.SKS?.toFixed(4) || 'N/A'}</strong></div>
+                                                <div>Terbobot: <strong>${response.weighted_values?.SKS?.toFixed(4) || 'N/A'}</strong></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="criteria-item">
+                                            <div class="criteria-header">
+                                                <strong>Nilai D/E/K</strong>
+                                                <span class="weight">(Bobot: 37.5%)</span>
+                                            </div>
+                                            <div class="criteria-values">
+                                                <div>Nilai: <strong>${response.persen_dek?.toFixed(2) || 'N/A'}%</strong></div>
+                                                <div>Normalisasi: <strong>${response.normalized_values?.["Nilai D/E/K"]?.toFixed(4) || 'N/A'}</strong></div>
+                                                <div>Terbobot: <strong>${response.weighted_values?.["Nilai D/E/K"]?.toFixed(4) || 'N/A'}</strong></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="result-final" style="background: ${classificationColor};">
+                                    <h4>Skor SAW Final: ${response.final_value?.toFixed(4) || 'N/A'}</h4>
+                                    <h3>Klasifikasi: ${response.klasifikasi || 'N/A'}</h3>
+                                    <p>${getClassificationThreshold(response.klasifikasi)}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Buat dan tampilkan window
+            var dialogDiv = $("<div>").appendTo("body");
+            dialogDiv.kendoDialog({
+                width: "800px",
+                title: "Klasifikasi SAW - Peluang Kelulusan",
+                content: windowContent,
+                actions: [
+                    { text: "Tutup" }
+                ],
+                close: function() {
+                    dialogDiv.data("kendoDialog").destroy();
+                    dialogDiv.remove();
+                }
+            }).data("kendoDialog").open();
+            
+            // Tampilkan notifikasi sukses
+            showNotification(
+                "success",
+                "Klasifikasi SAW Berhasil",
+                "Data klasifikasi SAW berhasil diambil"
+            );
+        },
+        error: function(xhr) {
+            let errorMessage = "Gagal mengambil data klasifikasi SAW";
+            if (xhr.responseJSON && xhr.responseJSON.detail) {
+                errorMessage += ": " + xhr.responseJSON.detail;
+            }
+            showNotification(
+                "error",
+                "Error",
+                errorMessage
+            );
+        },
+        complete: function() {
+            // Hentikan animasi icon
+            $(element).find('.fa-chart-line').removeClass('fa-spin');
+        }
+    });
+}
+
+// Fungsi untuk menampilkan window klasifikasi FIS
 function showKlasifikasi(e, element) {
     // Pastikan CONFIG tersedia
     if (typeof CONFIG === 'undefined') {
@@ -747,35 +947,103 @@ function showKlasifikasi(e, element) {
         url: `${CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY)}/${dataItem.nim}`,
         type: "GET",
         success: function(response) {
-            // Buat window untuk menampilkan hasil klasifikasi
+            // Debug: Log response untuk troubleshooting
+            console.log('FIS API Response:', response);
+            
+            // Fungsi untuk mendapatkan warna klasifikasi
+            function getFISClassificationColor(classification) {
+                if (!classification || typeof classification !== 'string') {
+                    return '#6c757d';
+                }
+                if (classification.includes('Tinggi')) return '#28a745';
+                if (classification.includes('Sedang')) return '#ffc107';
+                if (classification.includes('Kecil')) return '#dc3545';
+                return '#6c757d';
+            }
+            
+            // Fungsi untuk mendapatkan threshold klasifikasi
+            function getFISClassificationThreshold(classification) {
+                if (!classification || typeof classification !== 'string') {
+                    return '';
+                }
+                if (classification.includes('Tinggi')) return 'Nilai Fuzzy ≥ 0.7';
+                if (classification.includes('Sedang')) return '0.45 ≤ Nilai Fuzzy < 0.7';
+                if (classification.includes('Kecil')) return 'Nilai Fuzzy < 0.45';
+                return '';
+            }
+            
+            const classificationColor = getFISClassificationColor(response.kategori);
+            
+            // Buat window untuk menampilkan hasil klasifikasi FIS identik dengan halaman FIS
             var windowContent = `
-                <div class="k-content k-window-content k-dialog-content">
-                    <div style="margin-bottom: 20px;">
-                        <h3>Hasil Klasifikasi Kelulusan</h3>
-                        <p><strong>NIM:</strong> ${dataItem.nim}</p>
-                        <p><strong>Nama:</strong> ${dataItem.nama}</p>
-                        <p><strong>Program Studi:</strong> ${dataItem.program_studi}</p>
-                    </div>
-                    <div class="k-form">
-                        <div class="k-form-field">
-                            <label><strong>Kategori Kelulusan:</strong></label>
-                            <span class="k-form-field-text">${response.kategori}</span>
-                        </div>
-                        <div class="k-form-field">
-                            <label><strong>Nilai Fuzzy:</strong></label>
-                            <span class="k-form-field-text">${response.nilai_fuzzy.toFixed(2)}</span>
-                        </div>
-                        <div class="k-form-field">
-                            <label><strong>Keanggotaan IPK:</strong></label>
-                            <span class="k-form-field-text">${response.ipk_membership}</span>
-                        </div>
-                        <div class="k-form-field">
-                            <label><strong>Keanggotaan SKS:</strong></label>
-                            <span class="k-form-field-text">${response.sks_membership}</span>
-                        </div>
-                        <div class="k-form-field">
-                            <label><strong>Keanggotaan Nilai D/E/K:</strong></label>
-                            <span class="k-form-field-text">${response.nilai_dk_membership}</span>
+                <div class="k-content k-window-content k-dialog-content" style="padding: 20px;">
+                    <div id="hasilKlasifikasiFIS" style="display: block; margin-top: 0;">
+                        <h3>Hasil Klasifikasi</h3>
+                        <div id="hasilDetailFIS">
+                            <div class="fis-result">
+                                <div class="result-header">
+                                    <h4>Hasil untuk ${response.nama || 'N/A'} (${response.nim || 'N/A'})</h4>
+                                </div>
+                                
+                                <div class="result-section">
+                                    <h5>Informasi Mahasiswa</h5>
+                                    <div class="info-grid">
+                                        <div class="info-item">
+                                            <span class="label">NIM:</span>
+                                            <span class="value">${response.nim || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="label">Nama:</span>
+                                            <span class="value">${response.nama || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="label">Program Studi:</span>
+                                            <span class="value">${dataItem.program_studi || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="result-section">
+                                    <h5>Nilai Kriteria</h5>
+                                    <div class="criteria-grid">
+                                        <div class="criteria-item">
+                                            <div class="criteria-header">
+                                                <strong>IPK</strong>
+                                            </div>
+                                            <div class="criteria-values">
+                                                <div>Nilai: <strong>${response.ipk?.toFixed(2) || 'N/A'}</strong></div>
+                                                <div>Keanggotaan: <strong>${response.ipk_membership?.toFixed(2) || 'N/A'}</strong></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="criteria-item">
+                                            <div class="criteria-header">
+                                                <strong>SKS</strong>
+                                            </div>
+                                            <div class="criteria-values">
+                                                <div>Nilai: <strong>${response.sks || 'N/A'}</strong></div>
+                                                <div>Keanggotaan: <strong>${response.sks_membership?.toFixed(2) || 'N/A'}</strong></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="criteria-item">
+                                            <div class="criteria-header">
+                                                <strong>Nilai D/E/K</strong>
+                                            </div>
+                                            <div class="criteria-values">
+                                                <div>Nilai: <strong>${response.persen_dek?.toFixed(2) || 'N/A'}%</strong></div>
+                                                <div>Keanggotaan: <strong>${response.nilai_dk_membership?.toFixed(2) || 'N/A'}</strong></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="result-final" style="background: ${classificationColor};">
+                                    <h4>Nilai Fuzzy Final: ${response.nilai_fuzzy?.toFixed(2) || 'N/A'}</h4>
+                                    <h3>Klasifikasi: ${response.kategori || 'N/A'}</h3>
+                                    <p>${getFISClassificationThreshold(response.kategori)}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -784,8 +1052,8 @@ function showKlasifikasi(e, element) {
             // Buat dan tampilkan window
             var dialogDiv = $("<div>").appendTo("body");
             dialogDiv.kendoDialog({
-                width: "500px",
-                title: "Klasifikasi Peluang Kelulusan",
+                width: "800px",
+                title: "Klasifikasi FIS - Peluang Kelulusan",
                 content: windowContent,
                 actions: [
                     { text: "Tutup" }
@@ -799,15 +1067,19 @@ function showKlasifikasi(e, element) {
             // Tampilkan notifikasi sukses
             showNotification(
                 "success",
-                "Klasifikasi Berhasil",
-                "Data klasifikasi berhasil diambil"
+                "Klasifikasi FIS Berhasil",
+                "Data klasifikasi FIS berhasil diambil"
             );
         },
         error: function(xhr) {
+            let errorMessage = "Gagal mengambil data klasifikasi FIS";
+            if (xhr.responseJSON && xhr.responseJSON.detail) {
+                errorMessage += ": " + xhr.responseJSON.detail;
+            }
             showNotification(
                 "error",
                 "Error",
-                "Gagal mengambil data klasifikasi"
+                errorMessage
             );
         },
         complete: function() {
@@ -817,7 +1089,15 @@ function showKlasifikasi(e, element) {
     });
 } 
 
-function showBatchKlasifikasi() {
+function showBatchKlasifikasi(e) {
+    // Prevent default jika event ada dan memiliki preventDefault
+    if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+    }
+    
+    console.log('showBatchKlasifikasi called'); // Debug log
+    console.log('Event parameter:', e); // Debug log untuk melihat parameter event
+    
     // Tampilkan konfirmasi
     const confirmDialog = $("<div>")
         .append("<p>Apakah Anda yakin ingin melakukan klasifikasi untuk semua mahasiswa?</p>")
@@ -844,6 +1124,9 @@ function showBatchKlasifikasi() {
                 }
             ]
         });
+    
+    // Buka dialog
+    confirmDialog.data("kendoDialog").open();
 }
 
 function executeBatchKlasifikasi() {
@@ -853,6 +1136,8 @@ function executeBatchKlasifikasi() {
         showNotification("Error", "Konfigurasi aplikasi belum siap", "error");
         return;
     }
+
+    console.log('executeBatchKlasifikasi called'); // Debug log
 
     // Tampilkan loading
     const loadingDialog = $("<div>")
@@ -865,21 +1150,31 @@ function executeBatchKlasifikasi() {
             modal: true
         });
 
+    // Buka loading dialog
+    loadingDialog.data("kendoDialog").open();
+
     // Panggil API batch klasifikasi
     $.ajax({
         url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.BATCH_KLASIFIKASI),
         method: "POST",
         success: function(response) {
+            console.log('FIS batch API success:', response); // Debug log
             loadingDialog.data("kendoDialog").close();
+            
+            // Tampilkan hasil batch
+            displayBatchFISResults(response);
+            
             showNotification(
                 "Sukses",
                 response.message || "Klasifikasi batch berhasil dilakukan",
                 "success"
             );
+            
             // Refresh grid untuk menampilkan hasil terbaru
             $("#mahasiswaGrid").data("kendoGrid").dataSource.read();
         },
         error: function(xhr, status, error) {
+            console.error('FIS batch API error:', error); // Debug log
             loadingDialog.data("kendoDialog").close();
             let errorMessage = "Gagal melakukan klasifikasi batch";
             if (xhr.responseJSON && xhr.responseJSON.detail) {
@@ -892,4 +1187,300 @@ function executeBatchKlasifikasi() {
             );
         }
     });
+}
+
+function displayBatchFISResults(data) {
+    console.log('displayBatchFISResults called with data:', data); // Debug log
+    
+    // Untuk FIS batch, data hanya berisi message dan total_processed
+    // Kita perlu mengambil data klasifikasi dari database
+    const totalMahasiswa = data.total_processed || 0;
+    
+    console.log('Total mahasiswa processed:', totalMahasiswa); // Debug log
+    
+    // Ambil data klasifikasi dari database untuk menghitung distribusi
+    $.ajax({
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY) + "/distribution",
+        method: "GET",
+        success: function(distributionResponse) {
+            console.log('FIS distribution API success:', distributionResponse); // Debug log
+            
+            // Hitung klasifikasi dari distribusi
+            const counts = {
+                'Peluang Lulus Tinggi': distributionResponse.distribusi['Peluang Lulus Tinggi'] || 0,
+                'Peluang Lulus Sedang': distributionResponse.distribusi['Peluang Lulus Sedang'] || 0,
+                'Peluang Lulus Kecil': distributionResponse.distribusi['Peluang Lulus Kecil'] || 0
+            };
+            
+            console.log('Final counts from distribution:', counts); // Debug log
+            
+            // Buat dialog untuk menampilkan hasil
+            const resultDialog = $("<div>")
+                .append(`
+                    <div style="padding: 20px;">
+                        <h3 style="color: #FF5722; margin-bottom: 20px; text-align: center;">
+                            <i class="fas fa-chart-pie"></i> Hasil Klasifikasi FIS Batch
+                        </h3>
+                        
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                            <h4 style="color: #333; margin-bottom: 15px;">Ringkasan Hasil:</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                                <div style="text-align: center; padding: 15px; background: #e8f5e9; border-radius: 6px; border: 2px solid #28a745;">
+                                    <div style="font-size: 24px; font-weight: bold; color: #28a745;">${counts['Peluang Lulus Tinggi']}</div>
+                                    <div style="font-size: 14px; color: #333;">Peluang Tinggi</div>
+                                </div>
+                                <div style="text-align: center; padding: 15px; background: #fff3cd; border-radius: 6px; border: 2px solid #ffc107;">
+                                    <div style="font-size: 24px; font-weight: bold; color: #ffc107;">${counts['Peluang Lulus Sedang']}</div>
+                                    <div style="font-size: 14px; color: #333;">Peluang Sedang</div>
+                                </div>
+                                <div style="text-align: center; padding: 15px; background: #ffebee; border-radius: 6px; border: 2px solid #dc3545;">
+                                    <div style="font-size: 24px; font-weight: bold; color: #dc3545;">${counts['Peluang Lulus Kecil']}</div>
+                                    <div style="font-size: 14px; color: #333;">Peluang Kecil</div>
+                                </div>
+                                <div style="text-align: center; padding: 15px; background: #e3f2fd; border-radius: 6px; border: 2px solid #2196F3;">
+                                    <div style="font-size: 24px; font-weight: bold; color: #2196F3;">${totalMahasiswa}</div>
+                                    <div style="font-size: 14px; color: #333;">Total Mahasiswa</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #fff; border-radius: 8px; padding: 15px; border: 1px solid #e0e0e0;">
+                            <h4 style="color: #333; margin-bottom: 10px;">Detail Hasil:</h4>
+                            <p style="color: #666; margin: 0;">
+                                <i class="fas fa-info-circle"></i> 
+                                Klasifikasi FIS telah berhasil dilakukan untuk ${totalMahasiswa} mahasiswa. 
+                                Hasil telah disimpan ke database dan dapat dilihat di halaman FIS.
+                            </p>
+                        </div>
+                    </div>
+                `)
+                .kendoDialog({
+                    width: "600px",
+                    title: "Hasil Klasifikasi FIS Batch",
+                    closable: true,
+                    modal: true,
+                    actions: [
+                        {
+                            text: "Tutup",
+                            primary: true,
+                            action: function() {
+                                return true;
+                            }
+                        }
+                    ]
+                });
+            
+            resultDialog.data("kendoDialog").open();
+        },
+        error: function(xhr, status, error) {
+            console.error('FIS distribution API error:', error); // Debug log
+            showNotification("Error", "Gagal mengambil data distribusi FIS", "error");
+        }
+    });
+}
+
+function showBatchKlasifikasiSAW(e) {
+    // Prevent default jika event ada dan memiliki preventDefault
+    if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+    }
+    
+    console.log('showBatchKlasifikasiSAW called'); // Debug log
+    console.log('Event parameter:', e); // Debug log untuk melihat parameter event
+    
+    // Tampilkan konfirmasi
+    const confirmDialog = $("<div>")
+        .append("<p>Apakah Anda yakin ingin melakukan klasifikasi SAW untuk semua mahasiswa?</p>")
+        .append("<p>Proses ini mungkin membutuhkan waktu beberapa saat.</p>")
+        .kendoDialog({
+            width: "400px",
+            title: "Konfirmasi Klasifikasi SAW Batch",
+            closable: true,
+            modal: true,
+            actions: [
+                {
+                    text: "Batal",
+                    primary: false,
+                    action: function() {
+                        // Dialog akan tertutup otomatis
+                    }
+                },
+                {
+                    text: "Ya, Lakukan Klasifikasi",
+                    primary: true,
+                    action: function() {
+                        executeBatchKlasifikasiSAW();
+                    }
+                }
+            ]
+        });
+    
+    // Buka dialog
+    confirmDialog.data("kendoDialog").open();
+}
+
+function executeBatchKlasifikasiSAW() {
+    // Pastikan CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia di executeBatchKlasifikasiSAW');
+        showNotification("Error", "Konfigurasi aplikasi belum siap", "error");
+        return;
+    }
+
+    console.log('executeBatchKlasifikasiSAW called'); // Debug log
+
+    // Tampilkan loading
+    const loadingDialog = $("<div>")
+        .append("<p style='text-align: center;'><i class='fas fa-spinner fa-spin'></i></p>")
+        .append("<p style='text-align: center;'>Sedang melakukan klasifikasi SAW...</p>")
+        .kendoDialog({
+            width: "300px",
+            title: "Proses Klasifikasi SAW",
+            closable: false,
+            modal: true
+        });
+
+    // Buka loading dialog
+    loadingDialog.data("kendoDialog").open();
+
+    // Panggil API batch klasifikasi SAW
+    $.ajax({
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW) + "/batch",
+        method: "GET",
+        success: function(response) {
+            console.log('SAW batch API success:', response); // Debug log
+            loadingDialog.data("kendoDialog").close();
+            
+            // Tampilkan hasil batch
+            displayBatchSAWResults(response);
+            
+            showNotification(
+                "Sukses",
+                `Berhasil mengklasifikasi ${response.total_mahasiswa || 0} mahasiswa dengan metode SAW`,
+                "success"
+            );
+            
+            // Refresh grid untuk menampilkan hasil terbaru
+            $("#mahasiswaGrid").data("kendoGrid").dataSource.read();
+        },
+        error: function(xhr, status, error) {
+            console.error('SAW batch API error:', error); // Debug log
+            loadingDialog.data("kendoDialog").close();
+            let errorMessage = "Gagal melakukan klasifikasi SAW batch";
+            if (xhr.responseJSON && xhr.responseJSON.detail) {
+                errorMessage += ": " + xhr.responseJSON.detail;
+            }
+            showNotification(
+                "Error",
+                errorMessage,
+                "error"
+            );
+        }
+    });
+}
+
+function displayBatchSAWResults(data) {
+    console.log('displayBatchSAWResults called with data:', data); // Debug log
+    
+    // Validasi data dan tentukan struktur yang benar
+    let results = [];
+    let totalMahasiswa = 0;
+    
+    if (data && Array.isArray(data)) {
+        // Jika data langsung array
+        results = data;
+        totalMahasiswa = data.length;
+    } else if (data && data.data && Array.isArray(data.data)) {
+        // Jika data dalam format {data: [...]}
+        results = data.data;
+        totalMahasiswa = data.data.length;
+    } else if (data && data.results && Array.isArray(data.results)) {
+        // Jika data dalam format {results: [...]}
+        results = data.results;
+        totalMahasiswa = data.results.length;
+    } else {
+        console.error('Invalid SAW batch results data structure:', data);
+        showNotification("Error", "Format data hasil batch SAW tidak valid", "error");
+        return;
+    }
+    
+    console.log('Processed results:', results); // Debug log
+    console.log('Total mahasiswa:', totalMahasiswa); // Debug log
+    
+    // Hitung klasifikasi
+    const counts = {
+        'Peluang Lulus Tinggi': 0,
+        'Peluang Lulus Sedang': 0,
+        'Peluang Lulus Kecil': 0
+    };
+    
+    results.forEach((result, index) => {
+        console.log(`Result ${index}:`, result); // Debug log untuk setiap hasil
+        if (result && result.klasifikasi_saw) {
+            counts[result.klasifikasi_saw]++;
+            console.log(`Counted ${result.klasifikasi_saw}:`, counts[result.klasifikasi_saw]); // Debug log
+        } else {
+            console.log(`No klasifikasi_saw found for result ${index}:`, result); // Debug log
+        }
+    });
+    
+    console.log('Final counts:', counts); // Debug log
+    
+    // Buat dialog untuk menampilkan hasil
+    const resultDialog = $("<div>")
+        .append(`
+            <div style="padding: 20px;">
+                <h3 style="color: #FF5722; margin-bottom: 20px; text-align: center;">
+                    <i class="fas fa-chart-pie"></i> Hasil Klasifikasi SAW Batch
+                </h3>
+                
+                <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                    <h4 style="color: #333; margin-bottom: 15px;">Ringkasan Hasil:</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                        <div style="text-align: center; padding: 15px; background: #e8f5e9; border-radius: 6px; border: 2px solid #28a745;">
+                            <div style="font-size: 24px; font-weight: bold; color: #28a745;">${counts['Peluang Lulus Tinggi']}</div>
+                            <div style="font-size: 14px; color: #333;">Peluang Tinggi</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: #fff3cd; border-radius: 6px; border: 2px solid #ffc107;">
+                            <div style="font-size: 24px; font-weight: bold; color: #ffc107;">${counts['Peluang Lulus Sedang']}</div>
+                            <div style="font-size: 14px; color: #333;">Peluang Sedang</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: #ffebee; border-radius: 6px; border: 2px solid #dc3545;">
+                            <div style="font-size: 24px; font-weight: bold; color: #dc3545;">${counts['Peluang Lulus Kecil']}</div>
+                            <div style="font-size: 14px; color: #333;">Peluang Kecil</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: #e3f2fd; border-radius: 6px; border: 2px solid #2196F3;">
+                            <div style="font-size: 24px; font-weight: bold; color: #2196F3;">${totalMahasiswa}</div>
+                            <div style="font-size: 14px; color: #333;">Total Mahasiswa</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: #fff; border-radius: 8px; padding: 15px; border: 1px solid #e0e0e0;">
+                    <h4 style="color: #333; margin-bottom: 10px;">Detail Hasil:</h4>
+                    <p style="color: #666; margin: 0;">
+                        <i class="fas fa-info-circle"></i> 
+                        Klasifikasi SAW telah berhasil dilakukan untuk ${totalMahasiswa} mahasiswa. 
+                        Hasil telah disimpan ke database dan dapat dilihat di halaman SAW.
+                    </p>
+                </div>
+            </div>
+        `)
+        .kendoDialog({
+            width: "600px",
+            title: "Hasil Klasifikasi SAW Batch",
+            closable: true,
+            modal: true,
+            actions: [
+                {
+                    text: "Tutup",
+                    primary: true,
+                    action: function() {
+                        return true;
+                    }
+                }
+            ]
+        });
+    
+    resultDialog.data("kendoDialog").open();
 } 

@@ -139,6 +139,47 @@ def batch_klasifikasi_mahasiswa(db: Session = Depends(get_db)):
             detail=f"Terjadi kesalahan saat melakukan batch klasifikasi: {str(e)}"
         )
 
+@router.get("/distribution", description="Mendapatkan distribusi klasifikasi FIS")
+def get_fuzzy_distribution(db: Session = Depends(get_db)):
+    try:
+        # Ambil semua data klasifikasi
+        klasifikasi_list = db.query(KlasifikasiKelulusan).all()
+        
+        # Hitung distribusi
+        distribusi = {
+            "Peluang Lulus Tinggi": 0,
+            "Peluang Lulus Sedang": 0,
+            "Peluang Lulus Kecil": 0
+        }
+        
+        for klasifikasi in klasifikasi_list:
+            if klasifikasi.kategori in distribusi:
+                distribusi[klasifikasi.kategori] += 1
+        
+        # Hitung total
+        total = sum(distribusi.values())
+        
+        # Hitung persentase
+        persentase = {}
+        if total > 0:
+            for kategori, jumlah in distribusi.items():
+                persentase[kategori] = round((jumlah / total) * 100, 2)
+        else:
+            for kategori in distribusi.keys():
+                persentase[kategori] = 0.0
+        
+        return {
+            "total_mahasiswa": total,
+            "distribusi": distribusi,
+            "persentase": persentase
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat mengambil distribusi FIS: {str(e)}"
+        )
+
 @router.get("/{nim}")
 def get_fuzzy_result(nim: str, db: Session = Depends(get_db)):
     # Cek apakah mahasiswa ada
