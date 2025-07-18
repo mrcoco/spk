@@ -92,29 +92,59 @@ function initializeBatchButton() {
         showSAWBatchResultsLoading();
         showSAWStatsLoading();
         
-        // Perform batch classification
+        // Get current data before classification
+        const startTime = new Date();
+        
+        // First, get current data to show "before" state
         $.ajax({
             url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch'),
             type: 'GET',
-            success: function(data) {
-                hideSAWBatchResultsLoading();
-                showNotification("Success", `Berhasil mengklasifikasi ${data.total_mahasiswa} mahasiswa`, "success");
+            success: function(beforeData) {
+                // Display before state
+                displayBeforeResults(beforeData);
                 
-                // Display batch results
-                displayBatchResults(data);
-                
-                // Refresh grid and chart
-                loadSAWResultsTable();
-                loadSAWDistribution();
-                
-                // Reset button
-                $("#btnBatchKlasifikasiSAW").html('<i class="fas fa-tasks"></i> Klasifikasi Semua Mahasiswa');
-                $("#btnBatchKlasifikasiSAW").prop('disabled', false);
+                // Now perform batch classification
+                $.ajax({
+                    url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch'),
+                    type: 'GET',
+                    success: function(afterData) {
+                        const endTime = new Date();
+                        const processingTime = ((endTime - startTime) / 1000).toFixed(2);
+                        
+                        hideSAWBatchResultsLoading();
+                        showNotification("Success", `Berhasil mengklasifikasi ${afterData.total_mahasiswa} mahasiswa`, "success");
+                        
+                        // Display after state and comparison
+                        displayAfterResults(afterData);
+                        displayComparisonSummary(beforeData, afterData, processingTime);
+                        
+                        // Show comparison results
+                        $("#batchResultsComparisonSAW").show();
+                        $("#batchResultsSAW").hide(); // Hide legacy results
+                        
+                        // Refresh grid and chart
+                        loadSAWResultsTable();
+                        loadSAWDistribution();
+                        
+                        // Reset button
+                        $("#btnBatchKlasifikasiSAW").html('<i class="fas fa-tasks"></i> Klasifikasi Semua Mahasiswa');
+                        $("#btnBatchKlasifikasiSAW").prop('disabled', false);
+                    },
+                    error: function(xhr, status, error) {
+                        hideSAWBatchResultsLoading();
+                        console.error('Error batch classification:', error);
+                        showNotification("Error", "Gagal melakukan klasifikasi batch", "error");
+                        
+                        // Reset button
+                        $("#btnBatchKlasifikasiSAW").html('<i class="fas fa-tasks"></i> Klasifikasi Semua Mahasiswa');
+                        $("#btnBatchKlasifikasiSAW").prop('disabled', false);
+                    }
+                });
             },
             error: function(xhr, status, error) {
                 hideSAWBatchResultsLoading();
-                console.error('Error batch classification:', error);
-                showNotification("Error", "Gagal melakukan klasifikasi batch", "error");
+                console.error('Error getting before data:', error);
+                showNotification("Error", "Gagal mengambil data awal", "error");
                 
                 // Reset button
                 $("#btnBatchKlasifikasiSAW").html('<i class="fas fa-tasks"></i> Klasifikasi Semua Mahasiswa');
@@ -359,14 +389,179 @@ function displayBatchResults(data) {
         }
     });
     
+    // Calculate percentages
+    const total = results.length;
+    const percentages = {
+        'Peluang Lulus Tinggi': total > 0 ? (counts['Peluang Lulus Tinggi'] / total * 100) : 0,
+        'Peluang Lulus Sedang': total > 0 ? (counts['Peluang Lulus Sedang'] / total * 100) : 0,
+        'Peluang Lulus Kecil': total > 0 ? (counts['Peluang Lulus Kecil'] / total * 100) : 0
+    };
+    
     // Update display
     $("#batchTinggiSAW").text(counts['Peluang Lulus Tinggi']);
     $("#batchSedangSAW").text(counts['Peluang Lulus Sedang']);
     $("#batchKecilSAW").text(counts['Peluang Lulus Kecil']);
-    $("#batchTotalSAW").text(results.length);
+    $("#batchTotalSAW").text(total);
+    
+    // Update percentages
+    $("#batchTinggiSAWPercent").text(percentages['Peluang Lulus Tinggi'].toFixed(1) + '%');
+    $("#batchSedangSAWPercent").text(percentages['Peluang Lulus Sedang'].toFixed(1) + '%');
+    $("#batchKecilSAWPercent").text(percentages['Peluang Lulus Kecil'].toFixed(1) + '%');
     
     // Show results
     $("#batchResultsSAW").show();
+}
+
+function displayBeforeResults(data) {
+    // Add safety checks for data
+    if (!data || !data.data || !Array.isArray(data.data)) {
+        console.error('Invalid before results data:', data);
+        return;
+    }
+    
+    const results = data.data;
+    
+    // Count classifications
+    const counts = {
+        'Peluang Lulus Tinggi': 0,
+        'Peluang Lulus Sedang': 0,
+        'Peluang Lulus Kecil': 0
+    };
+    
+    results.forEach(result => {
+        if (result && result.klasifikasi_saw) {
+            counts[result.klasifikasi_saw]++;
+        }
+    });
+    
+    // Calculate percentages
+    const total = results.length;
+    const percentages = {
+        'Peluang Lulus Tinggi': total > 0 ? (counts['Peluang Lulus Tinggi'] / total * 100) : 0,
+        'Peluang Lulus Sedang': total > 0 ? (counts['Peluang Lulus Sedang'] / total * 100) : 0,
+        'Peluang Lulus Kecil': total > 0 ? (counts['Peluang Lulus Kecil'] / total * 100) : 0
+    };
+    
+    // Update before display
+    $("#beforeTinggiSAW").text(counts['Peluang Lulus Tinggi']);
+    $("#beforeSedangSAW").text(counts['Peluang Lulus Sedang']);
+    $("#beforeKecilSAW").text(counts['Peluang Lulus Kecil']);
+    $("#beforeTotalSAW").text(total);
+    
+    // Update before percentages
+    $("#beforeTinggiSAWPercent").text(percentages['Peluang Lulus Tinggi'].toFixed(1) + '%');
+    $("#beforeSedangSAWPercent").text(percentages['Peluang Lulus Sedang'].toFixed(1) + '%');
+    $("#beforeKecilSAWPercent").text(percentages['Peluang Lulus Kecil'].toFixed(1) + '%');
+}
+
+function displayAfterResults(data) {
+    // Add safety checks for data
+    if (!data || !data.data || !Array.isArray(data.data)) {
+        console.error('Invalid after results data:', data);
+        return;
+    }
+    
+    const results = data.data;
+    
+    // Count classifications
+    const counts = {
+        'Peluang Lulus Tinggi': 0,
+        'Peluang Lulus Sedang': 0,
+        'Peluang Lulus Kecil': 0
+    };
+    
+    results.forEach(result => {
+        if (result && result.klasifikasi_saw) {
+            counts[result.klasifikasi_saw]++;
+        }
+    });
+    
+    // Calculate percentages
+    const total = results.length;
+    const percentages = {
+        'Peluang Lulus Tinggi': total > 0 ? (counts['Peluang Lulus Tinggi'] / total * 100) : 0,
+        'Peluang Lulus Sedang': total > 0 ? (counts['Peluang Lulus Sedang'] / total * 100) : 0,
+        'Peluang Lulus Kecil': total > 0 ? (counts['Peluang Lulus Kecil'] / total * 100) : 0
+    };
+    
+    // Update after display
+    $("#afterTinggiSAW").text(counts['Peluang Lulus Tinggi']);
+    $("#afterSedangSAW").text(counts['Peluang Lulus Sedang']);
+    $("#afterKecilSAW").text(counts['Peluang Lulus Kecil']);
+    $("#afterTotalSAW").text(total);
+    
+    // Update after percentages
+    $("#afterTinggiSAWPercent").text(percentages['Peluang Lulus Tinggi'].toFixed(1) + '%');
+    $("#afterSedangSAWPercent").text(percentages['Peluang Lulus Sedang'].toFixed(1) + '%');
+    $("#afterKecilSAWPercent").text(percentages['Peluang Lulus Kecil'].toFixed(1) + '%');
+}
+
+function displayComparisonSummary(beforeData, afterData, processingTime) {
+    // Add safety checks for data
+    if (!beforeData || !afterData || !beforeData.data || !afterData.data) {
+        console.error('Invalid comparison data:', { beforeData, afterData });
+        return;
+    }
+    
+    const beforeResults = beforeData.data;
+    const afterResults = afterData.data;
+    
+    // Count before classifications
+    const beforeCounts = {
+        'Peluang Lulus Tinggi': 0,
+        'Peluang Lulus Sedang': 0,
+        'Peluang Lulus Kecil': 0
+    };
+    
+    beforeResults.forEach(result => {
+        if (result && result.klasifikasi_saw) {
+            beforeCounts[result.klasifikasi_saw]++;
+        }
+    });
+    
+    // Count after classifications
+    const afterCounts = {
+        'Peluang Lulus Tinggi': 0,
+        'Peluang Lulus Sedang': 0,
+        'Peluang Lulus Kecil': 0
+    };
+    
+    afterResults.forEach(result => {
+        if (result && result.klasifikasi_saw) {
+            afterCounts[result.klasifikasi_saw]++;
+        }
+    });
+    
+    // Calculate changes
+    const changes = {
+        'Peluang Lulus Tinggi': afterCounts['Peluang Lulus Tinggi'] - beforeCounts['Peluang Lulus Tinggi'],
+        'Peluang Lulus Sedang': afterCounts['Peluang Lulus Sedang'] - beforeCounts['Peluang Lulus Sedang'],
+        'Peluang Lulus Kecil': afterCounts['Peluang Lulus Kecil'] - beforeCounts['Peluang Lulus Kecil']
+    };
+    
+    // Find biggest change
+    let biggestChange = { category: 'Tidak ada perubahan', value: 0 };
+    Object.keys(changes).forEach(category => {
+        if (Math.abs(changes[category]) > Math.abs(biggestChange.value)) {
+            biggestChange = { 
+                category: category.replace('Peluang Lulus ', ''), 
+                value: changes[category] 
+            };
+        }
+    });
+    
+    // Update summary
+    $("#summaryTotalSAW").text(afterResults.length);
+    $("#summaryTimeSAW").text(processingTime + ' detik');
+    
+    if (biggestChange.value !== 0) {
+        const changeText = biggestChange.value > 0 ? 
+            `+${biggestChange.value} ${biggestChange.category}` : 
+            `${biggestChange.value} ${biggestChange.category}`;
+        $("#summaryChangeSAW").text(changeText);
+    } else {
+        $("#summaryChangeSAW").text('Tidak ada perubahan');
+    }
 }
 
 function loadSAWDistribution() {
@@ -646,11 +841,37 @@ function showSAWBatchResultsLoading() {
 }
 
 function showSAWStatsLoading() {
-    // Show loading for individual stat values
+    // Show loading for individual stat values (legacy)
     $('#batchTinggiSAW').html('<i class="fas fa-spinner fa-spin"></i>');
     $('#batchSedangSAW').html('<i class="fas fa-spinner fa-spin"></i>');
     $('#batchKecilSAW').html('<i class="fas fa-spinner fa-spin"></i>');
     $('#batchTotalSAW').html('<i class="fas fa-spinner fa-spin"></i>');
+    // Show loading for percentages (legacy)
+    $('#batchTinggiSAWPercent').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#batchSedangSAWPercent').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#batchKecilSAWPercent').html('<i class="fas fa-spinner fa-spin"></i>');
+    
+    // Show loading for comparison elements
+    $('#beforeTinggiSAW').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#beforeSedangSAW').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#beforeKecilSAW').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#beforeTotalSAW').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#beforeTinggiSAWPercent').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#beforeSedangSAWPercent').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#beforeKecilSAWPercent').html('<i class="fas fa-spinner fa-spin"></i>');
+    
+    $('#afterTinggiSAW').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#afterSedangSAW').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#afterKecilSAW').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#afterTotalSAW').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#afterTinggiSAWPercent').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#afterSedangSAWPercent').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#afterKecilSAWPercent').html('<i class="fas fa-spinner fa-spin"></i>');
+    
+    // Show loading for summary
+    $('#summaryTotalSAW').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#summaryTimeSAW').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#summaryChangeSAW').html('<i class="fas fa-spinner fa-spin"></i>');
 }
 
 function loadInitialSAWBatchResults() {
@@ -667,6 +888,10 @@ function loadInitialSAWBatchResults() {
             $('#batchSedangSAW').text('0');
             $('#batchKecilSAW').text('0');
             $('#batchTotalSAW').text('0');
+            // Reset percentages
+            $('#batchTinggiSAWPercent').text('0%');
+            $('#batchSedangSAWPercent').text('0%');
+            $('#batchKecilSAWPercent').text('0%');
         }
     });
 }

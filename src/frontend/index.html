@@ -440,25 +440,186 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- Batch Results -->
+                                    <!-- Batch Results Comparison -->
+                                    <div id="batchResultsComparisonSAW" style="display: none;">
+                                        <div class="batch-comparison-container">
+                                            <!-- Before Results -->
+                                            <div class="batch-results-card batch-results-before">
+                                                <div class="batch-results-header">
+                                                    <h4><i class="fas fa-clock"></i> Sebelum Klasifikasi</h4>
+                                                    <p class="batch-results-subtitle">Data mahasiswa sebelum diproses</p>
+                                                </div>
+                                                <div class="batch-stats-grid">
+                                                    <div class="stat-card stat-card-tinggi">
+                                                        <div class="stat-card-icon">
+                                                            <i class="fas fa-arrow-up"></i>
+                                                        </div>
+                                                        <div class="stat-card-content">
+                                                            <div class="stat-value" id="beforeTinggiSAW">0</div>
+                                                            <div class="stat-label">Peluang Tinggi</div>
+                                                            <div class="stat-percentage" id="beforeTinggiSAWPercent">0%</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="stat-card stat-card-sedang">
+                                                        <div class="stat-card-icon">
+                                                            <i class="fas fa-minus"></i>
+                                                        </div>
+                                                        <div class="stat-card-content">
+                                                            <div class="stat-value" id="beforeSedangSAW">0</div>
+                                                            <div class="stat-label">Peluang Sedang</div>
+                                                            <div class="stat-percentage" id="beforeSedangSAWPercent">0%</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="stat-card stat-card-kecil">
+                                                        <div class="stat-card-icon">
+                                                            <i class="fas fa-arrow-down"></i>
+                                                        </div>
+                                                        <div class="stat-card-content">
+                                                            <div class="stat-value" id="beforeKecilSAW">0</div>
+                                                            <div class="stat-label">Peluang Kecil</div>
+                                                            <div class="stat-percentage" id="beforeKecilSAWPercent">0%</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="stat-card stat-card-total">
+                                                        <div class="stat-card-icon">
+                                                            <i class="fas fa-users"></i>
+                                                        </div>
+                                                        <div class="stat-card-content">
+                                                            <div class="stat-value" id="beforeTotalSAW">0</div>
+                                                            <div class="stat-label">Total Mahasiswa</div>
+                                                            <div class="stat-percentage">100%</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Comparison Arrow -->
+                                            <div class="batch-comparison-arrow">
+                                                <i class="fas fa-arrow-right"></i>
+                                            </div>
+
+                                            <!-- After Results -->
+                                            <div class="batch-results-card batch-results-after">
+                                                <div class="batch-results-header">
+                                                    <h4><i class="fas fa-chart-pie"></i> Setelah Klasifikasi</h4>
+                                                    <p class="batch-results-subtitle">Hasil klasifikasi SAW</p>
+                                                </div>
+                                                <div class="batch-stats-grid">
+                                                    <div class="stat-card stat-card-tinggi">
+                                                        <div class="stat-card-icon">
+                                                            <i class="fas fa-arrow-up"></i>
+                                                        </div>
+                                                        <div class="stat-card-content">
+                                                            <div class="stat-value" id="afterTinggiSAW">0</div>
+                                                            <div class="stat-label">Peluang Tinggi</div>
+                                                            <div class="stat-percentage" id="afterTinggiSAWPercent">0%</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="stat-card stat-card-sedang">
+                                                        <div class="stat-card-icon">
+                                                            <i class="fas fa-minus"></i>
+                                                        </div>
+                                                        <div class="stat-card-content">
+                                                            <div class="stat-value" id="afterSedangSAW">0</div>
+                                                            <div class="stat-label">Peluang Sedang</div>
+                                                            <div class="stat-percentage" id="afterSedangSAWPercent">0%</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="stat-card stat-card-kecil">
+                                                        <div class="stat-card-icon">
+                                                            <i class="fas fa-arrow-down"></i>
+                                                        </div>
+                                                        <div class="stat-card-content">
+                                                            <div class="stat-value" id="afterKecilSAW">0</div>
+                                                            <div class="stat-label">Peluang Kecil</div>
+                                                            <div class="stat-percentage" id="afterKecilSAWPercent">0%</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="stat-card stat-card-total">
+                                                        <div class="stat-card-icon">
+                                                            <i class="fas fa-users"></i>
+                                                        </div>
+                                                        <div class="stat-card-content">
+                                                            <div class="stat-value" id="afterTotalSAW">0</div>
+                                                            <div class="stat-label">Total Mahasiswa</div>
+                                                            <div class="stat-percentage">100%</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Summary -->
+                                        <div class="batch-summary">
+                                            <div class="summary-item">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>Total mahasiswa yang diproses: <strong id="summaryTotalSAW">0</strong></span>
+                                            </div>
+                                            <div class="summary-item">
+                                                <i class="fas fa-clock"></i>
+                                                <span>Waktu pemrosesan: <strong id="summaryTimeSAW">-</strong></span>
+                                            </div>
+                                            <div class="summary-item">
+                                                <i class="fas fa-chart-line"></i>
+                                                <span>Perubahan terbesar: <strong id="summaryChangeSAW">-</strong></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Legacy Batch Results (for backward compatibility) -->
                                     <div id="batchResultsSAW" style="display: none;">
-                                        <h4>Hasil Analisis Batch</h4>
-                                        <div class="batch-stats">
-                                            <div class="stat-item">
-                                                <div class="stat-value stat-tinggi" id="batchTinggiSAW">0</div>
-                                                <div class="stat-label">Peluang Tinggi</div>
+                                        <div class="batch-results-card">
+                                            <div class="batch-results-header">
+                                                <h4><i class="fas fa-chart-pie"></i> Hasil Analisis Batch SAW</h4>
+                                                <p class="batch-results-subtitle">Distribusi klasifikasi peluang kelulusan mahasiswa</p>
                                             </div>
-                                            <div class="stat-item">
-                                                <div class="stat-value stat-sedang" id="batchSedangSAW">0</div>
-                                                <div class="stat-label">Peluang Sedang</div>
+                                            <div class="batch-stats-grid">
+                                                <div class="stat-card stat-card-tinggi">
+                                                    <div class="stat-card-icon">
+                                                        <i class="fas fa-arrow-up"></i>
+                                                    </div>
+                                                    <div class="stat-card-content">
+                                                        <div class="stat-value" id="batchTinggiSAW">0</div>
+                                                        <div class="stat-label">Peluang Tinggi</div>
+                                                        <div class="stat-percentage" id="batchTinggiSAWPercent">0%</div>
+                                                    </div>
+                                                </div>
+                                                <div class="stat-card stat-card-sedang">
+                                                    <div class="stat-card-icon">
+                                                        <i class="fas fa-minus"></i>
+                                                    </div>
+                                                    <div class="stat-card-content">
+                                                        <div class="stat-value" id="batchSedangSAW">0</div>
+                                                        <div class="stat-label">Peluang Sedang</div>
+                                                        <div class="stat-percentage" id="batchSedangSAWPercent">0%</div>
+                                                    </div>
+                                                </div>
+                                                <div class="stat-card stat-card-kecil">
+                                                    <div class="stat-card-icon">
+                                                        <i class="fas fa-arrow-down"></i>
+                                                    </div>
+                                                    <div class="stat-card-content">
+                                                        <div class="stat-value" id="batchKecilSAW">0</div>
+                                                        <div class="stat-label">Peluang Kecil</div>
+                                                        <div class="stat-percentage" id="batchKecilSAWPercent">0%</div>
+                                                    </div>
+                                                </div>
+                                                <div class="stat-card stat-card-total">
+                                                    <div class="stat-card-icon">
+                                                        <i class="fas fa-users"></i>
+                                                    </div>
+                                                    <div class="stat-card-content">
+                                                        <div class="stat-value" id="batchTotalSAW">0</div>
+                                                        <div class="stat-label">Total Mahasiswa</div>
+                                                        <div class="stat-percentage">100%</div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="stat-item">
-                                                <div class="stat-value stat-kecil" id="batchKecilSAW">0</div>
-                                                <div class="stat-label">Peluang Kecil</div>
-                                            </div>
-                                            <div class="stat-item">
-                                                <div class="stat-value stat-total" id="batchTotalSAW">0</div>
-                                                <div class="stat-label">Total Mahasiswa</div>
+                                            <div class="batch-results-footer">
+                                                <div class="batch-results-info">
+                                                    <i class="fas fa-info-circle"></i>
+                                                    <span>Data diperbarui secara real-time setelah klasifikasi batch</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

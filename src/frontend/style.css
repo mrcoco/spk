@@ -2800,3 +2800,158 @@ body.drawer-expanded .content-wrapper {
         font-size: 0.7rem !important;
     }
 }
+
+/* Batch Comparison Styles */
+.batch-comparison-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.batch-results-before,
+.batch-results-after {
+    flex: 1;
+    min-width: 300px;
+}
+
+.batch-results-before .batch-results-header {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+}
+
+.batch-results-after .batch-results-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.batch-comparison-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    border-radius: 50%;
+    color: white;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 16px rgba(255, 193, 7, 0.3);
+    animation: pulse 2s infinite;
+    flex-shrink: 0;
+}
+
+.batch-comparison-arrow i {
+    animation: slideRight 1.5s ease-in-out infinite;
+}
+
+@keyframes slideRight {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(3px); }
+}
+
+.batch-summary {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.summary-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.summary-item:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+.summary-item i {
+    width: 20px;
+    color: #007bff;
+    font-size: 1rem;
+}
+
+.summary-item span {
+    color: #495057;
+    font-size: 0.95rem;
+}
+
+.summary-item strong {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* Responsive Design for Batch Comparison */
+@media (max-width: 1024px) {
+    .batch-comparison-container {
+        flex-direction: column;
+        gap: 30px;
+    }
+    
+    .batch-comparison-arrow {
+        transform: rotate(90deg);
+    }
+    
+    .batch-comparison-arrow i {
+        animation: slideDown 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes slideDown {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(3px); }
+    }
+}
+
+@media (max-width: 768px) {
+    .batch-results-before,
+    .batch-results-after {
+        min-width: 100%;
+    }
+    
+    .batch-comparison-arrow {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+    
+    .batch-summary {
+        padding: 16px;
+    }
+    
+    .summary-item {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .batch-comparison-container {
+        gap: 20px;
+    }
+    
+    .batch-comparison-arrow {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .batch-summary {
+        padding: 12px;
+    }
+    
+    .summary-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        text-align: left;
+    }
+    
+    .summary-item i {
+        width: auto;
+    }
+}
