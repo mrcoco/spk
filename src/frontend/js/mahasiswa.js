@@ -350,7 +350,7 @@ $(document).ready(function() {
                 { 
                     name: "create", 
                     text: "Tambah Mahasiswa",
-                    template: '<button class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync"><i class="fas fa-plus"></i> <span class="k-button-text">Tambah Mahasiswa</span></button>'
+                    template: '<button class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync" onclick="showAddMahasiswaForm()"><i class="fas fa-plus"></i> <span class="k-button-text">Tambah Mahasiswa</span></button>'
                 },
                 { 
                     name: "syncAll", 
@@ -553,7 +553,7 @@ function initializeMahasiswaGrid() {
 }
 
 function initializeMahasiswaForm() {
-    $("#mahasiswaForm").kendoForm({
+    $("#mahasiswaForm .form-content").kendoForm({
         orientation: "vertical",
         formData: {
             nim: "",
@@ -622,6 +622,23 @@ function initializeMahasiswaForm() {
                 validation: { required: true, min: 0, max: 100 }
             }
         ],
+        buttons: {
+            items: [
+                {
+                    type: "submit",
+                    text: "Simpan",
+                    cssClass: "k-button k-button-md k-rounded-md k-button-solid custom-button-sync"
+                },
+                {
+                    type: "button",
+                    text: "Batal",
+                    cssClass: "k-button k-button-md k-rounded-md k-button-solid custom-button-delete",
+                    click: function() {
+                        hideMahasiswaForm();
+                    }
+                }
+            ]
+        },
         submit: function(e) {
             e.preventDefault();
             var formData = e.model;
@@ -629,7 +646,7 @@ function initializeMahasiswaForm() {
             // Menggunakan mahasiswaDataSource untuk menyimpan data
             mahasiswaDataSource.add(formData);
             mahasiswaDataSource.sync().then(function() {
-                $("#mahasiswaForm").hide();
+                hideMahasiswaForm();
                 showNotification(
                     "Sukses",
                     "Data mahasiswa berhasil disimpan",
@@ -1525,4 +1542,41 @@ function updateTotalRecordInfo(total, elementId) {
     if (element) {
         element.textContent = `Total: ${total || 0} record`;
     }
+}
+
+// Fungsi untuk menampilkan form tambah mahasiswa
+function showAddMahasiswaForm() {
+    // Reset form data
+    const form = $("#mahasiswaForm .form-content").data("kendoForm");
+    if (form) {
+        form.setOptions({
+            formData: {
+                nim: "",
+                nama: "",
+                program_studi: "",
+                ipk: 0.00,
+                sks: 0,
+                persen_dek: 0
+            }
+        });
+    }
+    
+    // Tampilkan form
+    $("#mahasiswaForm").show();
+    
+    // Scroll ke form
+    $("#mahasiswaForm")[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Focus ke field NIM
+    setTimeout(() => {
+        $("#mahasiswaForm input[name='nim']").focus();
+    }, 100);
+}
+
+// Fungsi untuk menyembunyikan form mahasiswa
+function hideMahasiswaForm() {
+    $("#mahasiswaForm").hide();
+    
+    // Scroll kembali ke grid
+    $("#mahasiswaGrid")[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
 } 
