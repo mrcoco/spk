@@ -332,17 +332,17 @@ $(document).ready(function() {
                 { 
                     name: "syncAll", 
                     text: "Sync Semua Nilai",
-                    template: '<button id="syncAllNilai" class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-primary" onclick="syncAllNilai()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">Sync Nilai D/E/K</span></button>'
+                    template: '<button id="syncAllNilai" class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync" onclick="syncAllNilai()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">Sync Nilai D/E/K</span></button>'
                 },
                 {
                     name: "batchKlasifikasi",
                     text: "Klasifikasi Batch Metode Fuzzy",
-                    template: '<button id="batchKlasifikasi" class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-success" onclick="showBatchKlasifikasi()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">FIS Batch</span></button>'
+                    template: '<button id="batchKlasifikasi" class="k-button k-button-md k-rounded-md k-button-solid custom-button-fis" onclick="showBatchKlasifikasi()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">FIS Batch</span></button>'
                 },
                 {
                     name: "batchKlasifikasiSAW",
                     text: "Klasifikasi Batch Metode SAW",
-                    template: '<button id="batchKlasifikasiSAW" class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-success" onclick="showBatchKlasifikasiSAW()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">SAW Batch</span></button>'
+                    template: '<button id="batchKlasifikasiSAW" class="k-button k-button-md k-rounded-md k-button-solid custom-button-saw" onclick="showBatchKlasifikasiSAW()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">SAW Batch</span></button>'
                 }
             ],
         columns: [
@@ -419,20 +419,20 @@ $(document).ready(function() {
                         name: "syncNilai",
                         text: "Sync",
                         click: syncNilai,
-                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-primary" href="\\#" onclick="syncNilai(event, this);"><i class="fas fa-sync-alt"></i> <span class="k-button-text">D/E/K</span></a>'
+                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync" href="\\#" onclick="syncNilai(event, this);"><i class="fas fa-sync-alt"></i> <span class="k-button-text">D/E/K</span></a>'
                     },
                     { 
                         name: "klasifikasi",
                         text: "Klasifikasi",
                         click: showKlasifikasi,
-                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-success" href="\\#" onclick="showKlasifikasi(event, this);"><i class="fas fa-chart-line"></i> <span class="k-button-text">FIS</span></a>'
+                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid custom-button-fis" href="\\#" onclick="showKlasifikasi(event, this);"><i class="fas fa-chart-line"></i> <span class="k-button-text">FIS</span></a>'
                     }
                     ,
                     { 
                         name: "klasifikasiSAW",
                         text: "Klasifikasi SAW",
                         click: showKlasifikasiSAW,
-                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-success" href="\\#" onclick="showKlasifikasiSAW(event, this);"><i class="fas fa-chart-line"></i> <span class="k-button-text">SAW</span></a>'
+                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid custom-button-saw" href="\\#" onclick="showKlasifikasiSAW(event, this);"><i class="fas fa-chart-line"></i> <span class="k-button-text">SAW</span></a>'
                     }
                     
                 ],
