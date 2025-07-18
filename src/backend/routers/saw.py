@@ -259,6 +259,68 @@ def refresh_saw_distribution(db: Session = Depends(get_db)):
             detail=f"Gagal refresh distribusi SAW: {str(e)}"
         )
 
+@router.get("/{nim}")
+def get_saw_detail(nim: str, db: Session = Depends(get_db)):
+    """
+    Mendapatkan detail lengkap hasil SAW untuk mahasiswa tertentu
+    """
+    try:
+        # Validasi mahasiswa exists
+        mahasiswa = db.query(Mahasiswa).filter(Mahasiswa.nim == nim).first()
+        if not mahasiswa:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Mahasiswa dengan NIM {nim} tidak ditemukan"
+            )
+        
+        # Hitung SAW untuk mahasiswa ini
+        result = calculate_saw(db, nim, save_to_db=False)
+        if not result:
+            raise HTTPException(
+                status_code=500,
+                detail="Gagal menghitung SAW untuk mahasiswa ini"
+            )
+        
+        # Ambil ranking dari database jika ada
+        saw_final_result = get_saw_final_result_from_db(db, nim)
+        ranking = saw_final_result.rank if saw_final_result else None
+        
+        # Ambil bobot kriteria
+        weights = {
+            "IPK": 0.35,
+            "SKS": 0.375,
+            "Nilai D/E/K": 0.375
+        }
+        
+        return {
+            "nim": nim,
+            "nama": mahasiswa.nama,
+            "program_studi": mahasiswa.program_studi,
+            "ipk": mahasiswa.ipk,
+            "sks": mahasiswa.sks,
+            "persen_dek": mahasiswa.persen_dek,
+            "skor_saw": result["final_value"],
+            "klasifikasi_saw": result["klasifikasi"],
+            "ranking": ranking,
+            "bobot_ipk": weights["IPK"],
+            "bobot_sks": weights["SKS"],
+            "bobot_persen_dek": weights["Nilai D/E/K"],
+            "normalisasi_ipk": result["normalized_values"]["IPK"],
+            "normalisasi_sks": result["normalized_values"]["SKS"],
+            "normalisasi_persen_dek": result["normalized_values"]["Nilai D/E/K"],
+            "skor_ipk": result["weighted_values"]["IPK"],
+            "skor_sks": result["weighted_values"]["SKS"],
+            "skor_persen_dek": result["weighted_values"]["Nilai D/E/K"],
+            "updated_at": mahasiswa.updated_at
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat mengambil detail SAW: {str(e)}"
+        )
+
 @router.get("/criteria/{nim}")
 def get_saw_criteria_details(nim: str, db: Session = Depends(get_db)):
     """

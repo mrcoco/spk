@@ -138,7 +138,23 @@ function initializeNilaiGrid() {
         },
         sortable: true,
         filterable: true,
-        toolbar: ["create", "excel", "pdf"],
+        toolbar: [
+            { 
+                name: "create", 
+                text: "Tambah Nilai",
+                template: '<button class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync"><i class="fas fa-plus"></i> <span class="k-button-text">Tambah Nilai</span></button>'
+            },
+            { 
+                name: "excel", 
+                text: "Export Excel",
+                template: '<button class="k-button k-button-md k-rounded-md k-button-solid custom-button-fis"><i class="fas fa-file-excel"></i> <span class="k-button-text">Excel</span></button>'
+            },
+            { 
+                name: "pdf", 
+                text: "Export PDF",
+                template: '<button class="k-button k-button-md k-rounded-md k-button-solid custom-button-saw"><i class="fas fa-file-pdf"></i> <span class="k-button-text">PDF</span></button>'
+            }
+        ],
         columns: [
             { field: "nim", title: "NIM", width: "120px" },
             { field: "tahun", title: "Tahun", width: "100px" },
@@ -158,7 +174,28 @@ function initializeNilaiGrid() {
                         });
                 }
             },
-            { command: ["edit", "destroy"], title: "&nbsp;", width: "200px" }
+            { 
+                command: [
+                    { 
+                        name: "edit", 
+                        text: "Edit",
+                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid custom-button-edit" href="\\#"><i class="fas fa-edit"></i> <span class="k-button-text">Edit</span></a>'
+                    },
+                    { 
+                        name: "destroy", 
+                        text: "Hapus",
+                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid custom-button-delete" href="\\#"><i class="fas fa-trash"></i> <span class="k-button-text">Hapus</span></a>'
+                    }
+                ], 
+                title: "Aksi", 
+                width: "280px",
+                headerAttributes: {
+                    style: "text-align: center; vertical-align: middle; font-weight: bold;"
+                },
+                attributes: {
+                    style: "text-align: center;"
+                }
+            }
         ],
         editable: "popup",
         edit: function(e) {
@@ -173,6 +210,9 @@ function initializeNilaiGrid() {
             console.log("Total Records:", data.length);
             console.log("First Record:", data[0]);
             console.log("DataSource Total:", grid.dataSource.total());
+            
+            // Update total record info
+            updateTotalRecordInfo(grid.dataSource.total(), "totalRecordTextNilai");
             
             showNotification(
                 "Sukses",
@@ -303,3 +343,11 @@ function initializeNilaiForm() {
 $("#addNilaiBtn").click(function() {
     $("#nilaiForm").show();
 }); 
+
+// Fungsi untuk mengupdate total record info
+function updateTotalRecordInfo(total, elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = `Total: ${total || 0} record`;
+    }
+} 

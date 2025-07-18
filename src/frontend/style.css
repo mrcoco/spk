@@ -2652,12 +2652,12 @@ body.drawer-expanded .content-wrapper {
 }
 
 .custom-button-fis {
-    background: linear-gradient(135deg, #e53e3e 0%, #f56565 100%) !important;
+    background: linear-gradient(135deg, #805ad5 0%, #9f7aea 100%) !important;
     border: none !important;
     color: white !important;
     font-weight: 600 !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-    box-shadow: 0 4px 12px rgba(229, 62, 62, 0.25) !important;
+    box-shadow: 0 4px 12px rgba(128, 90, 213, 0.25) !important;
     transition: all 0.3s ease !important;
     position: relative !important;
     overflow: hidden !important;
@@ -2679,14 +2679,14 @@ body.drawer-expanded .content-wrapper {
 }
 
 .custom-button-fis:hover {
-    background: linear-gradient(135deg, #c53030 0%, #e53e3e 100%) !important;
+    background: linear-gradient(135deg, #6b46c1 0%, #805ad5 100%) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(229, 62, 62, 0.35) !important;
+    box-shadow: 0 6px 20px rgba(128, 90, 213, 0.35) !important;
 }
 
 .custom-button-fis:active {
     transform: translateY(0) !important;
-    box-shadow: 0 2px 8px rgba(229, 62, 62, 0.25) !important;
+    box-shadow: 0 2px 8px rgba(128, 90, 213, 0.25) !important;
 }
 
 .custom-button-saw {
@@ -2736,6 +2736,52 @@ body.drawer-expanded .content-wrapper {
     animation: pulse 2s infinite;
 }
 
+/* Custom Button Styles for Nilai Grid */
+.custom-button-nilai {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
+    border: none !important;
+    color: white !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    font-size: 0.85rem !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3) !important;
+    position: relative !important;
+    overflow: hidden !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 80px !important;
+}
+
+.custom-button-nilai::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
+    transition: left 0.5s ease !important;
+}
+
+.custom-button-nilai:hover::before {
+    left: 100% !important;
+}
+
+.custom-button-nilai:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 16px rgba(23, 162, 184, 0.4) !important;
+    background: linear-gradient(135deg, #138496 0%, #117a8b 100%) !important;
+}
+
+.custom-button-nilai:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3) !important;
+}
+
 @keyframes pulse {
     0% {
         transform: scale(1);
@@ -2751,30 +2797,321 @@ body.drawer-expanded .content-wrapper {
 /* Button Text Styles */
 .custom-button-sync .k-button-text,
 .custom-button-fis .k-button-text,
-.custom-button-saw .k-button-text {
+.custom-button-saw .k-button-text,
+.custom-button-nilai .k-button-text {
     font-size: 0.85rem !important;
     letter-spacing: 0.5px !important;
+}
+
+/* Button Icon Styles for Nilai */
+.custom-button-nilai i {
+    margin-right: 6px !important;
+    font-size: 0.9rem !important;
+    animation: pulse 2s infinite;
+}
+
+/* Button Detail Styles - Compact Design with Green Color */
+.detail-button {
+    width: 40px !important;
+    height: 32px !important;
+    padding: 4px !important;
+    min-width: 40px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: linear-gradient(135deg, #38a169 0%, #48bb78 100%) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(56, 161, 105, 0.25) !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.detail-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transition: left 0.5s ease;
+}
+
+.detail-button:hover::before {
+    left: 100%;
+}
+
+.detail-button:hover {
+    background: linear-gradient(135deg, #2f855a 0%, #38a169 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(56, 161, 105, 0.35) !important;
+}
+
+.detail-button:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(56, 161, 105, 0.25) !important;
+}
+
+.detail-button i {
+    margin-right: 0 !important;
+    font-size: 0.9rem !important;
+    animation: none !important;
+}
+
+.detail-button .k-button-text {
+    display: none !important;
+}
+
+/* Button Delete Styles - Red Color for All Grids */
+.custom-button-delete {
+    background: linear-gradient(135deg, #e53e3e 0%, #f56565 100%) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(229, 62, 62, 0.25) !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.custom-button-delete::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transition: left 0.5s ease;
+}
+
+.custom-button-delete:hover::before {
+    left: 100%;
+}
+
+.custom-button-delete:hover {
+    background: linear-gradient(135deg, #c53030 0%, #e53e3e 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(229, 62, 62, 0.35) !important;
+}
+
+.custom-button-delete:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(229, 62, 62, 0.25) !important;
+}
+
+/* Button Edit Styles - Blue Color for All Grids */
+.custom-button-edit {
+    background: linear-gradient(135deg, #3182ce 0%, #4299e1 100%) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.25) !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.custom-button-edit::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transition: left 0.5s ease;
+}
+
+.custom-button-edit:hover::before {
+    left: 100%;
+}
+
+.custom-button-edit:hover {
+    background: linear-gradient(135deg, #2c5282 0%, #3182ce 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(49, 130, 206, 0.35) !important;
+}
+
+.custom-button-edit:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(49, 130, 206, 0.25) !important;
+}
+
+/* Grid Mahasiswa Action Buttons - Proportional Design */
+#mahasiswaGrid .k-grid-content .custom-button-edit,
+#mahasiswaGrid .k-grid-content .custom-button-delete,
+#mahasiswaGrid .k-grid-content .custom-button-sync,
+#mahasiswaGrid .k-grid-content .custom-button-fis,
+#mahasiswaGrid .k-grid-content .custom-button-saw {
+    padding: 8px 12px !important;
+    font-size: 0.85rem !important;
+    min-width: 80px !important;
+    margin: 3px !important;
+    height: 36px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#mahasiswaGrid .k-grid-content .custom-button-edit i,
+#mahasiswaGrid .k-grid-content .custom-button-delete i,
+#mahasiswaGrid .k-grid-content .custom-button-sync i,
+#mahasiswaGrid .k-grid-content .custom-button-fis i,
+#mahasiswaGrid .k-grid-content .custom-button-saw i {
+    font-size: 0.8rem !important;
+    margin-right: 4px !important;
+}
+
+#mahasiswaGrid .k-grid-content .custom-button-edit .k-button-text,
+#mahasiswaGrid .k-grid-content .custom-button-delete .k-button-text,
+#mahasiswaGrid .k-grid-content .custom-button-sync .k-button-text,
+#mahasiswaGrid .k-grid-content .custom-button-fis .k-button-text,
+#mahasiswaGrid .k-grid-content .custom-button-saw .k-button-text {
+    font-size: 0.8rem !important;
+    letter-spacing: 0.3px !important;
+    font-weight: 500 !important;
+}
+
+/* Responsive Design for Grid Mahasiswa Action Buttons */
+@media (max-width: 1200px) {
+    #mahasiswaGrid .k-grid-content .custom-button-edit,
+    #mahasiswaGrid .k-grid-content .custom-button-delete,
+    #mahasiswaGrid .k-grid-content .custom-button-sync,
+    #mahasiswaGrid .k-grid-content .custom-button-fis,
+    #mahasiswaGrid .k-grid-content .custom-button-saw {
+        padding: 6px 10px !important;
+        font-size: 0.8rem !important;
+        min-width: 70px !important;
+        height: 32px !important;
+    }
+    
+    #mahasiswaGrid .k-grid-content .custom-button-edit i,
+    #mahasiswaGrid .k-grid-content .custom-button-delete i,
+    #mahasiswaGrid .k-grid-content .custom-button-sync i,
+    #mahasiswaGrid .k-grid-content .custom-button-fis i,
+    #mahasiswaGrid .k-grid-content .custom-button-saw i {
+        font-size: 0.75rem !important;
+        margin-right: 3px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    #mahasiswaGrid .k-grid-content .custom-button-edit,
+    #mahasiswaGrid .k-grid-content .custom-button-delete,
+    #mahasiswaGrid .k-grid-content .custom-button-sync,
+    #mahasiswaGrid .k-grid-content .custom-button-fis,
+    #mahasiswaGrid .k-grid-content .custom-button-saw {
+        padding: 5px 8px !important;
+        font-size: 0.75rem !important;
+        min-width: 60px !important;
+        height: 30px !important;
+    }
+    
+    #mahasiswaGrid .k-grid-content .custom-button-edit i,
+    #mahasiswaGrid .k-grid-content .custom-button-delete i,
+    #mahasiswaGrid .k-grid-content .custom-button-sync i,
+    #mahasiswaGrid .k-grid-content .custom-button-fis i,
+    #mahasiswaGrid .k-grid-content .custom-button-saw i {
+        font-size: 0.7rem !important;
+        margin-right: 2px !important;
+    }
+}
+
+/* Responsive Design for Detail Button */
+@media (max-width: 768px) {
+    .detail-button {
+        width: 36px !important;
+        height: 28px !important;
+        padding: 3px !important;
+        min-width: 36px !important;
+    }
+    
+    .detail-button i {
+        font-size: 0.8rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .detail-button {
+        width: 32px !important;
+        height: 26px !important;
+        padding: 2px !important;
+        min-width: 32px !important;
+    }
+    
+    .detail-button i {
+        font-size: 0.75rem !important;
+    }
+}
+
+/* Responsive Design for Edit and Delete Buttons */
+@media (max-width: 768px) {
+    .custom-button-edit,
+    .custom-button-delete {
+        padding: 6px 12px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .custom-button-edit i,
+    .custom-button-delete i {
+        font-size: 0.8rem !important;
+        margin-right: 4px !important;
+    }
+    
+    .custom-button-edit .k-button-text,
+    .custom-button-delete .k-button-text {
+        font-size: 0.75rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .custom-button-edit,
+    .custom-button-delete {
+        padding: 4px 8px !important;
+        font-size: 0.75rem !important;
+    }
+    
+    .custom-button-edit i,
+    .custom-button-delete i {
+        font-size: 0.75rem !important;
+        margin-right: 3px !important;
+    }
+    
+    .custom-button-edit .k-button-text,
+    .custom-button-delete .k-button-text {
+        font-size: 0.7rem !important;
+    }
 }
 
 /* Responsive Design for Custom Buttons */
 @media (max-width: 768px) {
     .custom-button-sync,
     .custom-button-fis,
-    .custom-button-saw {
+    .custom-button-saw,
+    .custom-button-nilai {
         padding: 6px 12px !important;
         font-size: 0.8rem !important;
     }
     
     .custom-button-sync i,
     .custom-button-fis i,
-    .custom-button-saw i {
+    .custom-button-saw i,
+    .custom-button-nilai i {
         font-size: 0.8rem !important;
         margin-right: 4px !important;
     }
     
     .custom-button-sync .k-button-text,
     .custom-button-fis .k-button-text,
-    .custom-button-saw .k-button-text {
+    .custom-button-saw .k-button-text,
+    .custom-button-nilai .k-button-text {
         font-size: 0.75rem !important;
     }
 }
@@ -2782,21 +3119,24 @@ body.drawer-expanded .content-wrapper {
 @media (max-width: 480px) {
     .custom-button-sync,
     .custom-button-fis,
-    .custom-button-saw {
+    .custom-button-saw,
+    .custom-button-nilai {
         padding: 4px 8px !important;
         font-size: 0.75rem !important;
     }
     
     .custom-button-sync i,
     .custom-button-fis i,
-    .custom-button-saw i {
+    .custom-button-saw i,
+    .custom-button-nilai i {
         font-size: 0.75rem !important;
         margin-right: 3px !important;
     }
     
     .custom-button-sync .k-button-text,
     .custom-button-fis .k-button-text,
-    .custom-button-saw .k-button-text {
+    .custom-button-saw .k-button-text,
+    .custom-button-nilai .k-button-text {
         font-size: 0.7rem !important;
     }
 }
@@ -2953,5 +3293,173 @@ body.drawer-expanded .content-wrapper {
     
     .summary-item i {
         width: auto;
+    }
+}
+
+/* Styling khusus untuk button di grid nilai */
+#nilaiGrid .k-grid-content .custom-button-edit,
+#nilaiGrid .k-grid-content .custom-button-delete {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    min-width: 70px !important;
+    height: 32px !important;
+    margin: 3px !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+#nilaiGrid .k-grid-content .custom-button-edit i,
+#nilaiGrid .k-grid-content .custom-button-delete i {
+    font-size: 12px !important;
+    margin-right: 5px !important;
+    line-height: 1 !important;
+}
+
+#nilaiGrid .k-grid-content .custom-button-edit .k-button-text,
+#nilaiGrid .k-grid-content .custom-button-delete .k-button-text {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+}
+
+/* Responsive styling untuk button nilai */
+@media (max-width: 1200px) {
+    #nilaiGrid .k-grid-content .custom-button-edit,
+    #nilaiGrid .k-grid-content .custom-button-delete {
+        padding: 7px 10px !important;
+        font-size: 12px !important;
+        min-width: 65px !important;
+        height: 30px !important;
+        margin: 2px !important;
+    }
+
+    #nilaiGrid .k-grid-content .custom-button-edit i,
+    #nilaiGrid .k-grid-content .custom-button-delete i {
+        font-size: 11px !important;
+        margin-right: 4px !important;
+    }
+
+    #nilaiGrid .k-grid-content .custom-button-edit .k-button-text,
+    #nilaiGrid .k-grid-content .custom-button-delete .k-button-text {
+        font-size: 11px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    #nilaiGrid .k-grid-content .custom-button-edit,
+    #nilaiGrid .k-grid-content .custom-button-delete {
+        padding: 6px 8px !important;
+        font-size: 11px !important;
+        min-width: 55px !important;
+        height: 28px !important;
+        margin: 2px !important;
+    }
+
+    #nilaiGrid .k-grid-content .custom-button-edit i,
+    #nilaiGrid .k-grid-content .custom-button-delete i {
+        font-size: 10px !important;
+        margin-right: 3px !important;
+    }
+
+    #nilaiGrid .k-grid-content .custom-button-edit .k-button-text,
+    #nilaiGrid .k-grid-content .custom-button-delete .k-button-text {
+        font-size: 10px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #nilaiGrid .k-grid-content .custom-button-edit,
+    #nilaiGrid .k-grid-content .custom-button-delete {
+        padding: 5px 6px !important;
+        font-size: 10px !important;
+        min-width: 45px !important;
+        height: 26px !important;
+        margin: 1px !important;
+    }
+
+    #nilaiGrid .k-grid-content .custom-button-edit i,
+    #nilaiGrid .k-grid-content .custom-button-delete i {
+        font-size: 9px !important;
+        margin-right: 2px !important;
+    }
+
+    #nilaiGrid .k-grid-content .custom-button-edit .k-button-text,
+    #nilaiGrid .k-grid-content .custom-button-delete .k-button-text {
+        font-size: 9px !important;
+    }
+}
+
+/* Total Record Info Styling */
+.total-record-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.total-record-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.total-record-info i {
+    font-size: 16px;
+    color: #ffd700;
+}
+
+.total-record-info span {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Responsive styling untuk total record info */
+@media (max-width: 768px) {
+    .total-record-info {
+        padding: 10px 15px;
+        font-size: 13px;
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
+    }
+    
+    .total-record-info i {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .total-record-info {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    
+    .total-record-info i {
+        font-size: 12px;
+    }
+}
+
+/* Dark mode support untuk total record info */
+@media (prefers-color-scheme: dark) {
+    .total-record-info {
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        box-shadow: 0 4px 15px rgba(74, 85, 104, 0.3);
+    }
+    
+    .total-record-info:hover {
+        box-shadow: 0 6px 20px rgba(74, 85, 104, 0.4);
     }
 }

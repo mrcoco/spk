@@ -87,6 +87,11 @@ function initializeMahasiswaDataSource() {
                     params.sort = data.sort[0].field + "-" + data.sort[0].dir;
                 }
 
+                // Handle search parameter
+                if (data.search) {
+                    params.search = data.search;
+                }
+
                 // Handle filtering with proper null/undefined checks
                 if (data.filter && data.filter.filters && Array.isArray(data.filter.filters) && data.filter.filters.length > 0) {
                     // Convert filters to server format if needed
@@ -186,8 +191,15 @@ function initializeSearchFilter() {
         searchBtn.disabled = true;
         
         if (!searchTerm) {
-            // Jika kosong, reset filter
-            mahasiswaDataSource.filter({});
+            // Jika kosong, reset search parameter dan reload data
+            mahasiswaDataSource.transport.options.read.data = function() {
+                return {
+                    skip: 0,
+                    limit: mahasiswaDataSource.pageSize()
+                };
+            };
+            mahasiswaDataSource.page(1);
+            mahasiswaDataSource.read();
             searchInfo.style.display = 'none';
             // Reset button state
             searchBtn.innerHTML = '<i class="fas fa-search"></i> Cari';
@@ -195,29 +207,22 @@ function initializeSearchFilter() {
             return;
         }
         
-        // Buat filter untuk mencari di kolom NIM atau nama
-        const filter = {
-            logic: "or",
-            filters: [
-                {
-                    field: "nim",
-                    operator: "contains",
-                    value: searchTerm
-                },
-                {
-                    field: "nama",
-                    operator: "contains",
-                    value: searchTerm
-                }
-            ]
+        // Set search parameter untuk server-side filtering
+        mahasiswaDataSource.transport.options.read.data = function() {
+            return {
+                skip: 0, // Reset ke halaman pertama saat search
+                limit: mahasiswaDataSource.pageSize(),
+                search: searchTerm
+            };
         };
         
-        // Terapkan filter ke DataSource
-        mahasiswaDataSource.filter(filter);
+        // Reset ke halaman pertama dan reload data
+        mahasiswaDataSource.page(1);
+        mahasiswaDataSource.read();
         
         // Tampilkan info pencarian
         searchInfo.style.display = 'block';
-        searchResultText.textContent = `Menampilkan hasil pencarian untuk: "${searchTerm}"`;
+        searchResultText.textContent = `Mencari: "${searchTerm}"...`;
         
         // Reset button state setelah delay
         setTimeout(() => {
@@ -236,7 +241,17 @@ function initializeSearchFilter() {
         clearSearchBtn.disabled = true;
         
         searchInput.value = '';
-        mahasiswaDataSource.filter({});
+        
+        // Reset search parameter dan reload data
+        mahasiswaDataSource.transport.options.read.data = function() {
+            return {
+                skip: 0,
+                limit: mahasiswaDataSource.pageSize()
+            };
+        };
+        mahasiswaDataSource.page(1);
+        mahasiswaDataSource.read();
+        
         searchInfo.style.display = 'none';
         searchInput.focus();
         
@@ -277,6 +292,8 @@ function initializeSearchFilter() {
         if (searchTerm && e.items) {
             const totalItems = e.items.length;
             const totalInDataSource = mahasiswaDataSource.total();
+            const currentPage = mahasiswaDataSource.page();
+            const pageSize = mahasiswaDataSource.pageSize();
             
             if (totalItems === 0) {
                 searchResultText.textContent = `Tidak ada hasil untuk: "${searchTerm}"`;
@@ -284,7 +301,9 @@ function initializeSearchFilter() {
                 searchInfo.style.borderColor = 'rgba(220,53,69,0.2)';
                 searchInfo.style.color = '#dc3545';
             } else {
-                searchResultText.textContent = `Menampilkan ${totalItems} dari ${totalInDataSource} hasil untuk: "${searchTerm}"`;
+                const startIndex = (currentPage - 1) * pageSize + 1;
+                const endIndex = startIndex + totalItems - 1;
+                searchResultText.textContent = `Menampilkan ${startIndex}-${endIndex} dari ${totalInDataSource} hasil untuk: "${searchTerm}"`;
                 searchInfo.style.background = 'rgba(0,123,255,0.1)';
                 searchInfo.style.borderColor = 'rgba(0,123,255,0.2)';
                 searchInfo.style.color = '#0056b3';
@@ -328,7 +347,11 @@ $(document).ready(function() {
                 }
             },
             toolbar: [
-                { name: "create", text: "Tambah Mahasiswa" },
+                { 
+                    name: "create", 
+                    text: "Tambah Mahasiswa",
+                    template: '<button class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync"><i class="fas fa-plus"></i> <span class="k-button-text">Tambah Mahasiswa</span></button>'
+                },
                 { 
                     name: "syncAll", 
                     text: "Sync Semua Nilai",
@@ -413,8 +436,16 @@ $(document).ready(function() {
             },
             {
                 command: [
-                    { name: "edit", text: "" },
-                    { name: "destroy", text: "" },
+                    { 
+                        name: "edit", 
+                        text: "Edit",
+                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid custom-button-edit" href="\\#"><i class="fas fa-edit"></i> <span class="k-button-text">Edit</span></a>'
+                    },
+                    { 
+                        name: "destroy", 
+                        text: "Hapus",
+                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid custom-button-delete" href="\\#"><i class="fas fa-trash"></i> <span class="k-button-text">Hapus</span></a>'
+                    },
                     { 
                         name: "syncNilai",
                         text: "Sync",
@@ -437,7 +468,7 @@ $(document).ready(function() {
                     
                 ],
                 title: "Aksi",
-                width: 350,
+                width: 520,
                 headerAttributes: {
                     style: "text-align: center; vertical-align: middle; font-weight: bold;"
                 },
@@ -476,6 +507,9 @@ $(document).ready(function() {
             }
             
             console.log("Grid initialized with", dataSource.data().length, "records");
+            
+            // Update total record info
+            updateTotalRecordInfo(dataSource.total(), "totalRecordText");
         },
         remove: function(e) {
             // Validasi data sebelum remove
@@ -1483,4 +1517,12 @@ function displayBatchSAWResults(data) {
         });
     
     resultDialog.data("kendoDialog").open();
+} 
+
+// Fungsi untuk mengupdate total record info
+function updateTotalRecordInfo(total, elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = `Total: ${total || 0} record`;
+    }
 } 

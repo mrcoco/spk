@@ -30,8 +30,8 @@ function initializeFISGrid() {
             serverSorting: true
         },
         height: 550,
-        sortable: true,
-        filterable: true,
+        // sortable: true,
+        // filterable: true,
         pageable: {
             refresh: true,
             pageSizes: true,
@@ -114,10 +114,16 @@ function initializeFISGrid() {
                 }
             },
             {
-                field: "updated_at",
-                title: "Terakhir Update",
-                width: 150,
-                format: "{0:dd/MM/yyyy HH:mm}",
+                command: [
+                    {
+                        name: "detail",
+                        text: "Detail",
+                        click: showFISDetail,
+                        template: '<button class="k-button k-button-md k-rounded-md k-button-solid detail-button" onclick="showFISDetail(event, this);"><i class="fas fa-eye"></i></button>'
+                    }
+                ],
+                title: "Detail",
+                width: 120,
                 headerAttributes: {
                     style: "text-align: center; font-weight: bold;"
                 },
@@ -125,7 +131,14 @@ function initializeFISGrid() {
                     style: "text-align: center;"
                 }
             }
-        ]
+        ],
+        dataBound: function(e) {
+            console.log("FIS Grid Data Bound:", e);
+            const grid = e.sender;
+            
+            // Update total record info
+            updateTotalRecordInfo(grid.dataSource.total(), "totalRecordTextFIS");
+        }
     });
 }
 
@@ -806,5 +819,194 @@ function showNotification(type, title, message) {
         // Fallback terakhir
         const timestamp = new Date().toLocaleTimeString();
         console.log(`[${timestamp}] ${title}: ${message}`);
+    }
+} 
+
+// Fungsi untuk menampilkan detail mahasiswa dan hasil klasifikasi FIS
+function showFISDetail(e, element) {
+    e.preventDefault();
+    
+    // Dapatkan grid dan data item
+    const grid = $("#fisGrid").data("kendoGrid");
+    const row = $(element).closest("tr");
+    const dataItem = grid.dataItem(row);
+    
+    if (!dataItem || !dataItem.nim) {
+        showNotification("error", "Error", "Data mahasiswa tidak ditemukan");
+        return;
+    }
+    
+    console.log('Showing FIS detail for:', dataItem);
+    
+    // Tampilkan loading
+    kendo.ui.progress($("#fisSection"), true);
+    
+    // Ambil data detail dari API
+    $.ajax({
+        url: `${CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY)}/${dataItem.nim}`,
+        type: "GET",
+        success: function(response) {
+            kendo.ui.progress($("#fisSection"), false);
+            displayFISDetailDialog(response);
+        },
+        error: function(xhr, status, error) {
+            kendo.ui.progress($("#fisSection"), false);
+            let errorMessage = "Gagal memuat detail mahasiswa";
+            if (xhr.responseJSON && xhr.responseJSON.detail) {
+                errorMessage += ": " + xhr.responseJSON.detail;
+            }
+            showNotification("error", "Error", errorMessage);
+        }
+    });
+}
+
+// Fungsi untuk menampilkan dialog detail FIS
+function displayFISDetailDialog(data) {
+    console.log('Displaying FIS detail dialog:', data);
+    
+    if (!data) {
+        console.error('Invalid FIS detail data:', data);
+        showNotification("error", "Error", "Data detail tidak valid");
+        return;
+    }
+    
+    const classificationColor = getFISClassificationColor(data.kategori);
+    const classificationThreshold = getFISClassificationThreshold(data.kategori);
+    
+    // Buat dialog untuk menampilkan detail
+    const detailDialog = $("<div>")
+        .append(`
+            <div style="padding: 20px;">
+                <div class="fis-result">
+                    <div class="result-header" style="background: ${classificationColor}; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin: 0; text-align: center;">
+                            <i class="fas fa-user-graduate"></i> Detail Mahasiswa & Hasil Klasifikasi FIS
+                        </h4>
+                        <p style="margin: 10px 0 0 0; text-align: center; font-size: 14px;">
+                            ${data.nama || 'N/A'} (${data.nim || 'N/A'})
+                        </p>
+                    </div>
+                    
+                    <div class="result-section" style="margin-bottom: 20px;">
+                        <h5 style="color: #333; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px;">
+                            <i class="fas fa-info-circle"></i> Informasi Mahasiswa
+                        </h5>
+                        <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div class="info-item" style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #007bff;">
+                                <span class="label" style="font-weight: bold; color: #333;">NIM:</span>
+                                <span class="value" style="color: #007bff; margin-left: 8px;">${data.nim || 'N/A'}</span>
+                            </div>
+                            <div class="info-item" style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #28a745;">
+                                <span class="label" style="font-weight: bold; color: #333;">Nama:</span>
+                                <span class="value" style="color: #28a745; margin-left: 8px;">${data.nama || 'N/A'}</span>
+                            </div>
+                            <div class="info-item" style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #ffc107;">
+                                <span class="label" style="font-weight: bold; color: #333;">Program Studi:</span>
+                                <span class="value" style="color: #ffc107; margin-left: 8px;">${data.program_studi || 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-section" style="margin-bottom: 20px;">
+                        <h5 style="color: #333; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px;">
+                            <i class="fas fa-chart-line"></i> Hasil Klasifikasi FIS
+                        </h5>
+                        <div style="background: ${classificationColor}; color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                            <h3 style="margin: 0 0 5px 0; font-size: 24px;">
+                                <i class="fas fa-trophy"></i> ${data.kategori || 'N/A'}
+                            </h3>
+                            <p style="margin: 0; font-size: 14px; opacity: 0.9;">
+                                Nilai Fuzzy: <strong>${data.nilai_fuzzy?.toFixed(2) || 'N/A'}</strong>
+                            </p>
+                            <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.8;">
+                                ${classificationThreshold}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="result-section" style="margin-bottom: 20px;">
+                        <h5 style="color: #333; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px;">
+                            <i class="fas fa-calculator"></i> Detail Nilai Kriteria
+                        </h5>
+                        <div class="criteria-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                            <div class="criteria-item" style="background: #e8f5e9; padding: 15px; border-radius: 8px; border: 2px solid #28a745;">
+                                <div class="criteria-header" style="margin-bottom: 10px;">
+                                    <strong style="color: #28a745; font-size: 16px;">
+                                        <i class="fas fa-star"></i> IPK
+                                    </strong>
+                                </div>
+                                <div class="criteria-values" style="color: #333;">
+                                    <div style="margin-bottom: 5px;">Nilai: <strong>${data.ipk?.toFixed(2) || 'N/A'}</strong></div>
+                                    <div>Keanggotaan: <strong>${data.ipk_membership?.toFixed(2) || 'N/A'}</strong></div>
+                                </div>
+                            </div>
+                            
+                            <div class="criteria-item" style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 2px solid #ffc107;">
+                                <div class="criteria-header" style="margin-bottom: 10px;">
+                                    <strong style="color: #ffc107; font-size: 16px;">
+                                        <i class="fas fa-book"></i> SKS
+                                    </strong>
+                                </div>
+                                <div class="criteria-values" style="color: #333;">
+                                    <div style="margin-bottom: 5px;">Nilai: <strong>${data.sks || 'N/A'}</strong></div>
+                                    <div>Keanggotaan: <strong>${data.sks_membership?.toFixed(2) || 'N/A'}</strong></div>
+                                </div>
+                            </div>
+                            
+                            <div class="criteria-item" style="background: #ffebee; padding: 15px; border-radius: 8px; border: 2px solid #dc3545;">
+                                <div class="criteria-header" style="margin-bottom: 10px;">
+                                    <strong style="color: #dc3545; font-size: 16px;">
+                                        <i class="fas fa-percentage"></i> Nilai D/E/K
+                                    </strong>
+                                </div>
+                                <div class="criteria-values" style="color: #333;">
+                                    <div style="margin-bottom: 5px;">Persentase: <strong>${data.persen_dek?.toFixed(2) || 'N/A'}%</strong></div>
+                                    <div>Keanggotaan: <strong>${data.nilai_dk_membership?.toFixed(2) || 'N/A'}</strong></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-section">
+                        <h5 style="color: #333; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px;">
+                            <i class="fas fa-clock"></i> Informasi Waktu
+                        </h5>
+                        <div style="background: #e3f2fd; padding: 12px; border-radius: 6px; border-left: 4px solid #2196F3;">
+                            <p style="margin: 0; color: #333;">
+                                <i class="fas fa-calendar-alt"></i> 
+                                <strong>Terakhir Update:</strong> 
+                                <span style="color: #2196F3;">${data.updated_at ? new Date(data.updated_at).toLocaleString('id-ID') : 'N/A'}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `)
+        .kendoDialog({
+            width: "800px",
+            height: "600px",
+            title: "Detail Klasifikasi FIS",
+            closable: true,
+            modal: true,
+            actions: [
+                {
+                    text: "Tutup",
+                    primary: true,
+                    action: function() {
+                        return true;
+                    }
+                }
+            ]
+        });
+    
+    // Buka dialog
+    detailDialog.data("kendoDialog").open();
+} 
+
+// Fungsi untuk mengupdate total record info
+function updateTotalRecordInfo(total, elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = `Total: ${total || 0} record`;
     }
 } 
