@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
@@ -18,8 +18,8 @@ from fuzzy_logic import FuzzyKelulusan
 class EvaluationRequest(BaseModel):
     test_size: float = 0.3
     random_state: int = 42
-    evaluation_name: str | None = None
-    evaluation_notes: str | None = None
+    evaluation_name: Optional[str] = None
+    evaluation_notes: Optional[str] = None
     save_to_db: bool = True
 
 router = APIRouter(prefix="/api/fuzzy", tags=["fuzzy"])
