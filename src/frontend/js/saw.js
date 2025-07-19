@@ -820,14 +820,10 @@ function loadSAWResultsTable() {
     
     console.log('Fetching SAW results table from server');
     
-    // Gunakan endpoint /results yang lebih efisien daripada /batch
+    // Gunakan endpoint /batch yang memberikan data lengkap dengan IPK, SKS, D/E/K, dan Klasifikasi
     $.ajax({
-        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/results'),
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch'),
         type: 'GET',
-        data: {
-            skip: 0,
-            limit: 1000 // Ambil semua data sekaligus untuk performa
-        },
         success: function(response) {
             console.log('SAW results table loaded successfully:', response);
             
@@ -1191,6 +1187,8 @@ function displaySAWResultsTable(data) {
         return;
     }
     
+    console.log('Displaying SAW results table with data:', data);
+    
     $("#sawGrid").kendoGrid({
         dataSource: {
             data: data,
@@ -1207,17 +1205,48 @@ function displaySAWResultsTable(data) {
         columns: [
             { field: "nim", title: "NIM", width: 120 },
             { field: "nama", title: "Nama", width: 200 },
-            { field: "ipk", title: "IPK", width: 80, format: "{0:n2}" },
-            { field: "sks", title: "SKS", width: 80 },
-            { field: "persen_dek", title: "D/E/K (%)", width: 100, format: "{0:n1}" },
-            { field: "skor_saw", title: "Skor SAW", width: 120, format: "{0:n4}" },
+            { 
+                field: "ipk", 
+                title: "IPK", 
+                width: 80, 
+                format: "{0:n2}",
+                template: function(dataItem) {
+                    return dataItem.ipk ? dataItem.ipk.toFixed(2) : 'N/A';
+                }
+            },
+            { 
+                field: "sks", 
+                title: "SKS", 
+                width: 80,
+                template: function(dataItem) {
+                    return dataItem.sks ? dataItem.sks : 'N/A';
+                }
+            },
+            { 
+                field: "persen_dek", 
+                title: "D/E/K (%)", 
+                width: 100, 
+                format: "{0:n1}",
+                template: function(dataItem) {
+                    return dataItem.persen_dek ? dataItem.persen_dek.toFixed(1) : 'N/A';
+                }
+            },
+            { 
+                field: "skor_saw", 
+                title: "Skor SAW", 
+                width: 120, 
+                format: "{0:n4}",
+                template: function(dataItem) {
+                    return dataItem.skor_saw ? dataItem.skor_saw.toFixed(4) : 'N/A';
+                }
+            },
             { 
                 field: "klasifikasi_saw", 
                 title: "Klasifikasi", 
                 width: 180,
                 template: function(dataItem) {
                     const color = getClassificationColor(dataItem.klasifikasi_saw);
-                    return `<span style="color: ${color}; font-weight: bold;">${dataItem.klasifikasi_saw}</span>`;
+                    return `<span style="color: ${color}; font-weight: bold;">${dataItem.klasifikasi_saw || 'N/A'}</span>`;
                 }
             },
             {
@@ -1268,13 +1297,22 @@ function showSAWDetail(e, element) {
     // Tampilkan loading
     kendo.ui.progress($("#sawSection"), true);
     
-    // Ambil data detail dari API
+    // Ambil data detail dari API menggunakan endpoint yang benar
     $.ajax({
-        url: `${CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW)}/${dataItem.nim}`,
+        url: `${CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW)}/calculate/${dataItem.nim}`,
         type: "GET",
         success: function(response) {
             kendo.ui.progress($("#sawSection"), false);
-            displaySAWDetailDialog(response);
+            
+            // Gabungkan data dari grid dengan data detail
+            const combinedData = {
+                ...dataItem,
+                ...response,
+                skor_saw: dataItem.skor_saw,
+                klasifikasi_saw: dataItem.klasifikasi_saw
+            };
+            
+            displaySAWDetailDialog(combinedData);
         },
         error: function(xhr, status, error) {
             kendo.ui.progress($("#sawSection"), false);
@@ -1499,7 +1537,7 @@ function searchMahasiswaByName(nama) {
         console.log('🔧 CONFIG.ENDPOINTS.MAHASISWA:', CONFIG?.ENDPOINTS?.MAHASISWA);
         console.log('🔧 CONFIG.getApiUrl:', typeof CONFIG?.getApiUrl);
         
-        const url = CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA) + "?search=" + encodeURIComponent(nama) + "&limit=1000";
+        const url = CONFIG.getApiUrl(CONFIG.ENDPOINTS.MAHASISWA) + "/search?q=" + encodeURIComponent(nama);
         console.log('🔧 URL request:', url);
         
         $.ajax({
@@ -1507,9 +1545,24 @@ function searchMahasiswaByName(nama) {
             method: "GET",
             success: function(response) {
                 console.log('🔧 Hasil pencarian mahasiswa:', response);
-                if (response.data && response.data.length > 0) {
+                
+                // Handle response format yang berbeda
+                let mahasiswaData = [];
+                if (Array.isArray(response)) {
+                    // Response langsung array
+                    mahasiswaData = response;
+                } else if (response.data && Array.isArray(response.data)) {
+                    // Response dengan wrapper data
+                    mahasiswaData = response.data;
+                } else {
+                    console.log('🔧 Format response tidak dikenali:', response);
+                    resolve([]);
+                    return;
+                }
+                
+                if (mahasiswaData.length > 0) {
                     // Return array of NIMs
-                    const nims = response.data.map(mahasiswa => mahasiswa.nim);
+                    const nims = mahasiswaData.map(mahasiswa => mahasiswa.nim);
                     console.log('🔧 NIMs yang ditemukan:', nims);
                     resolve(nims);
                 } else {
@@ -1554,12 +1607,22 @@ async function performSAWSearch() {
             return;
         }
         
+        console.log('🔧 NIMs yang akan dicari di grid:', nims);
+        
         // Filter grid berdasarkan NIM yang ditemukan
         const grid = $("#sawGrid").data("kendoGrid");
+        if (!grid) {
+            console.error('🔧 Grid SAW tidak ditemukan');
+            updateSAWSearchInfo("Grid SAW tidak tersedia", "error");
+            return;
+        }
+        
         const allData = grid.dataSource.data();
+        console.log('🔧 Total data di grid:', allData.length);
         
         // Filter data berdasarkan NIM
         const filteredData = allData.filter(item => nims.includes(item.nim));
+        console.log('🔧 Data yang difilter:', filteredData.length);
         
         if (filteredData.length === 0) {
             updateSAWSearchInfo("Tidak ada hasil klasifikasi SAW ditemukan untuk mahasiswa tersebut", "warning");
@@ -1576,7 +1639,7 @@ async function performSAWSearch() {
         
     } catch (error) {
         console.error('🔧 Error dalam pencarian SAW:', error);
-        updateSAWSearchInfo("Terjadi kesalahan saat mencari data", "error");
+        updateSAWSearchInfo("Terjadi kesalahan saat mencari data: " + error.message, "error");
     }
 }
 
