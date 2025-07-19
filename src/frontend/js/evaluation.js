@@ -196,6 +196,9 @@ function clearEvaluationResults() {
         metricsChart.update();
     }
     
+    // Hide narration section
+    $('#evaluationNarrationSection').hide();
+    
     // Hide results
     $('.evaluation-section').not(':first').hide();
 }
@@ -287,8 +290,140 @@ function displayEvaluationResults(data) {
     // Update charts
     updateCharts(data);
     
+    // Generate and display narration
+    generateEvaluationNarration(data);
+    
     // Show results
     $('.evaluation-section').show();
+}
+
+// Generate evaluation narration
+function generateEvaluationNarration(data) {
+    console.log('Generating evaluation narration...');
+    
+    const accuracy = data.metrics.accuracy;
+    const precision = data.metrics.precision_macro;
+    const recall = data.metrics.recall_macro;
+    const f1 = data.metrics.f1_macro;
+    const confusionMatrix = data.confusion_matrix;
+    
+    // Determine performance level
+    const getPerformanceLevel = (value) => {
+        if (value >= 0.8) return 'high';
+        if (value >= 0.6) return 'medium';
+        return 'low';
+    };
+    
+    const getPerformanceClass = (value) => {
+        if (value >= 0.8) return 'metric-highlight';
+        if (value >= 0.6) return 'metric-medium';
+        return 'metric-low';
+    };
+    
+    const getPerformanceText = (value) => {
+        if (value >= 0.8) return 'Sangat Baik';
+        if (value >= 0.6) return 'Cukup Baik';
+        return 'Perlu Perbaikan';
+    };
+    
+    // Calculate confusion matrix insights
+    const totalPredictions = confusionMatrix.reduce((sum, row) => sum + row.reduce((a, b) => a + b, 0), 0);
+    const correctPredictions = confusionMatrix.reduce((sum, row, i) => sum + row[i], 0);
+    const incorrectPredictions = totalPredictions - correctPredictions;
+    
+    // Find most confused categories
+    let maxConfusion = 0;
+    let mostConfused = [];
+    for (let i = 0; i < confusionMatrix.length; i++) {
+        for (let j = 0; j < confusionMatrix[i].length; j++) {
+            if (i !== j && confusionMatrix[i][j] > maxConfusion) {
+                maxConfusion = confusionMatrix[i][j];
+                mostConfused = [i, j];
+            }
+        }
+    }
+    
+    const narrationHtml = `
+        <div class="evaluation-narration">
+            <h4><i class="fas fa-chart-line"></i> Analisis Performa Model FIS</h4>
+            
+            <div class="narration-item ${getPerformanceLevel(accuracy) === 'low' ? 'danger' : getPerformanceLevel(accuracy) === 'medium' ? 'warning' : ''}">
+                <h5><i class="fas fa-bullseye"></i> Akurasi Model</h5>
+                <p>Model FIS mencapai akurasi sebesar <span class="${getPerformanceClass(accuracy)}">${(accuracy * 100).toFixed(2)}%</span>, yang menunjukkan tingkat <strong>${getPerformanceText(accuracy)}</strong> dalam mengklasifikasikan peluang kelulusan mahasiswa.</p>
+                <p>Dari total ${data.summary.test_data} data test, model berhasil memprediksi dengan benar ${Math.round(accuracy * data.summary.test_data)} kasus.</p>
+            </div>
+            
+            <div class="narration-item ${getPerformanceLevel(precision) === 'low' ? 'danger' : getPerformanceLevel(precision) === 'medium' ? 'warning' : ''}">
+                <h5><i class="fas fa-crosshairs"></i> Presisi Model</h5>
+                <p>Presisi model sebesar <span class="${getPerformanceClass(precision)}">${(precision * 100).toFixed(2)}%</span> menunjukkan bahwa dari semua prediksi positif yang dibuat model, ${(precision * 100).toFixed(1)}% adalah benar.</p>
+                <p>Nilai presisi yang ${precision >= 0.8 ? 'tinggi' : precision >= 0.6 ? 'cukup' : 'rendah'} ini mengindikasikan ${precision >= 0.8 ? 'model jarang memberikan false positive' : precision >= 0.6 ? 'model cukup baik dalam menghindari false positive' : 'model masih sering memberikan false positive'}.</p>
+            </div>
+            
+            <div class="narration-item ${getPerformanceLevel(recall) === 'low' ? 'danger' : getPerformanceLevel(recall) === 'medium' ? 'warning' : ''}">
+                <h5><i class="fas fa-search"></i> Recall Model</h5>
+                <p>Recall model sebesar <span class="${getPerformanceClass(recall)}">${(recall * 100).toFixed(2)}%</span> menunjukkan bahwa dari semua kasus positif yang sebenarnya, model berhasil mengidentifikasi ${(recall * 100).toFixed(1)}%.</p>
+                <p>Nilai recall yang ${recall >= 0.8 ? 'tinggi' : recall >= 0.6 ? 'cukup' : 'rendah'} ini mengindikasikan ${recall >= 0.8 ? 'model sangat baik dalam menemukan kasus positif' : recall >= 0.6 ? 'model cukup baik dalam menemukan kasus positif' : 'model masih sering melewatkan kasus positif'}.</p>
+            </div>
+            
+            <div class="narration-item ${getPerformanceLevel(f1) === 'low' ? 'danger' : getPerformanceLevel(f1) === 'medium' ? 'warning' : ''}">
+                <h5><i class="fas fa-balance-scale"></i> F1-Score Model</h5>
+                <p>F1-Score sebesar <span class="${getPerformanceClass(f1)}">${(f1 * 100).toFixed(2)}%</span> merupakan rata-rata harmonik dari presisi dan recall, memberikan gambaran seimbang tentang performa model.</p>
+                <p>Nilai F1-Score yang ${f1 >= 0.8 ? 'tinggi' : f1 >= 0.6 ? 'cukup' : 'rendah'} menunjukkan bahwa model memiliki ${f1 >= 0.8 ? 'keseimbangan yang sangat baik' : f1 >= 0.6 ? 'keseimbangan yang cukup baik' : 'ketidakseimbangan'} antara presisi dan recall.</p>
+            </div>
+            
+            <div class="performance-summary">
+                <h5><i class="fas fa-star"></i> Ringkasan Performa</h5>
+                <p>Berdasarkan hasil evaluasi, model FIS menunjukkan performa <strong>${getPerformanceText(accuracy)}</strong> dalam mengklasifikasikan peluang kelulusan mahasiswa dengan akurasi ${(accuracy * 100).toFixed(2)}%.</p>
+            </div>
+            
+            <div class="confusion-analysis">
+                <h5><i class="fas fa-table"></i> Analisis Confusion Matrix</h5>
+                <p>Dari confusion matrix dapat dilihat bahwa:</p>
+                <ul>
+                    <li>Total prediksi yang benar: <strong>${correctPredictions}</strong> dari ${totalPredictions} prediksi</li>
+                    <li>Total prediksi yang salah: <strong>${incorrectPredictions}</strong> dari ${totalPredictions} prediksi</li>
+                    <li>Tingkat kesalahan: <strong>${((incorrectPredictions / totalPredictions) * 100).toFixed(2)}%</strong></li>
+                </ul>
+                
+                ${mostConfused.length > 0 ? `
+                <p><strong>Kesalahan Klasifikasi Terbesar:</strong> Model paling sering salah mengklasifikasikan "${Object.values(data.kategori_mapping)[mostConfused[0]]}" sebagai "${Object.values(data.kategori_mapping)[mostConfused[1]]}" sebanyak ${maxConfusion} kali.</p>
+                ` : ''}
+            </div>
+            
+            <div class="recommendation">
+                <h5><i class="fas fa-lightbulb"></i> Rekomendasi</h5>
+                ${accuracy >= 0.8 ? `
+                <ul>
+                    <li>Model menunjukkan performa yang sangat baik dan dapat digunakan untuk klasifikasi peluang kelulusan</li>
+                    <li>Pertimbangkan untuk menggunakan model ini dalam sistem pendukung keputusan</li>
+                    <li>Lakukan monitoring berkala untuk memastikan performa tetap konsisten</li>
+                </ul>
+                ` : accuracy >= 0.6 ? `
+                <ul>
+                    <li>Model menunjukkan performa yang cukup baik namun masih dapat ditingkatkan</li>
+                    <li>Pertimbangkan untuk menyesuaikan parameter fuzzy atau menambah data training</li>
+                    <li>Lakukan validasi dengan data historis yang lebih lengkap</li>
+                </ul>
+                ` : `
+                <ul>
+                    <li>Model menunjukkan performa yang perlu ditingkatkan secara signifikan</li>
+                    <li>Pertimbangkan untuk merevisi aturan fuzzy atau menambah data training</li>
+                    <li>Lakukan analisis mendalam terhadap kesalahan klasifikasi yang terjadi</li>
+                    <li>Pertimbangkan untuk menggunakan metode alternatif atau kombinasi metode</li>
+                </ul>
+                `}
+            </div>
+            
+            <div class="narration-item info">
+                <h5><i class="fas fa-info-circle"></i> Catatan Penting</h5>
+                <p>Hasil evaluasi ini menggunakan ground truth yang dibuat berdasarkan kriteria sederhana (IPK ≥ 3.5, SKS ≥ 120, Persen DEK ≥ 80 untuk "Peluang Lulus Tinggi"). Untuk evaluasi yang lebih akurat, diperlukan data historis kelulusan mahasiswa yang sebenarnya.</p>
+                <p>Model FIS ini dirancang untuk menangani ketidakpastian dalam data mahasiswa dan memberikan klasifikasi yang lebih fleksibel dibandingkan metode deterministik.</p>
+            </div>
+        </div>
+    `;
+    
+    $('#evaluationNarrationContent').html(narrationHtml);
+    $('#evaluationNarrationSection').show();
 }
 
 // Update summary section

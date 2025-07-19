@@ -6011,3 +6011,154 @@ body.drawer-expanded .content-wrapper {
         font-size: 13px;
     }
 }
+
+/* Narasi Hasil Evaluasi */
+.evaluation-narration {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #007bff;
+}
+
+.evaluation-narration h4 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.evaluation-narration .narration-item {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 3px solid #28a745;
+}
+
+.evaluation-narration .narration-item.warning {
+    border-left-color: #ffc107;
+}
+
+.evaluation-narration .narration-item.danger {
+    border-left-color: #dc3545;
+}
+
+.evaluation-narration .narration-item.info {
+    border-left-color: #17a2b8;
+}
+
+.evaluation-narration .metric-highlight {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    display: inline-block;
+    margin: 5px 0;
+}
+
+.evaluation-narration .metric-medium {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    display: inline-block;
+    margin: 5px 0;
+}
+
+.evaluation-narration .metric-low {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    display: inline-block;
+    margin: 5px 0;
+}
+
+.evaluation-narration .performance-summary {
+    background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    text-align: center;
+}
+
+.evaluation-narration .performance-summary h5 {
+    margin: 0 0 10px 0;
+    font-weight: 600;
+}
+
+.evaluation-narration .performance-summary p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.evaluation-narration .recommendation {
+    background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.evaluation-narration .recommendation h5 {
+    margin: 0 0 10px 0;
+    font-weight: 600;
+}
+
+.evaluation-narration .recommendation ul {
+    margin: 10px 0 0 0;
+    padding-left: 20px;
+}
+
+.evaluation-narration .recommendation li {
+    margin-bottom: 5px;
+}
+
+.evaluation-narration .confusion-analysis {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.evaluation-narration .confusion-analysis h5 {
+    color: #495057;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.evaluation-narration .confusion-analysis table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.evaluation-narration .confusion-analysis th,
+.evaluation-narration .confusion-analysis td {
+    border: 1px solid #dee2e6;
+    padding: 8px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.evaluation-narration .confusion-analysis th {
+    background-color: #e9ecef;
+    font-weight: 600;
+}
+
+.evaluation-narration .confusion-analysis .correct {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.evaluation-narration .confusion-analysis .incorrect {
+    background-color: #f8d7da;
+    color: #721c24;
+}
