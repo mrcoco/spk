@@ -5,6 +5,51 @@ from models import Mahasiswa, SAWCriteria, SAWResults, SAWFinalResults, Kategori
 from schemas import CriteriaDetailsResponse
 from datetime import datetime
 
+# Cache untuk nilai min/max
+_stats_cache = {}
+_stats_cache_timestamp = None
+_cache_duration = 300  # 5 menit
+
+def get_cached_stats(db: Session):
+    """
+    Mendapatkan statistik min/max dengan caching untuk performa
+    """
+    global _stats_cache, _stats_cache_timestamp
+    
+    current_time = datetime.utcnow()
+    
+    # Check if cache is still valid
+    if (_stats_cache and _stats_cache_timestamp and 
+        (current_time - _stats_cache_timestamp).total_seconds() < _cache_duration):
+        return _stats_cache
+    
+    # Query database untuk mendapatkan statistik
+    stats = db.query(
+        func.max(Mahasiswa.ipk).label('ipk_max'),
+        func.max(Mahasiswa.sks).label('sks_max'),
+        func.min(Mahasiswa.persen_dek).label('nilai_dek_min'),
+        func.max(Mahasiswa.persen_dek).label('nilai_dek_max')
+    ).first()
+    
+    # Update cache
+    _stats_cache = {
+        'ipk_max': stats.ipk_max or 4.0,
+        'sks_max': stats.sks_max or 200.0,
+        'nilai_dek_min': stats.nilai_dek_min or 0.0,
+        'nilai_dek_max': stats.nilai_dek_max or 100.0
+    }
+    _stats_cache_timestamp = current_time
+    
+    return _stats_cache
+
+def clear_stats_cache():
+    """
+    Clear cache statistik
+    """
+    global _stats_cache, _stats_cache_timestamp
+    _stats_cache = {}
+    _stats_cache_timestamp = None
+
 def initialize_saw_criteria(db: Session):
     """
     Inisialisasi kriteria SAW jika belum ada
@@ -109,11 +154,12 @@ def calculate_saw(db: Session, nim: str, save_to_db: bool = True) -> Optional[Di
     if not mahasiswa:
         return None
 
-    # Ambil nilai min/max untuk normalisasi
-    ipk_max = db.query(func.max(Mahasiswa.ipk)).scalar() or 4.0
-    sks_max = db.query(func.max(Mahasiswa.sks)).scalar() or 200.0
-    nilai_dek_min = db.query(func.min(Mahasiswa.persen_dek)).scalar() or 0.0
-    nilai_dek_max = db.query(func.max(Mahasiswa.persen_dek)).scalar() or 100.0
+    # Ambil nilai min/max untuk normalisasi dengan caching
+    stats = get_cached_stats(db)
+    ipk_max = stats['ipk_max']
+    sks_max = stats['sks_max']
+    nilai_dek_min = stats['nilai_dek_min']
+    nilai_dek_max = stats['nilai_dek_max']
     
     # Nilai kriteria mahasiswa
     criteria_values = {
@@ -189,14 +235,21 @@ def batch_calculate_saw(db: Session, save_to_db: bool = True) -> List[Dict[str, 
     # Inisialisasi kriteria jika belum ada
     initialize_saw_criteria(db)
     
-    # Ambil semua mahasiswa
+    # Ambil semua mahasiswa dengan satu query
     all_mahasiswa = db.query(Mahasiswa).all()
     
-    # Ambil nilai min/max untuk normalisasi
-    ipk_max = db.query(func.max(Mahasiswa.ipk)).scalar() or 4.0
-    sks_max = db.query(func.max(Mahasiswa.sks)).scalar() or 200.0
-    nilai_dek_min = db.query(func.min(Mahasiswa.persen_dek)).scalar() or 0.0
-    nilai_dek_max = db.query(func.max(Mahasiswa.persen_dek)).scalar() or 100.0
+    # Ambil nilai min/max untuk normalisasi dengan satu query yang dioptimasi
+    stats = db.query(
+        func.max(Mahasiswa.ipk).label('ipk_max'),
+        func.max(Mahasiswa.sks).label('sks_max'),
+        func.min(Mahasiswa.persen_dek).label('nilai_dek_min'),
+        func.max(Mahasiswa.persen_dek).label('nilai_dek_max')
+    ).first()
+    
+    ipk_max = stats.ipk_max or 4.0
+    sks_max = stats.sks_max or 200.0
+    nilai_dek_min = stats.nilai_dek_min or 0.0
+    nilai_dek_max = stats.nilai_dek_max or 100.0
     
     # Bobot sesuai FIS_SAW_fix.ipynb
     weights = {
@@ -207,6 +260,7 @@ def batch_calculate_saw(db: Session, save_to_db: bool = True) -> List[Dict[str, 
     
     results = []
     
+    # Batch process semua mahasiswa
     for mahasiswa in all_mahasiswa:
         # Nilai kriteria
         criteria_values = {
@@ -263,14 +317,42 @@ def batch_calculate_saw(db: Session, save_to_db: bool = True) -> List[Dict[str, 
     # Urutkan berdasarkan skor SAW untuk menentukan ranking
     results.sort(key=lambda x: x["skor_saw"], reverse=True)
     
-    # Simpan ke database jika diminta
+    # Simpan ke database jika diminta dengan batch operation yang dioptimasi
     if save_to_db:
         try:
+            # Clear existing results first dengan satu operasi
+            db.query(SAWResults).delete()
+            db.query(SAWFinalResults).delete()
+            db.commit()
+            
+            # Batch insert new results untuk performa yang lebih baik
+            saw_results_batch = []
+            saw_final_results_batch = []
+            
             for idx, result in enumerate(results):
                 ranking = idx + 1
-                save_saw_result(db, result["nim"], result["skor_saw"], ranking)
-                save_saw_final_result(db, result["nim"], result["skor_saw"], ranking)
+                
+                # Prepare SAWResults
+                saw_results_batch.append(SAWResults(
+                    nim=result["nim"],
+                    nilai_akhir=result["skor_saw"],
+                    ranking=ranking
+                ))
+                
+                # Prepare SAWFinalResults
+                saw_final_results_batch.append(SAWFinalResults(
+                    nim=result["nim"],
+                    final_score=result["skor_saw"],
+                    rank=ranking
+                ))
+            
+            # Batch insert untuk performa optimal
+            db.bulk_save_objects(saw_results_batch)
+            db.bulk_save_objects(saw_final_results_batch)
+            db.commit()
+            
         except Exception as e:
+            db.rollback()
             print(f"Error saving batch SAW results: {e}")
     
     return results

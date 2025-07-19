@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -27,6 +27,14 @@ class Mahasiswa(Base):
     klasifikasi = relationship("KlasifikasiKelulusan", back_populates="mahasiswa", uselist=False)
     saw_results = relationship("SAWResults", back_populates="mahasiswa")
     saw_final_results = relationship("SAWFinalResults", back_populates="mahasiswa")
+
+    # Indexes for performance optimization
+    __table_args__ = (
+        Index('idx_mahasiswa_ipk', 'ipk'),
+        Index('idx_mahasiswa_sks', 'sks'),
+        Index('idx_mahasiswa_persen_dek', 'persen_dek'),
+        Index('idx_mahasiswa_nama', 'nama'),
+    )
 
     def to_dict(self):
         return {
@@ -121,6 +129,13 @@ class SAWResults(Base):
     # Relationships
     mahasiswa = relationship("Mahasiswa", back_populates="saw_results")
 
+    # Indexes for performance optimization
+    __table_args__ = (
+        Index('idx_saw_results_nim', 'nim'),
+        Index('idx_saw_results_ranking', 'ranking'),
+        Index('idx_saw_results_nilai_akhir', 'nilai_akhir'),
+    )
+
 class SAWFinalResults(Base):
     __tablename__ = "saw_final_results"
 
@@ -132,4 +147,11 @@ class SAWFinalResults(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationship
-    mahasiswa = relationship("Mahasiswa", back_populates="saw_final_results") 
+    mahasiswa = relationship("Mahasiswa", back_populates="saw_final_results")
+
+    # Indexes for performance optimization
+    __table_args__ = (
+        Index('idx_saw_final_results_nim', 'nim'),
+        Index('idx_saw_final_results_rank', 'rank'),
+        Index('idx_saw_final_results_final_score', 'final_score'),
+    ) 

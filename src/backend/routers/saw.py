@@ -124,27 +124,31 @@ def get_saw_results(
     db: Session = Depends(get_db)
 ):
     """
-    Mengambil hasil SAW dari database dengan pagination
+    Mengambil hasil SAW dari database dengan pagination yang dioptimasi
     """
     try:
-        # Ambil data dari database
-        results = get_saw_results_from_db(db, skip, limit)
+        # Ambil data dari database dengan JOIN untuk menghindari N+1 query
+        results = db.query(SAWResults, Mahasiswa.nama).join(
+            Mahasiswa, SAWResults.nim == Mahasiswa.nim
+        ).order_by(SAWResults.ranking).offset(skip).limit(limit).all()
+        
         total = db.query(SAWResults).count()
         
         # Jika tidak ada data, hitung dan simpan
         if total == 0:
             print("No SAW results found in database, calculating...")
             batch_results = batch_calculate_saw(db, save_to_db=True)
-            results = get_saw_results_from_db(db, skip, limit)
+            results = db.query(SAWResults, Mahasiswa.nama).join(
+                Mahasiswa, SAWResults.nim == Mahasiswa.nim
+            ).order_by(SAWResults.ranking).offset(skip).limit(limit).all()
             total = db.query(SAWResults).count()
         
-        # Format hasil
+        # Format hasil dengan data yang sudah di-JOIN
         formatted_results = []
-        for result in results:
-            mahasiswa = db.query(Mahasiswa).filter(Mahasiswa.nim == result.nim).first()
+        for result, nama in results:
             formatted_results.append({
                 "nim": result.nim,
-                "nama": mahasiswa.nama if mahasiswa else "Unknown",
+                "nama": nama,
                 "nilai_akhir": result.nilai_akhir,
                 "ranking": result.ranking,
                 "created_at": result.created_at.isoformat() if result.created_at else None
@@ -169,27 +173,31 @@ def get_saw_final_results(
     db: Session = Depends(get_db)
 ):
     """
-    Mengambil hasil SAW final dari database dengan pagination
+    Mengambil hasil SAW final dari database dengan pagination yang dioptimasi
     """
     try:
-        # Ambil data dari database
-        results = get_saw_final_results_from_db(db, skip, limit)
+        # Ambil data dari database dengan JOIN untuk menghindari N+1 query
+        results = db.query(SAWFinalResults, Mahasiswa.nama).join(
+            Mahasiswa, SAWFinalResults.nim == Mahasiswa.nim
+        ).order_by(SAWFinalResults.rank).offset(skip).limit(limit).all()
+        
         total = db.query(SAWFinalResults).count()
         
         # Jika tidak ada data, hitung dan simpan
         if total == 0:
             print("No SAW final results found in database, calculating...")
             batch_results = batch_calculate_saw(db, save_to_db=True)
-            results = get_saw_final_results_from_db(db, skip, limit)
+            results = db.query(SAWFinalResults, Mahasiswa.nama).join(
+                Mahasiswa, SAWFinalResults.nim == Mahasiswa.nim
+            ).order_by(SAWFinalResults.rank).offset(skip).limit(limit).all()
             total = db.query(SAWFinalResults).count()
         
-        # Format hasil
+        # Format hasil dengan data yang sudah di-JOIN
         formatted_results = []
-        for result in results:
-            mahasiswa = db.query(Mahasiswa).filter(Mahasiswa.nim == result.nim).first()
+        for result, nama in results:
             formatted_results.append({
                 "nim": result.nim,
-                "nama": mahasiswa.nama if mahasiswa else "Unknown",
+                "nama": nama,
                 "final_score": result.final_score,
                 "rank": result.rank,
                 "created_at": result.created_at.isoformat() if result.created_at else None

@@ -125,7 +125,10 @@ function initializeBatchButton() {
                         $("#batchResultsComparisonSAW").show();
                         $("#batchResultsSAW").hide(); // Hide legacy results
                         
-                        // Refresh grid and chart
+                        // Clear cache karena data sudah berubah
+                        clearSawCache();
+                        
+                        // Refresh grid and chart dengan data baru
                         loadSAWResultsTable();
                         loadSAWDistribution();
                         
@@ -568,20 +571,32 @@ function displayComparisonSummary(beforeData, afterData, processingTime) {
 }
 
 function loadSAWDistribution() {
-    // Show loading state
-    showSAWChartLoading();
+    console.log('Loading SAW distribution...');
+    
+    // Cek cache terlebih dahulu
+    if (sawDataCache.distribution && isCacheValid()) {
+        console.log('Loading SAW distribution from cache');
+        displaySAWDistribution(sawDataCache.distribution);
+        return;
+    }
+    
+    console.log('Fetching SAW distribution from server');
     
     $.ajax({
         url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/distribution'),
         type: 'GET',
         success: function(data) {
-            hideSAWChartLoading();
-            displaySAWDistributionFromAPI(data);
+            console.log('SAW distribution loaded successfully:', data);
+            
+            // Simpan ke cache
+            sawDataCache.distribution = data;
+            updateCacheTimestamp();
+            
+            displaySAWDistribution(data);
         },
         error: function(xhr, status, error) {
             console.error('Error loading SAW distribution:', error);
-            hideSAWChartLoading();
-            $('#sawChart').html('<p class="error">Error loading distribution</p>');
+            showNotification("Error", "Gagal memuat distribusi SAW", "error");
         }
     });
 }
@@ -795,15 +810,36 @@ function loadSAWResultsTable() {
     // Show loading state
     showSAWGridLoading();
     
+    // Cek cache terlebih dahulu
+    if (sawDataCache.results && isCacheValid()) {
+        console.log('Loading SAW results table from cache');
+        hideSAWGridLoading();
+        displaySAWResultsTable(sawDataCache.results.data);
+        return;
+    }
+    
+    console.log('Fetching SAW results table from server');
+    
+    // Gunakan endpoint /results yang lebih efisien daripada /batch
     $.ajax({
-        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch'),
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/results'),
         type: 'GET',
-        success: function(data) {
+        data: {
+            skip: 0,
+            limit: 1000 // Ambil semua data sekaligus untuk performa
+        },
+        success: function(response) {
+            console.log('SAW results table loaded successfully:', response);
+            
+            // Simpan ke cache
+            sawDataCache.results = response;
+            updateCacheTimestamp();
+            
             hideSAWGridLoading();
-            displaySAWResultsTable(data.data);
+            displaySAWResultsTable(response.data);
         },
         error: function(xhr, status, error) {
-            console.error('Error loading SAW results:', error);
+            console.error('Error loading SAW results table:', error);
             hideSAWGridLoading();
             $('#sawGrid').html('<p class="error">Error loading results</p>');
         }
@@ -1579,4 +1615,107 @@ function updateSAWSearchInfo(message, type) {
             icon.addClass("fa-info-circle");
             searchInfo.css("color", "#17a2b8");
     }
+} 
+
+// Cache untuk data SAW
+let sawDataCache = {
+    results: null,
+    finalResults: null,
+    distribution: null,
+    lastFetch: null,
+    cacheDuration: 5 * 60 * 1000 // 5 menit dalam milidetik
+};
+
+// Fungsi untuk mengecek apakah cache masih valid
+function isCacheValid() {
+    return sawDataCache.lastFetch && 
+           (Date.now() - sawDataCache.lastFetch) < sawDataCache.cacheDuration;
+}
+
+// Fungsi untuk clear cache
+function clearSawCache() {
+    sawDataCache = {
+        results: null,
+        finalResults: null,
+        distribution: null,
+        lastFetch: null,
+        cacheDuration: 5 * 60 * 1000
+    };
+}
+
+// Fungsi untuk menampilkan status cache
+function showCacheStatus() {
+    const status = isCacheValid() ? 'valid' : 'invalid';
+    const message = isCacheValid() ? 'Cache Aktif' : 'Cache Expired';
+    
+    // Remove existing status
+    $('.cache-status').remove();
+    
+    // Add new status
+    $('body').append(`
+        <div class="cache-status ${status}">
+            <i class="fas fa-${isCacheValid() ? 'check-circle' : 'exclamation-circle'}"></i>
+            ${message}
+        </div>
+    `);
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+        $('.cache-status').fadeOut();
+    }, 3000);
+}
+
+// Update cache timestamp dengan status indicator
+function updateCacheTimestamp() {
+    sawDataCache.lastFetch = Date.now();
+    showCacheStatus();
+}
+
+// Lazy loading untuk grid SAW
+let sawGridData = [];
+let sawGridPageSize = 50;
+let sawGridCurrentPage = 0;
+
+function loadSAWGridLazy(page = 0, pageSize = 50) {
+    // Cek cache terlebih dahulu
+    if (sawDataCache.results && isCacheValid()) {
+        console.log('Loading SAW grid from cache (lazy)');
+        const startIndex = page * pageSize;
+        const endIndex = startIndex + pageSize;
+        const pageData = sawDataCache.results.data.slice(startIndex, endIndex);
+        
+        displaySAWResultsTable({
+            data: pageData,
+            total: sawDataCache.results.total,
+            skip: startIndex,
+            limit: pageSize
+        });
+        return;
+    }
+    
+    console.log('Fetching SAW grid from server (lazy)');
+    
+    $.ajax({
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/results'),
+        type: 'GET',
+        data: {
+            skip: page * pageSize,
+            limit: pageSize
+        },
+        success: function(response) {
+            console.log('SAW grid loaded successfully (lazy):', response);
+            
+            // Simpan ke cache jika ini adalah halaman pertama
+            if (page === 0) {
+                sawDataCache.results = response;
+                updateCacheTimestamp();
+            }
+            
+            displaySAWResultsTable(response);
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading SAW grid (lazy):', error);
+            $('#sawGrid').html('<p class="error">Error loading results</p>');
+        }
+    });
 } 
