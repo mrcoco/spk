@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean, Index
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean, Index, JSON, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -154,4 +154,75 @@ class SAWFinalResults(Base):
         Index('idx_saw_final_results_nim', 'nim'),
         Index('idx_saw_final_results_rank', 'rank'),
         Index('idx_saw_final_results_final_score', 'final_score'),
-    ) 
+    )
+
+class FISEvaluation(Base):
+    __tablename__ = "fis_evaluation"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    evaluation_name = Column(String(100), nullable=False)
+    test_size = Column(Float, nullable=False)
+    random_state = Column(Integer, nullable=False)
+    
+    # Metrics
+    accuracy = Column(Float, nullable=False)
+    precision_macro = Column(Float, nullable=False)
+    recall_macro = Column(Float, nullable=False)
+    f1_macro = Column(Float, nullable=False)
+    
+    # Per-class metrics (stored as JSON)
+    precision_per_class = Column(JSON, nullable=False)
+    recall_per_class = Column(JSON, nullable=False)
+    f1_per_class = Column(JSON, nullable=False)
+    
+    # Confusion matrix (stored as JSON)
+    confusion_matrix = Column(JSON, nullable=False)
+    
+    # Summary
+    total_data = Column(Integer, nullable=False)
+    training_data = Column(Integer, nullable=False)
+    test_data = Column(Integer, nullable=False)
+    execution_time = Column(Float, nullable=False)
+    
+    # Additional metadata
+    kategori_mapping = Column(JSON, nullable=False)
+    evaluation_notes = Column(Text, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Indexes for performance optimization
+    __table_args__ = (
+        Index('idx_fis_evaluation_created_at', 'created_at'),
+        Index('idx_fis_evaluation_accuracy', 'accuracy'),
+        Index('idx_fis_evaluation_test_size', 'test_size'),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "evaluation_name": self.evaluation_name,
+            "test_size": float(self.test_size),
+            "random_state": self.random_state,
+            "metrics": {
+                "accuracy": float(self.accuracy),
+                "precision_macro": float(self.precision_macro),
+                "recall_macro": float(self.recall_macro),
+                "f1_macro": float(self.f1_macro),
+                "precision": self.precision_per_class,
+                "recall": self.recall_per_class,
+                "f1": self.f1_per_class
+            },
+            "confusion_matrix": self.confusion_matrix,
+            "summary": {
+                "total_data": self.total_data,
+                "training_data": self.training_data,
+                "test_data": self.test_data,
+                "execution_time": float(self.execution_time)
+            },
+            "kategori_mapping": self.kategori_mapping,
+            "evaluation_notes": self.evaluation_notes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        } 

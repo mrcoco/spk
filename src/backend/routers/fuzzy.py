@@ -6,9 +6,10 @@ import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
 import time
+import json
 
 from database import get_db
-from models import Mahasiswa, KlasifikasiKelulusan
+from models import Mahasiswa, KlasifikasiKelulusan, FISEvaluation
 from schemas import KlasifikasiKelulusanResponse, KlasifikasiGridResponse, FuzzyResponse
 from fuzzy_logic import FuzzyKelulusan
 
@@ -184,6 +185,96 @@ def get_fuzzy_distribution(db: Session = Depends(get_db)):
             detail=f"Terjadi kesalahan saat mengambil distribusi FIS: {str(e)}"
         )
 
+@router.get("/evaluations", description="Mendapatkan daftar evaluasi FIS yang tersimpan")
+def get_fis_evaluations(
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    try:
+        # Ambil total evaluasi
+        total = db.query(FISEvaluation).count()
+        
+        if total == 0:
+            return {
+                "total": 0,
+                "data": []
+            }
+        
+        # Ambil data evaluasi dengan pagination
+        evaluations = db.query(FISEvaluation)\
+            .order_by(FISEvaluation.created_at.desc())\
+            .offset(skip)\
+            .limit(limit)\
+            .all()
+        
+        # Format hasil
+        formatted_evaluations = []
+        for evaluation in evaluations:
+            formatted_evaluations.append(evaluation.to_dict())
+        
+        return {
+            "total": total,
+            "data": formatted_evaluations
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat mengambil data evaluasi: {str(e)}"
+        )
+
+@router.get("/evaluations/{evaluation_id}", description="Mendapatkan detail evaluasi FIS berdasarkan ID")
+def get_fis_evaluation_detail(evaluation_id: int, db: Session = Depends(get_db)):
+    try:
+        # Ambil evaluasi berdasarkan ID
+        evaluation = db.query(FISEvaluation).filter(FISEvaluation.id == evaluation_id).first()
+        
+        if not evaluation:
+            raise HTTPException(
+                status_code=404,
+                detail="Evaluasi tidak ditemukan"
+            )
+        
+        return evaluation.to_dict()
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat mengambil detail evaluasi: {str(e)}"
+        )
+
+@router.delete("/evaluations/{evaluation_id}", description="Menghapus evaluasi FIS berdasarkan ID")
+def delete_fis_evaluation(evaluation_id: int, db: Session = Depends(get_db)):
+    try:
+        # Ambil evaluasi berdasarkan ID
+        evaluation = db.query(FISEvaluation).filter(FISEvaluation.id == evaluation_id).first()
+        
+        if not evaluation:
+            raise HTTPException(
+                status_code=404,
+                detail="Evaluasi tidak ditemukan"
+            )
+        
+        # Hapus evaluasi
+        db.delete(evaluation)
+        db.commit()
+        
+        return {
+            "message": f"Evaluasi dengan ID {evaluation_id} berhasil dihapus"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat menghapus evaluasi: {str(e)}"
+        )
+
 @router.get("/{nim}")
 def get_fuzzy_result(nim: str, db: Session = Depends(get_db)):
     # Cek apakah mahasiswa ada
@@ -249,6 +340,9 @@ def get_fuzzy_result(nim: str, db: Session = Depends(get_db)):
 def evaluate_fuzzy_system(
     test_size: float = 0.3,
     random_state: int = 42,
+    evaluation_name: str = None,
+    evaluation_notes: str = None,
+    save_to_db: bool = True,
     db: Session = Depends(get_db)
 ):
     try:
@@ -343,7 +437,8 @@ def evaluate_fuzzy_system(
         
         execution_time = time.time() - start_time
         
-        return {
+        # Prepare response data
+        response_data = {
             "confusion_matrix": cm.tolist(),
             "metrics": {
                 "accuracy": accuracy,
@@ -367,7 +462,51 @@ def evaluate_fuzzy_system(
             }
         }
         
+        # Save to database if requested
+        if save_to_db:
+            # Generate evaluation name if not provided
+            if not evaluation_name:
+                evaluation_name = f"FIS_Evaluation_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+            
+            # Create evaluation record
+            evaluation_record = FISEvaluation(
+                evaluation_name=evaluation_name,
+                test_size=test_size,
+                random_state=random_state,
+                accuracy=accuracy,
+                precision_macro=precision_macro,
+                recall_macro=recall_macro,
+                f1_macro=f1_macro,
+                precision_per_class=precision,
+                recall_per_class=recall,
+                f1_per_class=f1,
+                confusion_matrix=cm.tolist(),
+                total_data=len(mahasiswa_list),
+                training_data=len(X_train),
+                test_data=len(X_test),
+                execution_time=round(execution_time, 3),
+                kategori_mapping={
+                    "0": "Peluang Lulus Tinggi",
+                    "1": "Peluang Lulus Sedang", 
+                    "2": "Peluang Lulus Kecil"
+                },
+                evaluation_notes=evaluation_notes
+            )
+            
+            db.add(evaluation_record)
+            db.commit()
+            db.refresh(evaluation_record)
+            
+            # Add evaluation ID to response
+            response_data["evaluation_id"] = evaluation_record.id
+            response_data["evaluation_name"] = evaluation_record.evaluation_name
+            response_data["saved_to_db"] = True
+        
+        return response_data
+        
     except Exception as e:
+        if save_to_db:
+            db.rollback()
         raise HTTPException(
             status_code=500,
             detail=f"Terjadi kesalahan saat evaluasi: {str(e)}"
