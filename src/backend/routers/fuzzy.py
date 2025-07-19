@@ -7,11 +7,20 @@ from sklearn.metrics import confusion_matrix, classification_report, accuracy_sc
 from sklearn.model_selection import train_test_split
 import time
 import json
+from pydantic import BaseModel
 
 from database import get_db
 from models import Mahasiswa, KlasifikasiKelulusan, FISEvaluation
 from schemas import KlasifikasiKelulusanResponse, KlasifikasiGridResponse, FuzzyResponse
 from fuzzy_logic import FuzzyKelulusan
+
+# Pydantic model untuk request evaluasi
+class EvaluationRequest(BaseModel):
+    test_size: float = 0.3
+    random_state: int = 42
+    evaluation_name: str | None = None
+    evaluation_notes: str | None = None
+    save_to_db: bool = True
 
 router = APIRouter(prefix="/api/fuzzy", tags=["fuzzy"])
 fuzzy_system = FuzzyKelulusan()
@@ -338,11 +347,7 @@ def get_fuzzy_result(nim: str, db: Session = Depends(get_db)):
 
 @router.post("/evaluate", description="Menghitung confusion matrix dan evaluation metrics")
 def evaluate_fuzzy_system(
-    test_size: float = 0.3,
-    random_state: int = 42,
-    evaluation_name: str = None,
-    evaluation_notes: str = None,
-    save_to_db: bool = True,
+    request: EvaluationRequest,
     db: Session = Depends(get_db)
 ):
     try:
@@ -397,7 +402,7 @@ def evaluate_fuzzy_system(
         
         # Split data untuk training dan testing
         X_train, X_test, y_true_train, y_true_test, y_pred_train, y_pred_test = train_test_split(
-            X, y_true, y_pred, test_size=test_size, random_state=random_state, stratify=y_true
+            X, y_true, y_pred, test_size=request.test_size, random_state=request.random_state, stratify=y_true
         )
         
         # Hitung confusion matrix untuk test data
@@ -463,16 +468,18 @@ def evaluate_fuzzy_system(
         }
         
         # Save to database if requested
-        if save_to_db:
+        if request.save_to_db:
             # Generate evaluation name if not provided
-            if not evaluation_name:
+            if not request.evaluation_name:
                 evaluation_name = f"FIS_Evaluation_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+            else:
+                evaluation_name = request.evaluation_name
             
             # Create evaluation record
             evaluation_record = FISEvaluation(
                 evaluation_name=evaluation_name,
-                test_size=test_size,
-                random_state=random_state,
+                test_size=request.test_size,
+                random_state=request.random_state,
                 accuracy=accuracy,
                 precision_macro=precision_macro,
                 recall_macro=recall_macro,
@@ -490,7 +497,7 @@ def evaluate_fuzzy_system(
                     "1": "Peluang Lulus Sedang", 
                     "2": "Peluang Lulus Kecil"
                 },
-                evaluation_notes=evaluation_notes
+                evaluation_notes=request.evaluation_notes
             )
             
             db.add(evaluation_record)
@@ -505,7 +512,7 @@ def evaluate_fuzzy_system(
         return response_data
         
     except Exception as e:
-        if save_to_db:
+        if request.save_to_db:
             db.rollback()
         raise HTTPException(
             status_code=500,

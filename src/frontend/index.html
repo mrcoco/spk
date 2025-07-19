@@ -29,6 +29,9 @@
     <!-- Font Awesome (CDN/eksternal, tidak perlu version) -->
     <link rel="stylesheet" href="styles/font-awesome/all.min.css">
     
+    <!-- Chart.js (CDN/eksternal, tidak perlu version) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <!-- Version/Timestamp untuk cache busting dan loader custom asset -->
     <script>
         // Generate timestamp untuk cache busting
@@ -51,7 +54,8 @@
             'js/mahasiswa.js',
             'js/nilai.js',
             'js/fis.js',
-            'js/saw.js'
+            'js/saw.js',
+            'js/evaluation.js'
         ];
         // Load CSS
         cssFiles.forEach(href => {
@@ -166,11 +170,18 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="evaluation.html" class="nav-link" target="_blank">
+                                <a href="#evaluation" class="nav-link">
                                     <i class="fas fa-chart-line"></i>
                                     <span>Evaluasi FIS</span>
                                 </a>
                             </li>
+                            <!-- Test Button untuk Bypass Submenu -->
+                            <!-- <li class="nav-item">
+                                <a href="#evaluation" class="nav-link" id="testEvaluationLink" style="background: #ffeb3b; color: #333;">
+                                    <i class="fas fa-bug"></i>
+                                    <span>TEST Evaluasi FIS</span>
+                                </a>
+                            </li> -->
                             <!-- <li class="nav-item">
                                 <a href="#comparison" class="nav-link">
                                     <i class="fas fa-balance-scale"></i>
@@ -809,6 +820,335 @@
                                             <li>0.45 ≤ Skor < 0.7 = Peluang Lulus Sedang</li>
                                             <li>Skor < 0.45 = Peluang Lulus Kecil</li>
                                         </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evaluation Section -->
+                <div id="evaluationSection" class="section" style="display: none;">
+                    <div class="content-container">
+                        <h2>Evaluasi Metode FIS</h2>
+                        <div class="section-description">
+                            <p>Evaluasi performa dan keakuratan metode FIS (Fuzzy Inference System) dalam mengklasifikasikan peluang kelulusan mahasiswa.</p>
+                        </div>
+                        
+                        <!-- Loading Indicator -->
+                        <div id="evaluationLoadingIndicator" class="loading-container" style="display: none;">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                            <p>Sedang menghitung evaluasi FIS...</p>
+                        </div>
+
+                        <!-- Control Panel -->
+                        <div class="evaluation-control-panel">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-cogs"></i> Pengaturan Evaluasi FIS</h3>
+                                </div>
+                                <div class="card-body">
+                                    
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="evaluationTestSize">Ukuran Data Test (%):</label>
+                                            <input type="number" id="evaluationTestSize" value="30" min="10" max="50" class="form-control">
+                                            <small class="form-text">Persentase data yang digunakan untuk testing (10-50%)</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="evaluationRandomState">Random State:</label>
+                                            <input type="number" id="evaluationRandomState" value="42" class="form-control">
+                                            <small class="form-text">Seed untuk reproduksi hasil yang konsisten</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>
+                                                <input type="checkbox" id="evaluationSaveToDb"> Simpan ke Database
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons Row -->
+                                    <div class="action-buttons-row">
+                                        <div class="action-buttons-group">
+                                            <button id="evaluationCalculateBtn" class="btn btn-primary">
+                                                <i class="fas fa-calculator"></i>
+                                                Hitung Evaluasi FIS
+                                            </button>
+                                            <button id="evaluationExportBtn" class="btn btn-secondary">
+                                                <i class="fas fa-download"></i>
+                                                Export Data
+                                            </button>
+                                            <button id="evaluationPrintBtn" class="btn btn-secondary">
+                                                <i class="fas fa-print"></i>
+                                                Cetak Laporan
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="info-box">
+                                        <h4><i class="fas fa-info-circle"></i> Informasi Evaluasi</h4>
+                                        <p>Evaluasi ini akan mengukur performa dan keakuratan metode FIS dalam mengklasifikasikan peluang kelulusan mahasiswa berdasarkan kriteria IPK, SKS, dan persentase nilai D/E/K.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Summary Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-info-circle"></i> Ringkasan Evaluasi</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="summary-grid">
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-database"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Total Data</h4>
+                                                <span id="evaluationTotalData">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-graduation-cap"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Training Data</h4>
+                                                <span id="evaluationTrainingData">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-flask"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Test Data</h4>
+                                                <span id="evaluationTestData">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-clock"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Waktu Eksekusi</h4>
+                                                <span id="evaluationExecutionTime">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Confusion Matrix Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-table"></i> Confusion Matrix</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="evaluationConfusionMatrixContainer">
+                                        <div class="confusion-matrix">
+                                            <table class="confusion-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th></th>
+                                                        <th colspan="3">Predicted</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Actual</th>
+                                                        <th>Peluang Lulus Tinggi</th>
+                                                        <th>Peluang Lulus Sedang</th>
+                                                        <th>Peluang Lulus Kecil</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="evaluationConfusionMatrixBody">
+                                                    <tr>
+                                                        <td><strong>Peluang Lulus Tinggi</strong></td>
+                                                        <td id="evaluation-cm-0-0">-</td>
+                                                        <td id="evaluation-cm-0-1">-</td>
+                                                        <td id="evaluation-cm-0-2">-</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><strong>Peluang Lulus Sedang</strong></td>
+                                                        <td id="evaluation-cm-1-0">-</td>
+                                                        <td id="evaluation-cm-1-1">-</td>
+                                                        <td id="evaluation-cm-1-2">-</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><strong>Peluang Lulus Kecil</strong></td>
+                                                        <td id="evaluation-cm-2-0">-</td>
+                                                        <td id="evaluation-cm-2-1">-</td>
+                                                        <td id="evaluation-cm-2-2">-</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Evaluation Metrics Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-chart-bar"></i> Evaluation Metrics</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="metrics-grid">
+                                        <!-- Overall Metrics -->
+                                        <div class="metrics-card overall">
+                                            <h4><i class="fas fa-chart-pie"></i> Overall Metrics</h4>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Accuracy:</span>
+                                                <span class="metric-value" id="evaluationAccuracy">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Precision (Macro):</span>
+                                                <span class="metric-value" id="evaluationPrecisionMacro">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Recall (Macro):</span>
+                                                <span class="metric-value" id="evaluationRecallMacro">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">F1-Score (Macro):</span>
+                                                <span class="metric-value" id="evaluationF1Macro">-</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Per-Class Metrics -->
+                                        <div class="metrics-card per-class">
+                                            <h4><i class="fas fa-list"></i> Per-Class Metrics</h4>
+                                            <div class="class-metrics">
+                                                <div class="class-metric">
+                                                    <h5><i class="fas fa-star" style="color: #28a745;"></i> Peluang Lulus Tinggi</h5>
+                                                    <div class="metric-item">
+                                                        <span class="metric-label">Precision:</span>
+                                                        <span class="metric-value" id="evaluationPrecision0">-</span>
+                                                    </div>
+                                                    <div class="metric-item">
+                                                        <span class="metric-label">Recall:</span>
+                                                        <span class="metric-value" id="evaluationRecall0">-</span>
+                                                    </div>
+                                                    <div class="metric-item">
+                                                        <span class="metric-label">F1-Score:</span>
+                                                        <span class="metric-value" id="evaluationF10">-</span>
+                                                    </div>
+                                                </div>
+                                                <div class="class-metric">
+                                                    <h5><i class="fas fa-star" style="color: #ffc107;"></i> Peluang Lulus Sedang</h5>
+                                                    <div class="metric-item">
+                                                        <span class="metric-label">Precision:</span>
+                                                        <span class="metric-value" id="evaluationPrecision1">-</span>
+                                                    </div>
+                                                    <div class="metric-item">
+                                                        <span class="metric-label">Recall:</span>
+                                                        <span class="metric-value" id="evaluationRecall1">-</span>
+                                                    </div>
+                                                    <div class="metric-item">
+                                                        <span class="metric-label">F1-Score:</span>
+                                                        <span class="metric-value" id="evaluationF11">-</span>
+                                                    </div>
+                                                </div>
+                                                <div class="class-metric">
+                                                    <h5><i class="fas fa-star" style="color: #dc3545;"></i> Peluang Lulus Kecil</h5>
+                                                    <div class="metric-item">
+                                                        <span class="metric-label">Precision:</span>
+                                                        <span class="metric-value" id="evaluationPrecision2">-</span>
+                                                    </div>
+                                                    <div class="metric-item">
+                                                        <span class="metric-label">Recall:</span>
+                                                        <span class="metric-value" id="evaluationRecall2">-</span>
+                                                    </div>
+                                                    <div class="metric-item">
+                                                        <span class="metric-label">F1-Score:</span>
+                                                        <span class="metric-value" id="evaluationF12">-</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-chart-line"></i> Visualisasi Hasil</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="charts-grid">
+                                        <div class="chart-container">
+                                            <h4>Confusion Matrix Heatmap</h4>
+                                            <canvas id="evaluationConfusionMatrixChart"></canvas>
+                                        </div>
+                                        <div class="chart-container">
+                                            <h4>Metrics Comparison</h4>
+                                            <canvas id="evaluationMetricsChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Saved Evaluations Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-save"></i> Evaluasi Tersimpan</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="evaluationSavedGrid"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interpretation Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-lightbulb"></i> Interpretasi Hasil</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="evaluationInterpretationContent">
+                                        <div class="interpretation-item">
+                                            <h4><i class="fas fa-info-circle"></i> Tentang Evaluasi</h4>
+                                            <p>Evaluasi ini mengukur seberapa baik metode FIS dalam mengklasifikasikan peluang kelulusan mahasiswa. Semakin tinggi nilai accuracy, precision, recall, dan F1-score, semakin baik performa model.</p>
+                                        </div>
+                                        <div class="interpretation-item">
+                                            <h4><i class="fas fa-chart-bar"></i> Metrik Evaluasi</h4>
+                                            <ul>
+                                                <li><strong>Accuracy:</strong> Proporsi prediksi yang benar dari total prediksi</li>
+                                                <li><strong>Precision:</strong> Proporsi prediksi positif yang benar</li>
+                                                <li><strong>Recall:</strong> Proporsi kasus positif yang berhasil diprediksi</li>
+                                                <li><strong>F1-Score:</strong> Rata-rata harmonik dari precision dan recall</li>
+                                            </ul>
+                                        </div>
+                                        <div class="interpretation-item">
+                                            <h4><i class="fas fa-exclamation-triangle"></i> Catatan Penting</h4>
+                                            <p>Hasil evaluasi ini menggunakan ground truth yang dibuat berdasarkan kriteria sederhana. Untuk evaluasi yang lebih akurat, diperlukan data historis kelulusan mahasiswa yang sebenarnya.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Results Narration Section -->
+                        <div class="evaluation-section" id="evaluationNarrationSection" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-comments"></i> Narasi Hasil Evaluasi</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="evaluationNarrationContent">
+                                        <!-- Content will be dynamically generated by JavaScript -->
                                     </div>
                                 </div>
                             </div>

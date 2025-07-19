@@ -89,6 +89,15 @@ class Router {
                     }
                 }
                 break;
+            case 'evaluation':
+                if (typeof initializeEvaluation === 'function') {
+                    // Only initialize if not already initialized
+                    if (!window.evaluationInitialized) {
+                        window.evaluationInitialized = true;
+                        initializeEvaluation();
+                    }
+                }
+                break;
             case 'comparison':
                 if (typeof initializeComparison === 'function') {
                     // Only initialize if not already initialized

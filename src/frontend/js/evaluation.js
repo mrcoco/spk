@@ -1,6 +1,34 @@
 // Evaluation.js - Script untuk halaman evaluasi FIS
-$(document).ready(function() {
-    console.log('🚀 Evaluation FIS page loaded');
+
+// Global variables
+let confusionMatrixChart = null;
+let metricsChart = null;
+let evaluationData = null;
+
+// Initialize evaluation for router
+function initializeEvaluation() {
+    console.log('🚀 Evaluation FIS section initialized');
+    
+    // Debug: Check if we can access the section
+    const section = $('#evaluationSection');
+    console.log('Evaluation section found:', section.length > 0);
+    console.log('Section display:', section.css('display'));
+    console.log('Section visibility:', section.css('visibility'));
+    console.log('Current hash:', window.location.hash);
+    
+    // Debug: Check submenu
+    const submenu = $('.submenu');
+    const hasSubmenu = $('.has-submenu');
+    console.log('Submenu found:', submenu.length);
+    console.log('Has submenu items:', hasSubmenu.length);
+    console.log('Submenu display:', submenu.css('display'));
+    
+    // Try to expand submenu if needed
+    if (hasSubmenu.length > 0 && submenu.css('display') === 'none') {
+        console.log('Attempting to expand submenu...');
+        hasSubmenu.addClass('expanded');
+        submenu.show();
+    }
     
     // Initialize evaluation components
     initializeEvaluationComponents();
@@ -13,12 +41,7 @@ $(document).ready(function() {
     
     // Load saved evaluations
     loadSavedEvaluations();
-});
-
-// Global variables
-let confusionMatrixChart = null;
-let metricsChart = null;
-let evaluationData = null;
+}
 
 // Initialize evaluation components
 function initializeEvaluationComponents() {
@@ -30,8 +53,8 @@ function initializeEvaluationComponents() {
     // Initialize tooltips
     initializeTooltips();
     
-    // Initialize saved evaluations section
-    initializeSavedEvaluationsSection();
+    // Initialize saved evaluations grid
+    initializeSavedEvaluationsGrid();
 }
 
 // Initialize event handlers
@@ -39,30 +62,33 @@ function initializeEvaluationHandlers() {
     console.log('Initializing evaluation handlers...');
     
     // Calculate button handler
-    $('#calculateBtn').click(function() {
+    $('#evaluationCalculateBtn').click(function() {
         console.log('Calculate button clicked');
         performEvaluation();
     });
     
     // Form input handlers
-    $('#testSize, #randomState').on('change', function() {
+    $('#evaluationTestSize, #evaluationRandomState').on('change', function() {
         console.log('Form input changed:', {
-            testSize: $('#testSize').val(),
-            randomState: $('#randomState').val()
+            testSize: $('#evaluationTestSize').val(),
+            randomState: $('#evaluationRandomState').val()
         });
     });
     
     // Save to database checkbox handler
-    $('#saveToDb').on('change', function() {
+    $('#evaluationSaveToDb').on('change', function() {
         const isChecked = $(this).is(':checked');
-        $('#evaluationName, #evaluationNotes').prop('disabled', !isChecked);
-        
-        if (isChecked) {
-            $('#evaluationName').val(`FIS_Evaluation_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}`);
-        } else {
-            $('#evaluationName').val('');
-            $('#evaluationNotes').val('');
-        }
+        console.log('Save to database:', isChecked);
+    });
+    
+    // Export button handler
+    $('#evaluationExportBtn').click(function() {
+        exportEvaluationData();
+    });
+    
+    // Print button handler
+    $('#evaluationPrintBtn').click(function() {
+        printEvaluationReport();
     });
 }
 
@@ -72,135 +98,6 @@ function loadInitialState() {
     
     // Show info message
     showInfoMessage('Silakan atur parameter evaluasi dan klik "Hitung Evaluasi FIS" untuk memulai evaluasi.');
-}
-
-// Load saved evaluations
-function loadSavedEvaluations() {
-    console.log('Loading saved evaluations...');
-    
-    $.ajax({
-        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY) + '/evaluations',
-        type: 'GET',
-        timeout: 10000,
-        success: function(response) {
-            console.log('Saved evaluations loaded:', response);
-            displaySavedEvaluations(response);
-        },
-        error: function(xhr, status, error) {
-            console.error('Error loading saved evaluations:', error);
-            showErrorMessage('Gagal memuat daftar evaluasi yang tersimpan');
-        }
-    });
-}
-
-// Initialize saved evaluations section
-function initializeSavedEvaluationsSection() {
-    // Add saved evaluations section to the page
-    const savedEvaluationsSection = `
-        <div class="evaluation-section">
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="fas fa-database"></i> Evaluasi yang Tersimpan</h3>
-                </div>
-                <div class="card-body">
-                    <div id="savedEvaluationsContainer">
-                        <div class="loading-placeholder">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            <p>Memuat evaluasi yang tersimpan...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Insert before interpretation section
-    $('.evaluation-section:last').before(savedEvaluationsSection);
-}
-
-// Display saved evaluations
-function displaySavedEvaluations(response) {
-    const container = $('#savedEvaluationsContainer');
-    
-    if (response.total === 0) {
-        container.html(`
-            <div class="empty-state">
-                <i class="fas fa-database"></i>
-                <h4>Tidak ada evaluasi yang tersimpan</h4>
-                <p>Evaluasi yang Anda lakukan akan disimpan di sini jika opsi "Simpan ke Database" diaktifkan.</p>
-            </div>
-        `);
-        return;
-    }
-    
-    let html = `
-        <div class="saved-evaluations-grid">
-            <div class="evaluations-summary">
-                <span class="summary-text">Total: ${response.total} evaluasi</span>
-            </div>
-    `;
-    
-    response.data.forEach(evaluation => {
-        const accuracyPercent = (evaluation.metrics.accuracy * 100).toFixed(2);
-        const f1Percent = (evaluation.metrics.f1_macro * 100).toFixed(2);
-        const createdAt = new Date(evaluation.created_at).toLocaleString('id-ID');
-        
-        html += `
-            <div class="evaluation-card" data-evaluation-id="${evaluation.id}">
-                <div class="evaluation-header">
-                    <h4>${evaluation.evaluation_name}</h4>
-                    <div class="evaluation-actions">
-                        <button class="btn btn-sm btn-primary load-evaluation" title="Muat Evaluasi">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger delete-evaluation" title="Hapus Evaluasi">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="evaluation-details">
-                    <div class="detail-row">
-                        <span class="detail-label">Accuracy:</span>
-                        <span class="detail-value ${getAccuracyClass(evaluation.metrics.accuracy)}">${accuracyPercent}%</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">F1-Score:</span>
-                        <span class="detail-value">${f1Percent}%</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Test Size:</span>
-                        <span class="detail-value">${(evaluation.test_size * 100).toFixed(0)}%</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Data:</span>
-                        <span class="detail-value">${evaluation.summary.total_data} total, ${evaluation.summary.test_data} test</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Waktu:</span>
-                        <span class="detail-value">${evaluation.summary.execution_time} detik</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Tanggal:</span>
-                        <span class="detail-value">${createdAt}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    html += '</div>';
-    container.html(html);
-    
-    // Add event handlers for evaluation cards
-    $('.load-evaluation').click(function() {
-        const evaluationId = $(this).closest('.evaluation-card').data('evaluation-id');
-        loadEvaluationById(evaluationId);
-    });
-    
-    $('.delete-evaluation').click(function() {
-        const evaluationId = $(this).closest('.evaluation-card').data('evaluation-id');
-        deleteEvaluationById(evaluationId);
-    });
 }
 
 // Load evaluation by ID
@@ -273,19 +170,19 @@ function clearEvaluationResults() {
     evaluationData = null;
     
     // Clear summary
-    $('#totalData, #trainingData, #testData, #executionTime').text('-');
+    $('#evaluationTotalData, #evaluationTrainingData, #evaluationTestData, #evaluationExecutionTime').text('-');
     
     // Clear confusion matrix
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
-            $(`#cm-${i}-${j}`).text('-').removeClass('correct-prediction incorrect-prediction');
+            $(`#evaluation-cm-${i}-${j}`).text('-').removeClass('correct-prediction incorrect-prediction');
         }
     }
     
     // Clear metrics
-    $('#accuracy, #precision-macro, #recall-macro, #f1-macro').text('-');
+    $('#evaluationAccuracy, #evaluationPrecisionMacro, #evaluationRecallMacro, #evaluationF1Macro').text('-');
     for (let i = 0; i < 3; i++) {
-        $(`#precision-${i}, #recall-${i}, #f1-${i}`).text('-');
+        $(`#evaluationPrecision${i}, #evaluationRecall${i}, #evaluationF1${i}`).text('-');
     }
     
     // Clear charts
@@ -308,11 +205,9 @@ function performEvaluation() {
     console.log('Starting FIS evaluation...');
     
     // Get parameters
-    const testSize = parseFloat($('#testSize').val()) / 100;
-    const randomState = parseInt($('#randomState').val());
-    const saveToDb = $('#saveToDb').is(':checked');
-    const evaluationName = $('#evaluationName').val();
-    const evaluationNotes = $('#evaluationNotes').val();
+    const testSize = parseFloat($('#evaluationTestSize').val()) / 100;
+    const randomState = parseInt($('#evaluationRandomState').val());
+    const saveToDb = $('#evaluationSaveToDb').is(':checked');
     
     // Validate parameters
     if (testSize < 0.1 || testSize > 0.5) {
@@ -325,11 +220,6 @@ function performEvaluation() {
         return;
     }
     
-    if (saveToDb && !evaluationName.trim()) {
-        showErrorMessage('Nama evaluasi harus diisi jika menyimpan ke database');
-        return;
-    }
-    
     // Show loading
     showLoading(true);
     
@@ -339,13 +229,6 @@ function performEvaluation() {
         random_state: randomState,
         save_to_db: saveToDb
     };
-    
-    if (saveToDb) {
-        requestData.evaluation_name = evaluationName;
-        if (evaluationNotes.trim()) {
-            requestData.evaluation_notes = evaluationNotes;
-        }
-    }
     
     console.log('Evaluation parameters:', requestData);
     
@@ -362,9 +245,12 @@ function performEvaluation() {
             displayEvaluationResults(response);
             
             if (response.saved_to_db) {
-                showSuccessMessage(`Evaluasi FIS berhasil diselesaikan dan disimpan dengan nama "${response.evaluation_name}"!`);
-                // Reload saved evaluations
-                loadSavedEvaluations();
+                showSuccessMessage(`Evaluasi FIS berhasil diselesaikan dan disimpan!`);
+                // Refresh saved evaluations grid
+                const grid = $("#evaluationSavedGrid").data("kendoGrid");
+                if (grid) {
+                    grid.dataSource.read();
+                }
             } else {
                 showSuccessMessage('Evaluasi FIS berhasil diselesaikan!');
             }
@@ -409,10 +295,10 @@ function displayEvaluationResults(data) {
 function updateSummary(summary) {
     console.log('Updating summary:', summary);
     
-    $('#totalData').text(summary.total_data);
-    $('#trainingData').text(summary.training_data);
-    $('#testData').text(summary.test_data);
-    $('#executionTime').text(summary.execution_time + ' detik');
+    $('#evaluationTotalData').text(summary.total_data);
+    $('#evaluationTrainingData').text(summary.training_data);
+    $('#evaluationTestData').text(summary.test_data);
+    $('#evaluationExecutionTime').text(summary.execution_time + ' detik');
 }
 
 // Update confusion matrix
@@ -422,7 +308,7 @@ function updateConfusionMatrix(confusionMatrix, kategoriMapping) {
     // Update table cells
     for (let i = 0; i < confusionMatrix.length; i++) {
         for (let j = 0; j < confusionMatrix[i].length; j++) {
-            const cellId = `cm-${i}-${j}`;
+            const cellId = `evaluation-cm-${i}-${j}`;
             const value = confusionMatrix[i][j];
             
             // Add color coding based on value
@@ -448,16 +334,16 @@ function updateMetrics(metrics) {
     console.log('Updating metrics:', metrics);
     
     // Overall metrics
-    $('#accuracy').text((metrics.accuracy * 100).toFixed(2) + '%');
-    $('#precision-macro').text((metrics.precision_macro * 100).toFixed(2) + '%');
-    $('#recall-macro').text((metrics.recall_macro * 100).toFixed(2) + '%');
-    $('#f1-macro').text((metrics.f1_macro * 100).toFixed(2) + '%');
+    $('#evaluationAccuracy').text((metrics.accuracy * 100).toFixed(2) + '%');
+    $('#evaluationPrecisionMacro').text((metrics.precision_macro * 100).toFixed(2) + '%');
+    $('#evaluationRecallMacro').text((metrics.recall_macro * 100).toFixed(2) + '%');
+    $('#evaluationF1Macro').text((metrics.f1_macro * 100).toFixed(2) + '%');
     
     // Per-class metrics
     for (let i = 0; i < 3; i++) {
-        $(`#precision-${i}`).text((metrics.precision[i] * 100).toFixed(2) + '%');
-        $(`#recall-${i}`).text((metrics.recall[i] * 100).toFixed(2) + '%');
-        $(`#f1-${i}`).text((metrics.f1[i] * 100).toFixed(2) + '%');
+        $(`#evaluationPrecision${i}`).text((metrics.precision[i] * 100).toFixed(2) + '%');
+        $(`#evaluationRecall${i}`).text((metrics.recall[i] * 100).toFixed(2) + '%');
+        $(`#evaluationF1${i}`).text((metrics.f1[i] * 100).toFixed(2) + '%');
     }
 }
 
@@ -466,7 +352,7 @@ function initializeCharts() {
     console.log('Initializing charts...');
     
     // Confusion Matrix Chart
-    const confusionCtx = document.getElementById('confusionMatrixChart');
+    const confusionCtx = document.getElementById('evaluationConfusionMatrixChart');
     if (confusionCtx) {
         confusionMatrixChart = new Chart(confusionCtx, {
             type: 'bar',
@@ -506,30 +392,47 @@ function initializeCharts() {
     }
     
     // Metrics Chart
-    const metricsCtx = document.getElementById('metricsChart');
+    const metricsCtx = document.getElementById('evaluationMetricsChart');
     if (metricsCtx) {
         metricsChart = new Chart(metricsCtx, {
-            type: 'radar',
+            type: 'bar',
             data: {
-                labels: ['Peluang Lulus Tinggi', 'Peluang Lulus Sedang', 'Peluang Lulus Kecil'],
-                datasets: []
+                labels: ['Accuracy', 'Precision', 'Recall', 'F1-Score'],
+                datasets: [{
+                    label: 'Overall Metrics',
+                    data: [0, 0, 0, 0],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                        'rgba(255, 99, 132, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Metrics Comparison'
-                    }
-                },
                 scales: {
-                    r: {
+                    y: {
                         beginAtZero: true,
                         max: 1,
                         ticks: {
-                            stepSize: 0.2
+                            callback: function(value) {
+                                return (value * 100).toFixed(0) + '%';
+                            }
                         }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
                     }
                 }
             }
@@ -560,29 +463,30 @@ function updateCharts(data) {
     // Update metrics chart
     if (metricsChart) {
         const metrics = data.metrics;
-        const labels = ['Peluang Lulus Tinggi', 'Peluang Lulus Sedang', 'Peluang Lulus Kecil'];
+        const labels = ['Accuracy', 'Precision', 'Recall', 'F1-Score'];
         
         metricsChart.data.datasets = [
             {
-                label: 'Precision',
-                data: metrics.precision,
-                borderColor: 'rgb(255, 99, 132)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderWidth: 2
-            },
-            {
-                label: 'Recall',
-                data: metrics.recall,
-                borderColor: 'rgb(54, 162, 235)',
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderWidth: 2
-            },
-            {
-                label: 'F1-Score',
-                data: metrics.f1,
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderWidth: 2
+                label: 'Overall Metrics',
+                data: [
+                    metrics.accuracy,
+                    metrics.precision_macro,
+                    metrics.recall_macro,
+                    metrics.f1_macro
+                ],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(255, 99, 132, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
             }
         ];
         
@@ -629,11 +533,9 @@ function getMetricTooltip(metricName) {
 // Show loading indicator
 function showLoading(show) {
     if (show) {
-        $('#loadingIndicator').show();
-        $('#calculateBtn').prop('disabled', true).text('Menghitung...');
+        $('#evaluationLoadingIndicator').show();
     } else {
-        $('#loadingIndicator').hide();
-        $('#calculateBtn').prop('disabled', false).text('Hitung Evaluasi FIS');
+        $('#evaluationLoadingIndicator').hide();
     }
 }
 
@@ -799,51 +701,127 @@ function generateEvaluationReport(data) {
     `;
 }
 
-// Add export and print buttons to the page
-$(document).ready(function() {
-    // Add save to database options
-    const saveOptions = `
-        <div class="form-group">
-            <label class="checkbox-label">
-                <input type="checkbox" id="saveToDb" checked>
-                <span class="checkmark"></span>
-                Simpan ke Database
-            </label>
-        </div>
-        <div class="form-group">
-            <label for="evaluationName">Nama Evaluasi:</label>
-            <input type="text" id="evaluationName" class="form-control" placeholder="Masukkan nama evaluasi">
-            <small class="form-text">Nama untuk mengidentifikasi evaluasi ini</small>
-        </div>
-        <div class="form-group">
-            <label for="evaluationNotes">Catatan Evaluasi:</label>
-            <textarea id="evaluationNotes" class="form-control" rows="3" placeholder="Tambahkan catatan tentang evaluasi ini (opsional)"></textarea>
-        </div>
-    `;
+// Initialize saved evaluations grid
+function initializeSavedEvaluationsGrid() {
+    console.log('Initializing saved evaluations grid...');
     
-    // Insert save options after random state
-    $('#randomState').closest('.form-group').after(saveOptions);
-    
-    // Add export button
-    const exportBtn = $(`
-        <button id="exportBtn" class="btn btn-secondary" style="margin-left: 10px;">
-            <i class="fas fa-download"></i>
-            Ekspor Data
-        </button>
-    `);
-    
-    // Add print button
-    const printBtn = $(`
-        <button id="printBtn" class="btn btn-secondary" style="margin-left: 10px;">
-            <i class="fas fa-print"></i>
-            Cetak Laporan
-        </button>
-    `);
-    
-    // Insert buttons after calculate button
-    $('#calculateBtn').after(exportBtn).after(printBtn);
-    
-    // Add event handlers
-    $('#exportBtn').click(exportEvaluationData);
-    $('#printBtn').click(printEvaluationReport);
-}); 
+    // Initialize Kendo UI Grid for saved evaluations
+    $("#evaluationSavedGrid").kendoGrid({
+        dataSource: {
+            transport: {
+                read: {
+                    url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY) + '/evaluations',
+                    dataType: "json",
+                    success: function(response) {
+                        console.log('Grid data loaded:', response);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Grid data error:', error);
+                    }
+                },
+                destroy: {
+                    url: function(data) {
+                        return CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY) + `/evaluations/${data.id}`;
+                    },
+                    type: "DELETE"
+                }
+            },
+            schema: {
+                data: "data",
+                total: "total",
+                model: {
+                    id: "id",
+                    fields: {
+                        id: { type: "number" },
+                        evaluation_name: { type: "string" },
+                        test_size: { type: "number" },
+                        random_state: { type: "number" },
+                        accuracy: { type: "number" },
+                        precision_macro: { type: "number" },
+                        recall_macro: { type: "number" },
+                        f1_macro: { type: "number" },
+                        total_data: { type: "number" },
+                        test_data: { type: "number" },
+                        execution_time: { type: "number" },
+                        created_at: { type: "date" }
+                    }
+                }
+            },
+            pageSize: 10
+        },
+        height: 400,
+        scrollable: true,
+        sortable: true,
+        filterable: true,
+        pageable: {
+            input: true,
+            numeric: false
+        },
+        columns: [
+            { field: "id", title: "ID", width: 60 },
+            { field: "evaluation_name", title: "Nama Evaluasi", width: 200 },
+            { 
+                field: "accuracy", 
+                title: "Accuracy", 
+                width: 100,
+                template: "#= (metrics.accuracy * 100).toFixed(2) + '%' #"
+            },
+            { 
+                field: "precision_macro", 
+                title: "Precision", 
+                width: 100,
+                template: "#= (metrics.precision_macro * 100).toFixed(2) + '%' #"
+            },
+            { 
+                field: "recall_macro", 
+                title: "Recall", 
+                width: 100,
+                template: "#= (metrics.recall_macro * 100).toFixed(2) + '%' #"
+            },
+            { 
+                field: "f1_macro", 
+                title: "F1-Score", 
+                width: 100,
+                template: "#= (metrics.f1_macro * 100).toFixed(2) + '%' #"
+            },
+            { 
+                field: "test_size", 
+                title: "Test Size", 
+                width: 100,
+                template: "#= (test_size * 100).toFixed(0) + '%' #"
+            },
+            { 
+                field: "total_data", 
+                title: "Total Data", 
+                width: 100,
+                template: "#= summary.total_data #"
+            },
+            { 
+                field: "execution_time", 
+                title: "Waktu (s)", 
+                width: 100,
+                template: "#= summary.execution_time #"
+            },
+            { 
+                field: "created_at", 
+                title: "Tanggal Dibuat", 
+                width: 150,
+                template: "#= kendo.toString(new Date(created_at), 'yyyy-MM-dd HH:mm') #"
+            },
+            {
+                command: [
+                    { name: "view", text: "View", click: viewEvaluation },
+                    { name: "destroy", text: "Delete" }
+                ],
+                width: 150
+            }
+        ]
+    });
+}
+
+// View evaluation function for grid
+function viewEvaluation(e) {
+    e.preventDefault();
+    const dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+    loadEvaluationById(dataItem.id);
+} 

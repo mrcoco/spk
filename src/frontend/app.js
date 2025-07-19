@@ -5,6 +5,7 @@ const routes = {
     '#nilai': 'nilaiSection',
     '#fis': 'fisSection',
     '#saw': 'sawSection',
+    '#evaluation': 'evaluationSection',
     '#comparison': 'comparisonSection'
 };
 
@@ -63,11 +64,15 @@ $(document).ready(function() {
         const $link = $(this);
         const $menuItem = $link.parent('.nav-item');
         
+        console.log('Menu clicked:', $link.attr('href'), 'Parent has submenu:', $menuItem.hasClass('has-submenu'));
+        
         if ($menuItem.hasClass('has-submenu')) {
             e.preventDefault();
             e.stopPropagation();
             $menuItem.toggleClass('expanded');
             $menuItem.find('.submenu').slideToggle(300);
+            
+            console.log('Submenu toggled. Expanded:', $menuItem.hasClass('expanded'), 'Submenu visible:', $menuItem.find('.submenu').is(':visible'));
             
             // Tutup submenu lain yang terbuka
             $('.has-submenu').not($menuItem).removeClass('expanded')
@@ -76,6 +81,8 @@ $(document).ready(function() {
             const route = $link.attr('href');
             if (route && route.startsWith('#')) {
                 e.preventDefault();
+                console.log('Navigating to route:', route);
+                
                 // Jika di mobile, tutup drawer setelah item menu diklik
                 if ($(window).width() <= 768) {
                     $('body').removeClass('drawer-expanded');
