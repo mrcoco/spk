@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Parsing Test</title>
+</head>
+<body>
+    <h1>Frontend Parsing Test</h1>
+    <div id="results"></div>
+
+    <script>
+        // Mock response data from backend
+        const mockResponseData = {
+            "evaluation_info": {
+                "name": "Enhanced Evaluation 2025-07-20 14:16:12",
+                "notes": null,
+                "total_data": 1604,
+                "execution_time": 0.2289128303527832,
+                "methods_used": [
+                    "cross_validation",
+                    "bootstrap",
+                    "ensemble"
+                ]
+            },
+            "results": {
+                "cross_validation": {
+                    "accuracy": 0.7001,
+                    "precision": 0.7796,
+                    "recall": 0.7001,
+                    "f1_score": 0.5979,
+                    "confidence_interval": [0.6768, 0.7295],
+                    "method": "cross_validation",
+                    "execution_time": 0.01349186897277832
+                },
+                "bootstrap": {
+                    "accuracy": 0.7155,
+                    "precision": 0.7885,
+                    "recall": 0.7155,
+                    "f1_score": 0.6171,
+                    "confidence_interval": [0.6660, 0.7591],
+                    "method": "bootstrap",
+                    "execution_time": 0.06785202026367188
+                },
+                "ensemble": {
+                    "accuracy": 0.7051,
+                    "precision": 0.7687,
+                    "recall": 0.7051,
+                    "f1_score": 0.61,
+                    "confidence_interval": [0.7051, 0.7051],
+                    "method": "ensemble",
+                    "execution_time": 0.01706385612487793
+                },
+                "aggregated": {
+                    "accuracy": 0.7062,
+                    "precision": 0.779,
+                    "recall": 0.7062,
+                    "f1_score": 0.6073,
+                    "method": "aggregated",
+                    "execution_time": 0.0
+                }
+            }
+        };
+
+        // Test parsing logic
+        function testParsing() {
+            const responseData = mockResponseData;
+            let results = {};
+
+            console.log('📊 Raw response:', responseData);
+
+            // Enhanced evaluation format parsing
+            if (responseData.results && responseData.results.aggregated) {
+                const aggregated = responseData.results.aggregated;
+                results = {
+                    accuracy: aggregated.accuracy || 0,
+                    precision: aggregated.precision || 0,
+                    recall: aggregated.recall || 0,
+                    f1_score: aggregated.f1_score || 0,
+                    execution_time: responseData.evaluation_info.execution_time || 0,
+                    data_processed: responseData.evaluation_info.total_data || 0,
+                    outliers_removed: 0,
+                    methods_used: responseData.evaluation_info.methods_used || ['enhanced'],
+                    evaluation_type: 'full',
+                    cross_validation: responseData.results.cross_validation || null,
+                    bootstrap: responseData.results.bootstrap || null,
+                    ensemble: responseData.results.ensemble || null
+                };
+            }
+
+            // Validate results to ensure no undefined values
+            results.accuracy = results.accuracy || 0;
+            results.precision = results.precision || 0;
+            results.recall = results.recall || 0;
+            results.f1_score = results.f1_score || 0;
+            results.execution_time = results.execution_time || 0;
+            results.data_processed = results.data_processed || 0;
+            results.outliers_removed = results.outliers_removed || 0;
+            results.methods_used = results.methods_used || ['evaluation'];
+            results.confidence_interval = results.confidence_interval || [0, 0];
+
+            console.log('✅ Parsed Results:', results);
+
+            // Display results
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <h2>Parsing Test Results:</h2>
+                <p><strong>Accuracy:</strong> ${(results.accuracy * 100).toFixed(1)}%</p>
+                <p><strong>Precision:</strong> ${(results.precision * 100).toFixed(1)}%</p>
+                <p><strong>Recall:</strong> ${(results.recall * 100).toFixed(1)}%</p>
+                <p><strong>F1-Score:</strong> ${(results.f1_score * 100).toFixed(1)}%</p>
+                <p><strong>Execution Time:</strong> ${results.execution_time}s</p>
+                <p><strong>Data Processed:</strong> ${results.data_processed} records</p>
+                <p><strong>Methods Used:</strong> ${results.methods_used.join(', ')}</p>
+            `;
+
+            return results;
+        }
+
+        // Run test
+        const testResults = testParsing();
+        console.log('Final Test Results:', testResults);
+    </script>
+</body>
+</html> 

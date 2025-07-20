@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Fuzzy Evaluation - SPK System</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        .evaluation-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .parameter-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .parameter-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .result-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .metric-badge {
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 8px 16px;
+            margin: 5px;
+            display: inline-block;
+        }
+        
+        .progress-custom {
+            height: 25px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .progress-custom .progress-bar {
+            border-radius: 15px;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .loading-spinner {
+            display: none;
+        }
+        
+        .btn-evaluate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-evaluate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .alert-custom {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .table-custom {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .table-custom th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        
+        /* Narrative Analysis Styles */
+        .narrative-text {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        
+        .narrative-text h6 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .narrative-text p {
+            margin-bottom: 10px;
+            color: #6c757d;
+        }
+        
+        .narrative-text .highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .narrative-text .metric-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .narrative-text .positive {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .narrative-text .warning {
+            color: #ffc107;
+            font-weight: 600;
+        }
+        
+        .narrative-text .info {
+            color: #17a2b8;
+            font-weight: 600;
+        }
+        
+        #narrativeSection .parameter-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #dee2e6;
+        }
+        
+        #narrativeSection h5 {
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-brain"></i> SPK System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="mahasiswa.html">
+                            <i class="fas fa-users"></i> Mahasiswa
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="klasifikasi.html">
+                            <i class="fas fa-chart-pie"></i> Klasifikasi
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="enhanced_evaluation.html">
+                            <i class="fas fa-rocket"></i> Enhanced Evaluation
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="evaluation-card text-white p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h1 class="mb-2">
+                                <i class="fas fa-rocket"></i> Enhanced Fuzzy Evaluation
+                            </h1>
+                            <p class="mb-0">
+                                Sistem evaluasi fuzzy yang ditingkatkan dengan multiple methods, cross-validation, 
+                                dan ensemble techniques untuk akurasi yang lebih tinggi.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="d-flex justify-content-end">
+                                <div class="me-3">
+                                    <h4 class="mb-0" id="totalData">0</h4>
+                                    <small>Total Data</small>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0" id="accuracyScore">0%</h4>
+                                    <small>Accuracy</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="parameter-card p-4">
+                    <h3 class="mb-3">
+                        <i class="fas fa-cogs"></i> Konfigurasi Evaluasi
+                    </h3>
+                    
+                    <div class="row">
+                        <!-- Evaluation Type -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-list"></i> Tipe Evaluasi
+                            </label>
+                            <select class="form-select" id="evaluationType">
+                                <option value="quick">Quick Enhanced (Cepat)</option>
+                                <option value="full">Full Enhanced (Lengkap)</option>
+                                <option value="cross_validation">Cross-Validation Only</option>
+                                <option value="bootstrap">Bootstrap Only</option>
+                                <option value="ensemble">Ensemble Only</option>
+                            </select>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> Pilih tipe evaluasi sesuai kebutuhan. 
+                                Full Enhanced memberikan hasil yang lebih komprehensif.
+                            </small>
+                        </div>
+                        
+                        <!-- Cross Validation Folds -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-layer-group"></i> Cross-Validation Folds
+                            </label>
+                            <input type="number" class="form-control" id="cvFolds" value="5" min="3" max="10">
+                        </div>
+                        
+                        <!-- Bootstrap Samples -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-random"></i> Bootstrap Samples
+                            </label>
+                            <input type="number" class="form-control" id="bootstrapSamples" value="20" min="10" max="100">
+                        </div>
+                        
+                        <!-- Ensemble Size -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-cubes"></i> Ensemble Size
+                            </label>
+                            <input type="number" class="form-control" id="ensembleSize" value="10" min="5" max="50">
+                        </div>
+                        
+                        <!-- Data Preprocessing -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-filter"></i> Data Preprocessing
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="enablePreprocessing" checked>
+                                <label class="form-check-label" for="enablePreprocessing">
+                                    Enable Outlier Removal
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Rule Weighting -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-weight-hanging"></i> Rule Weighting
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="enableRuleWeighting" checked>
+                                <label class="form-check-label" for="enableRuleWeighting">
+                                    Enable Adaptive Weighting
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button class="btn btn-evaluate text-white me-2" id="runEvaluation">
+                                <i class="fas fa-play"></i> Jalankan Evaluasi
+                            </button>
+                            <button class="btn btn-outline-secondary" id="resetConfig">
+                                <i class="fas fa-undo"></i> Reset Konfigurasi
+                            </button>
+                            <button class="btn btn-outline-info" id="loadSampleData">
+                                <i class="fas fa-download"></i> Load Sample Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Section -->
+        <div class="row mb-4" id="loadingSection" style="display: none;">
+            <div class="col-12">
+                <div class="parameter-card p-4 text-center">
+                    <div class="loading-spinner">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h4>Menjalankan Enhanced Evaluation...</h4>
+                        <p class="text-muted" id="loadingMessage">Memproses data dan menjalankan evaluasi...</p>
+                        <div class="progress progress-custom">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="row mb-4" id="resultsSection" style="display: none;">
+            <!-- Main Results -->
+            <div class="col-md-8 mb-4">
+                <div class="result-card p-4">
+                    <h3 class="mb-3">
+                        <i class="fas fa-chart-line"></i> Hasil Evaluasi
+                    </h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="metric-badge">
+                                <h4 class="mb-1" id="finalAccuracy">0%</h4>
+                                <small>Accuracy</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="metric-badge">
+                                <h4 class="mb-1" id="finalPrecision">0%</h4>
+                                <small>Precision</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="metric-badge">
+                                <h4 class="mb-1" id="finalRecall">0%</h4>
+                                <small>Recall</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="metric-badge">
+                                <h4 class="mb-1" id="finalF1Score">0%</h4>
+                                <small>F1-Score</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h5>Detail Metrik:</h5>
+                        <div id="detailedMetrics"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Performance Metrics -->
+            <div class="col-md-4 mb-4">
+                <div class="parameter-card p-4">
+                    <h4 class="mb-3">
+                        <i class="fas fa-tachometer-alt"></i> Performance
+                    </h4>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Execution Time</label>
+                        <h5 id="executionTime">0.00s</h5>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Data Processed</label>
+                        <h5 id="dataProcessed">0 records</h5>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Outliers Removed</label>
+                        <h5 id="outliersRemoved">0 records</h5>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Methods Used</label>
+                        <div id="methodsUsed"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="row mb-4" id="chartsSection" style="display: none;">
+            <!-- Accuracy Comparison Chart -->
+            <div class="col-md-6 mb-4">
+                <div class="chart-container">
+                    <h4 class="mb-3">
+                        <i class="fas fa-chart-bar"></i> Perbandingan Akurasi
+                    </h4>
+                    <canvas id="accuracyChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Confusion Matrix -->
+            <div class="col-md-6 mb-4">
+                <div class="chart-container">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0">
+                            <i class="fas fa-table"></i> Confusion Matrix
+                        </h4>
+                        <div class="btn-group btn-group-sm" role="group" id="confusionMatrixToggle">
+                            <input type="radio" class="btn-check" name="confusionMatrixType" id="heatmap" value="heatmap" checked>
+                            <label class="btn btn-outline-primary" for="heatmap">
+                                <i class="fas fa-table"></i> Table
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="confusionMatrixType" id="bar" value="bar">
+                            <label class="btn btn-outline-primary" for="bar">
+                                <i class="fas fa-chart-bar"></i> Bar
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="confusionMatrixType" id="doughnut" value="doughnut">
+                            <label class="btn btn-outline-primary" for="doughnut">
+                                <i class="fas fa-circle"></i> Doughnut
+                            </label>
+                        </div>
+                    </div>
+                    <canvas id="confusionMatrixChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Results Table -->
+        <div class="row mb-4" id="tableSection" style="display: none;">
+            <div class="col-12">
+                <div class="parameter-card p-4">
+                    <h4 class="mb-3">
+                        <i class="fas fa-table"></i> Hasil Detail Evaluasi
+                    </h4>
+                    <div class="table-responsive">
+                        <table class="table table-custom" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>Method</th>
+                                    <th>Accuracy</th>
+                                    <th>Precision</th>
+                                    <th>Recall</th>
+                                    <th>F1-Score</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations Section -->
+        <div class="row mb-4" id="recommendationsSection" style="display: none;">
+            <div class="col-12">
+                <div class="parameter-card p-4">
+                    <h4 class="mb-3">
+                        <i class="fas fa-lightbulb"></i> Rekomendasi
+                    </h4>
+                    <div id="recommendations"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Narrative Analysis Section -->
+        <div class="row mb-4" id="narrativeSection" style="display: none;">
+            <div class="col-12">
+                <div class="parameter-card p-4">
+                    <h4 class="mb-3">
+                        <i class="fas fa-file-alt"></i> Analisis Hasil Evaluasi
+                    </h4>
+                    <div id="narrativeAnalysis">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <h5 class="text-primary">
+                                        <i class="fas fa-chart-line"></i> Ringkasan Performa
+                                    </h5>
+                                    <div id="performanceSummary" class="narrative-text">
+                                        <!-- Performance summary will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <h5 class="text-success">
+                                        <i class="fas fa-check-circle"></i> Kekuatan Model
+                                    </h5>
+                                    <div id="modelStrengths" class="narrative-text">
+                                        <!-- Model strengths will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <h5 class="text-warning">
+                                        <i class="fas fa-exclamation-triangle"></i> Area Perbaikan
+                                    </h5>
+                                    <div id="improvementAreas" class="narrative-text">
+                                        <!-- Improvement areas will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <h5 class="text-info">
+                                        <i class="fas fa-lightbulb"></i> Interpretasi Praktis
+                                    </h5>
+                                    <div id="practicalInterpretation" class="narrative-text">
+                                        <!-- Practical interpretation will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <h5 class="text-primary">
+                                        <i class="fas fa-table"></i> Analisis Confusion Matrix
+                                    </h5>
+                                    <div id="confusionMatrixAnalysis" class="narrative-text">
+                                        <!-- Confusion matrix analysis will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="mb-4">
+                                    <h5 class="text-dark">
+                                        <i class="fas fa-cogs"></i> Metodologi Evaluasi
+                                    </h5>
+                                    <div id="evaluationMethodology" class="narrative-text">
+                                        <!-- Evaluation methodology will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <h5 class="text-secondary">
+                                        <i class="fas fa-clipboard-list"></i> Kesimpulan
+                                    </h5>
+                                    <div id="evaluationConclusion" class="narrative-text">
+                                        <!-- Evaluation conclusion will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="row mb-4" id="exportSection" style="display: none;">
+            <div class="col-12">
+                <div class="parameter-card p-4">
+                    <h4 class="mb-3">
+                        <i class="fas fa-download"></i> Export Results
+                    </h4>
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-primary w-100" id="exportPDF">
+                                <i class="fas fa-file-pdf"></i> Export PDF
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-success w-100" id="exportExcel">
+                                <i class="fas fa-file-excel"></i> Export Excel
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-info w-100" id="exportJSON">
+                                <i class="fas fa-file-code"></i> Export JSON
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-warning w-100" id="shareResults">
+                                <i class="fas fa-share"></i> Share Results
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <div class="container">
+            <p class="mb-0">
+                <i class="fas fa-copyright"></i> 2025 SPK System - Enhanced Fuzzy Evaluation
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Standalone config for enhanced evaluation -->
+    <script>
+        // Standalone configuration for enhanced evaluation
+        window.CONFIG = {
+            API_BASE_URL: 'http://localhost:8000',
+            API_PREFIX: '/api',
+            API_VERSION: 'v1',
+            APP_NAME: 'SPK Monitoring Masa Studi',
+            ENVIRONMENT: 'development',
+            DEBUG: true,
+            getApiUrl: function(endpoint) {
+                return this.API_BASE_URL + endpoint;
+            }
+        };
+        console.log('✅ Standalone config loaded for enhanced evaluation');
+    </script>
+    
+    <!-- Load enhanced evaluation after config is ready -->
+    <script src="js/enhanced_evaluation.js"></script>
+    
+    <script>
+        // Initialize enhanced evaluation when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Enhanced Evaluation Page Loaded');
+            
+            // Wait for config to be ready
+            const checkConfig = setInterval(() => {
+                if (window.CONFIG && window.CONFIG.API_BASE_URL) {
+                    clearInterval(checkConfig);
+                    console.log('✅ Config loaded, initializing Enhanced Evaluation');
+                    
+                    // Initialize the enhanced evaluation system
+                    if (window.EnhancedEvaluation) {
+                        console.log('✅ EnhancedEvaluation module found');
+                        window.EnhancedEvaluation.init();
+                        
+                        // Test if button exists and add debug listener
+                        const runButton = document.getElementById('runEvaluation');
+                        if (runButton) {
+                            console.log('✅ Run Evaluation button found');
+                            // Add additional debug listener
+                            runButton.addEventListener('click', function() {
+                                console.log('🔍 Run Evaluation button clicked!');
+                                console.log('🔍 EnhancedEvaluation instance:', window.EnhancedEvaluation);
+                                console.log('🔍 Config:', window.CONFIG);
+                            });
+                        } else {
+                            console.error('❌ Run Evaluation button not found');
+                        }
+                    } else {
+                        console.error('❌ EnhancedEvaluation module not found');
+                    }
+                }
+            }, 100);
+            
+            // Timeout after 5 seconds
+            setTimeout(() => {
+                clearInterval(checkConfig);
+                if (!window.CONFIG) {
+                    console.error('❌ Config loading timeout');
+                }
+            }, 5000);
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Click Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+        #log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Button Click Test</h1>
+    
+    <button id="testButton">Test Button Click</button>
+    <button id="apiTestButton">Test API Call</button>
+    
+    <div id="log"></div>
+    
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            console.log(message);
+        }
+        
+        // Test basic button click
+        document.getElementById('testButton').addEventListener('click', function() {
+            log('✅ Test button clicked!');
+        });
+        
+        // Test API call
+        document.getElementById('apiTestButton').addEventListener('click', async function() {
+            log('🔍 Testing API call...');
+            try {
+                const response = await fetch('http://localhost:8000/api/fuzzy/evaluate-quick', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        enable_preprocessing: true,
+                        enable_rule_weighting: true
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ API call successful!');
+                    log(`📊 Accuracy: ${(data.results.accuracy * 100).toFixed(1)}%`);
+                } else {
+                    log(`❌ API call failed: ${response.status}`);
+                }
+            } catch (error) {
+                log(`❌ API call error: ${error.message}`);
+            }
+        });
+        
+        log('🚀 Test page loaded');
+        log('✅ Event listeners attached');
+    </script>
+</body>
+</html> 

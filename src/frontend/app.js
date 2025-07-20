@@ -6,6 +6,7 @@ const routes = {
     '#fis': 'fisSection',
     '#saw': 'sawSection',
     '#evaluation': 'evaluationSection',
+    '#enhanced-evaluation': 'enhancedEvaluationSection',
     '#comparison': 'comparisonSection'
 };
 

@@ -98,6 +98,15 @@ class Router {
                     }
                 }
                 break;
+            case 'enhanced-evaluation':
+                if (typeof window.EnhancedEvaluation !== 'undefined') {
+                    // Only initialize if not already initialized
+                    if (!window.enhancedEvaluationInitialized) {
+                        window.enhancedEvaluationInitialized = true;
+                        window.EnhancedEvaluation.init();
+                    }
+                }
+                break;
             case 'comparison':
                 if (typeof initializeComparison === 'function') {
                     // Only initialize if not already initialized
