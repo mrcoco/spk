@@ -312,7 +312,7 @@ Week 9-12: Expert-based validation
 
 ---
 
-**Resume ini dibuat pada: 2025-07-19**
+**Resume ini dibuat pada: 2024-07-19**
 **Versi: 1.0**
 **Status: Final**
 **Disetujui oleh: Tim Evaluasi FIS**

@@ -103,7 +103,7 @@ $.ajax({
             "ipk_membership": 0.5,
             "sks_membership": 0.15,
             "nilai_dk_membership": 0.9275,
-            "updated_at": "2025-07-17T15:12:53.428351"
+            "updated_at": "2024-07-17T15:12:53.428351"
         }
     ],
     "total": 1604

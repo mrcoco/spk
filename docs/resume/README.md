@@ -136,12 +136,12 @@ Directory ini berisi resume dan ringkasan proyek untuk project managers dan tech
 
 ### **Documentation Updates**
 - **Version**: 1.0
-- **Last Updated**: 2025-07-19
+- **Last Updated**: 2024-07-19
 - **Next Review**: 2025-08-19
 - **Maintainer**: Project Documentation Team
 
 ---
 
-**Resume Documentation dibuat pada: 2025-07-19**
+**Resume Documentation dibuat pada: 2024-07-19**
 **Versi: 1.0**
 **Status: Complete** 

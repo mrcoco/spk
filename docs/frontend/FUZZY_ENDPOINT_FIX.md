@@ -91,7 +91,7 @@ dataSource: {
             "ipk_membership": 0.8,
             "sks_membership": 0.9,
             "nilai_dk_membership": 0.7,
-            "updated_at": "2025-07-17T10:30:00"
+            "updated_at": "2024-07-17T10:30:00"
         }
     ]
 }

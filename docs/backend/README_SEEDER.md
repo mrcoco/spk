@@ -294,9 +294,9 @@ docker ps | grep postgres
 
 ## 📝 Changelog
 
-- **2025-07-17**: Initial seeder dengan data sample
-- **2025-07-17**: Integrasi seeder ke dalam migration database
-- **2025-07-17**: Penambahan script `run_seeder.py` untuk kemudahan penggunaan
-- **2025-07-17**: Update seeder dengan data real mahasiswa dan nilai
-- **2025-07-17**: Implementasi logika distribusi nilai berdasarkan IPK real
-- **2025-07-17**: Update dokumentasi untuk mencerminkan data real 
+- **2024-07-17**: Initial seeder dengan data sample
+- **2024-07-17**: Integrasi seeder ke dalam migration database
+- **2024-07-17**: Penambahan script `run_seeder.py` untuk kemudahan penggunaan
+- **2024-07-17**: Update seeder dengan data real mahasiswa dan nilai
+- **2024-07-17**: Implementasi logika distribusi nilai berdasarkan IPK real
+- **2024-07-17**: Update dokumentasi untuk mencerminkan data real 

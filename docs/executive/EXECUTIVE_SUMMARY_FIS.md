@@ -222,7 +222,7 @@ Fase 4: Evaluation (4-5 bulan)
 
 ---
 
-**Executive Summary dibuat pada: 2025-07-19**
+**Executive Summary dibuat pada: 2024-07-19**
 **Versi: 1.0**
 **Status: Ready for Review**
 **Disetujui oleh: Tim Evaluasi FIS**
