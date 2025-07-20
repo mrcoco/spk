@@ -1,170 +1,241 @@
-# Backend Tools
+# 🛠️ BACKEND TOOLS DIRECTORY
 
-Directory ini berisi file-file utility dan tools yang tidak terkait langsung dengan sistem SPK utama, tetapi berguna untuk development, testing, dan maintenance.
-
-## 📁 Struktur File
-
-### 🔧 Database Tools
-- **Restore Scripts** - Script untuk restore database
-- **Test Scripts** - Script untuk testing koneksi dan operasi database
-- **Monitor Scripts** - Script untuk monitoring proses restore
-
-### 🧠 FIS (Fuzzy Inference System) Tools
-- **test_fis_comparison.py** - Membandingkan implementasi FIS project dengan notebook
-- **fix_fis_implementation.py** - Memperbaiki implementasi FIS untuk NIM spesifik
-- **batch_update_fis.py** - Batch update semua mahasiswa dengan FIS yang diperbaiki
-
-### 🧪 Testing Tools
-- **Environment Tests** - Script untuk testing environment variables
-- **Configuration Tests** - Script untuk testing konfigurasi aplikasi
-- **Docker Tests** - Script untuk testing Docker build dan deployment
-
-### 🌱 Seeder Tools
-- **Data Seeders** - Script untuk seeding data awal ke database
-
-### 🐳 Docker Tools
-- **Docker Scripts** - Script untuk manajemen Docker container
-
-## 📋 Daftar File
-
-### Database Management
-- `backup-public.sql` - File backup database utama
-- `restore_database.py` - Script restore database utama
-- `restore_database_by_table.py` - Script restore database per-tabel
-- `restore_database_container.py` - Script restore database dari container
-- `restore_database.sh` - Shell script untuk restore database
-- `restore_database_by_table.sh` - Shell script untuk restore per-tabel
-- `restore_database_docker.sh` - Shell script untuk restore dari Docker
-- `restore_from_container.sh` - Shell script untuk restore dari container
-- `restore_menu.sh` - Menu interaktif untuk restore database
-- `monitor_restore.py` - Script untuk monitoring progress restore
-
-### Database Testing
-- `test_db_connection.py` - Test koneksi database
-- `test_db_operations.sh` - Test operasi database
-- `test_restore_by_table.py` - Test restore per-tabel
-- `test_restore_by_table.sh` - Shell script test restore per-tabel
-- `test_restore_config.py` - Test konfigurasi restore
-
-### Environment Testing
-- `fix_env.py` - Script untuk memperbaiki environment variables
-- `simple_env_test.py` - Test sederhana environment variables
-- `test_env_loading.py` - Test loading environment variables
-- `test_config.py` - Test konfigurasi aplikasi
-- `validate_env.sh` - Validasi environment variables
-
-### Docker Testing
-- `test_docker_build.sh` - Test Docker build
-- `docker.sh` - Script manajemen Docker
-
-### Data Seeding
-- `seeders.py` - Script seeder data awal
-- `run_seeder.py` - Script untuk menjalankan seeder
-
-## 🚀 Cara Penggunaan
-
-### Database Backup & Restore
-```bash
-# Restore database dengan menu interaktif
-./tools/restore_menu.sh
-
-# Restore database per-tabel (recommended untuk data besar)
-./tools/restore_by_table.sh
-
-# Test restore per-tabel
-./tools/test_restore_by_table.sh
-
-# Backup database (jika diperlukan)
-docker exec spk-backend-1 pg_dump -h db -U spk_user -d spk_db > tools/backup-$(date +%Y%m%d).sql
-```
-
-### Environment Testing
-```bash
-# Test environment variables
-python tools/test_env_loading.py
-
-# Validasi environment
-./tools/validate_env.sh
-
-# Test konfigurasi
-python tools/test_config.py
-```
-
-### Docker Testing
-```bash
-# Test Docker build
-./tools/test_docker_build.sh
-
-# Manajemen Docker
-./tools/docker.sh
-```
-
-### Data Seeding
-```bash
-# Jalankan seeder data
-python tools/run_seeder.py
-```
-
-### FIS Implementation
-```bash
-# Test perbandingan dengan notebook
-python tools/test_fis_comparison.py
-
-# Fix implementasi untuk NIM spesifik
-python tools/fix_fis_implementation.py
-
-# Batch update semua mahasiswa
-python tools/batch_update_fis.py
-```
-
-## 📝 Catatan Penting
-
-1. **Backup Database**: 
-   - File `backup-public.sql` adalah backup database utama
-   - Selalu backup database sebelum melakukan restore
-   - Backup file disimpan di directory `tools/`
-
-2. **Environment Variables**: Pastikan environment variables sudah dikonfigurasi dengan benar
-3. **Docker Container**: Pastikan container berjalan sebelum menjalankan script restore
-4. **Permissions**: Pastikan script memiliki permission execute yang tepat
-5. **File Size**: File backup cukup besar (~30MB), pastikan ada ruang disk yang cukup
-
-## 🔧 Troubleshooting
-
-### Error Koneksi Database
-```bash
-# Test koneksi database
-python tools/test_db_connection.py
-
-# Cek environment variables
-./tools/validate_env.sh
-```
-
-### Error Restore Database
-```bash
-# Monitor progress restore
-python tools/monitor_restore.py monitor
-
-# Test restore dengan database kosong
-./tools/test_restore_by_table.sh
-```
-
-### Error Docker
-```bash
-# Test Docker build
-./tools/test_docker_build.sh
-
-# Restart container
-./tools/docker.sh restart
-```
-
-## 📚 Dokumentasi Terkait
-
-- **[Database Restore Guide](../../docs/database/README_DATABASE_RESTORE.md)** - Panduan lengkap restore database
-- **[Environment Configuration](../../docs/deployment/README_ENVIRONMENT.md)** - Konfigurasi environment variables
-- **[FIS Implementation Fix](../../docs/backend/FIS_IMPLEMENTATION_FIX.md)** - Dokumentasi perbaikan implementasi FIS
-- **[Troubleshooting Guide](../../docs/troubleshooting/README.md)** - Panduan troubleshooting
+## 📅 **Tanggal**: 2025-07-20
+## 🎯 **Tujuan**: Development tools, testing scripts, dan utility untuk backend
+## 🔄 **Update**: File dari root directory tools/ telah dipindahkan ke sini
 
 ---
 
-**Note**: Semua script di directory ini adalah utility tools dan tidak terkait langsung dengan sistem SPK utama. Script ini berguna untuk development, testing, dan maintenance aplikasi. 
+## 📋 **DAFTAR FILE TOOLS**
+
+### **🧪 Testing Files:**
+
+#### **A. Enhanced Evaluation Testing:**
+- `test_enhanced_evaluation.py` (13KB) - Testing enhanced evaluation functionality
+- `test_enhanced_evaluation_docker.py` (13KB) - Testing enhanced evaluation dalam Docker environment
+
+#### **B. Fuzzy Logic Testing:**
+- `test_fuzzy_simple.py` (12KB) - Simple fuzzy logic testing
+- `test_fuzzy_corrected.py` (6.2KB) - Corrected fuzzy logic testing
+- `test_fuzzy_final.py` (6.2KB) - Final fuzzy logic testing
+- `test_fuzzy_fixed.py` (6.1KB) - Fixed fuzzy logic testing
+- `test_fuzzy_comparison.py` (4.0KB) - Fuzzy logic comparison testing
+- `test_fis_comparison.py` (9.3KB) - FIS comparison testing
+
+#### **C. NIM Specific Testing:**
+- `test_nim_19812141079.py` (7.9KB) - Testing untuk NIM spesifik
+- `test_nim_19812141079_real_data.py` (9.9KB) - Testing dengan data real untuk NIM spesifik
+
+#### **D. Implementation Testing:**
+- `test_new_implementation.py` (3.7KB) - Testing implementasi baru
+- `test_fuzzy_difference.py` (11KB) - Analisis perbedaan fuzzy logic
+
+### **🔧 Fix & Implementation Files:**
+
+#### **A. Fuzzy Logic Fixes:**
+- `fix_fuzzy_implementation.py` (15KB) - Perbaikan implementasi fuzzy logic
+- `fix_fis_implementation.py` (13KB) - Perbaikan implementasi FIS
+- `replace_fuzzy_implementation.py` (4.3KB) - Replace implementasi fuzzy logic
+
+#### **B. Batch Operations:**
+- `batch_update_fis.py` (7.0KB) - Batch update untuk FIS
+
+### **🗄️ Database Tools:**
+
+#### **A. Restore Scripts:**
+- `restore_database.py` (11KB) - Restore database script
+- `restore_database.sh` (7.7KB) - Restore database shell script
+- `restore_database_docker.sh` (6.4KB) - Restore database dalam Docker
+- `restore_database_container.py` (16KB) - Restore database dari container
+- `restore_database_by_table.py` (14KB) - Restore database per table
+- `restore_by_table.sh` (6.9KB) - Restore per table shell script
+- `restore_from_container.sh` (6.1KB) - Restore dari container shell script
+
+#### **B. Database Testing:**
+- `test_db_connection.py` (8.6KB) - Testing koneksi database
+- `test_db_operations.sh` (8.7KB) - Testing operasi database
+- `test_restore_by_table.py` (7.2KB) - Testing restore per table
+- `test_restore_by_table.sh` (5.8KB) - Testing restore per table shell script
+
+#### **C. Database Monitoring:**
+- `monitor_restore.py` (6.4KB) - Monitoring restore process
+
+#### **D. Database Data:**
+- `backup-public.sql` (30MB) - Backup database file
+
+### **🌐 Environment & Configuration:**
+
+#### **A. Environment Testing:**
+- `test_env_loading.py` (5.0KB) - Testing environment loading
+- `simple_env_test.py` (3.1KB) - Simple environment testing
+- `test_restore_config.py` (5.7KB) - Testing restore configuration
+- `test_config.py` (6.0KB) - Testing configuration
+
+#### **B. Environment Fixes:**
+- `fix_env.py` (7.0KB) - Fix environment issues
+- `validate_env.sh` (9.6KB) - Validate environment shell script
+
+### **🐳 Docker Tools:**
+- `docker.sh` (1.8KB) - Docker utility script
+- `test_docker_build.sh` (4.2KB) - Testing Docker build
+
+### **🌱 Seeding Tools:**
+- `seeders.py` (9.8KB) - Database seeding script
+- `run_seeder.py` (566B) - Run seeder script
+
+### **🔧 Menu Tools:**
+- `restore_menu.sh` (8.6KB) - Restore menu shell script
+
+---
+
+## 🎯 **KATEGORI FILE**
+
+### **🧪 Testing Files (12 files):**
+- Enhanced evaluation testing
+- Fuzzy logic testing
+- NIM specific testing
+- Implementation testing
+
+### **🔧 Fix & Implementation Files (4 files):**
+- Fuzzy logic fixes
+- FIS implementation fixes
+- Batch operations
+
+### **🗄️ Database Tools (15 files):**
+- Restore scripts
+- Database testing
+- Database monitoring
+- Database data
+
+### **🌐 Environment & Configuration (6 files):**
+- Environment testing
+- Environment fixes
+- Configuration testing
+
+### **🐳 Docker Tools (2 files):**
+- Docker utilities
+- Docker testing
+
+### **🌱 Seeding Tools (2 files):**
+- Database seeding
+- Seeder runner
+
+### **🔧 Menu Tools (1 file):**
+- Menu restoration
+
+---
+
+## 🚀 **PENGGUNAAN**
+
+### **1. Testing Enhanced Evaluation:**
+```bash
+# Test enhanced evaluation
+python src/backend/tools/test_enhanced_evaluation.py
+
+# Test dalam Docker environment
+python src/backend/tools/test_enhanced_evaluation_docker.py
+```
+
+### **2. Testing Fuzzy Logic:**
+```bash
+# Test fuzzy logic implementation
+python src/backend/tools/test_fuzzy_simple.py
+
+# Test fuzzy logic comparison
+python src/backend/tools/test_fuzzy_comparison.py
+```
+
+### **3. Database Operations:**
+```bash
+# Restore database
+python src/backend/tools/restore_database.py
+
+# Test database connection
+python src/backend/tools/test_db_connection.py
+```
+
+### **4. Environment Testing:**
+```bash
+# Test environment loading
+python src/backend/tools/test_env_loading.py
+
+# Validate environment
+bash src/backend/tools/validate_env.sh
+```
+
+---
+
+## 📝 **NOTES**
+
+### **A. File Organization:**
+- ✅ **Testing files** - Untuk testing berbagai komponen sistem
+- ✅ **Fix files** - Untuk memperbaiki implementasi
+- ✅ **Database tools** - Untuk operasi database
+- ✅ **Environment tools** - Untuk testing dan fix environment
+- ✅ **Docker tools** - Untuk operasi Docker
+- ✅ **Seeding tools** - Untuk populate database
+
+### **B. Usage Guidelines:**
+- **Testing**: Jalankan test files untuk validasi sistem
+- **Fixes**: Gunakan fix files untuk memperbaiki masalah
+- **Database**: Gunakan database tools untuk backup/restore
+- **Environment**: Gunakan environment tools untuk troubleshooting
+
+### **C. Maintenance:**
+- **Regular testing** - Jalankan test files secara berkala
+- **Backup database** - Gunakan restore scripts untuk backup
+- **Environment validation** - Validate environment sebelum deployment
+
+---
+
+## 🔧 **CLEANUP RECOMMENDATIONS**
+
+### **1. Files to Keep:**
+- `test_enhanced_evaluation.py` (useful untuk testing)
+- `restore_database.py` (useful untuk backup/restore)
+- `test_db_connection.py` (useful untuk troubleshooting)
+- `validate_env.sh` (useful untuk environment validation)
+
+### **2. Files to Consider Removing:**
+- `backup-public.sql` (large file, consider external storage)
+- Old test files yang sudah tidak digunakan
+- Duplicate fix files
+
+### **3. Files to Archive:**
+- Test files yang sudah tidak relevan
+- Fix files yang sudah tidak diperlukan
+- Old backup files
+
+---
+
+## 📊 **STATISTICS**
+
+### **File Distribution:**
+- **Testing Files**: 12 files
+- **Fix & Implementation**: 4 files
+- **Database Tools**: 15 files
+- **Environment Tools**: 6 files
+- **Docker Tools**: 2 files
+- **Seeding Tools**: 2 files
+- **Menu Tools**: 1 file
+- **Total**: 42 files + 1 README.md
+
+### **File Sizes:**
+- **Largest**: backup-public.sql (30MB)
+- **Average**: ~8KB per file
+- **Total Size**: ~35MB
+
+### **Categories:**
+- **Testing**: 28.6%
+- **Database**: 35.7%
+- **Environment**: 14.3%
+- **Fixes**: 9.5%
+- **Others**: 11.9%
+
+---
+
+**Status**: ✅ **FULLY ORGANIZED**  
+**Total Files**: 42 tools + 1 README.md  
+**Categories**: 7 categories  
+**Main Purpose**: Development, testing, dan maintenance tools  
+**Next**: 🧹 **CLEANUP & MAINTENANCE** 

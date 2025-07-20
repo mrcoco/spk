@@ -13,10 +13,27 @@ from database import get_db
 from models import Mahasiswa, KlasifikasiKelulusan, FISEvaluation
 from schemas import KlasifikasiKelulusanResponse, KlasifikasiGridResponse, FuzzyResponse
 from fuzzy_logic import FuzzyKelulusan
+from enhanced_fuzzy_evaluation import EnhancedFuzzyEvaluator, EvaluationConfig, run_enhanced_evaluation
 
 # Pydantic model untuk request evaluasi
 class EvaluationRequest(BaseModel):
     test_size: float = 0.3
+    random_state: int = 42
+    evaluation_name: Optional[str] = None
+    evaluation_notes: Optional[str] = None
+    save_to_db: bool = True
+
+class EnhancedEvaluationRequest(BaseModel):
+    """Request model untuk enhanced evaluation"""
+    use_cross_validation: bool = True
+    cv_folds: int = 5
+    use_bootstrap: bool = True
+    bootstrap_samples: int = 100
+    use_ensemble: bool = True
+    ensemble_models: int = 5
+    use_data_preprocessing: bool = True
+    use_rule_weighting: bool = True
+    confidence_threshold: float = 0.3
     random_state: int = 42
     evaluation_name: Optional[str] = None
     evaluation_notes: Optional[str] = None
@@ -1339,4 +1356,228 @@ def evaluate_fuzzy_filtered(
         raise HTTPException(
             status_code=500,
             detail=f"Terjadi kesalahan saat evaluasi filtered: {str(e)}"
+        ) 
+
+@router.post("/evaluate-enhanced", description="Evaluasi FIS dengan metode peningkatan akurasi")
+def evaluate_fuzzy_enhanced(
+    request: EnhancedEvaluationRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Evaluasi FIS dengan multiple methods untuk akurasi tinggi
+    """
+    try:
+        start_time = time.time()
+        
+        # Ambil semua data mahasiswa
+        mahasiswa_list = db.query(Mahasiswa).all()
+        
+        if len(mahasiswa_list) < 10:
+            raise HTTPException(
+                status_code=400,
+                detail="Data tidak cukup untuk evaluasi. Minimal 10 data diperlukan."
+            )
+        
+        # Buat konfigurasi evaluasi
+        config = EvaluationConfig(
+            use_cross_validation=request.use_cross_validation,
+            cv_folds=request.cv_folds,
+            use_bootstrap=request.use_bootstrap,
+            bootstrap_samples=request.bootstrap_samples,
+            use_ensemble=request.use_ensemble,
+            ensemble_models=request.ensemble_models,
+            use_data_preprocessing=request.use_data_preprocessing,
+            use_rule_weighting=request.use_rule_weighting,
+            confidence_threshold=request.confidence_threshold,
+            random_state=request.random_state
+        )
+        
+        # Jalankan evaluasi enhanced
+        results = run_enhanced_evaluation(mahasiswa_list, config)
+        
+        # Format hasil untuk response
+        formatted_results = {
+            "evaluation_info": {
+                "name": request.evaluation_name or f"Enhanced Evaluation {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                "notes": request.evaluation_notes,
+                "total_data": len(mahasiswa_list),
+                "execution_time": time.time() - start_time,
+                "methods_used": []
+            },
+            "results": {}
+        }
+        
+        # Format individual method results
+        for method, result in results.items():
+            if method == "aggregated":
+                formatted_results["results"]["aggregated"] = {
+                    "accuracy": round(result.accuracy, 4),
+                    "precision": round(result.precision, 4),
+                    "recall": round(result.recall, 4),
+                    "f1_score": round(result.f1_score, 4),
+                    "method": result.method,
+                    "execution_time": result.execution_time
+                }
+            else:
+                # Convert confusion matrix to list for JSON serialization
+                confusion_matrix_list = result.confusion_matrix.tolist() if hasattr(result.confusion_matrix, 'tolist') else []
+                
+                formatted_results["results"][method] = {
+                    "accuracy": round(result.accuracy, 4),
+                    "precision": round(result.precision, 4),
+                    "recall": round(result.recall, 4),
+                    "f1_score": round(result.f1_score, 4),
+                    "confusion_matrix": confusion_matrix_list,
+                    "confidence_interval": result.confidence_interval,
+                    "method": result.method,
+                    "execution_time": result.execution_time
+                }
+                formatted_results["evaluation_info"]["methods_used"].append(method)
+        
+        # Add aggregated confusion matrix from cross-validation (most reliable)
+        if "cross_validation" in results and hasattr(results["cross_validation"], 'confusion_matrix'):
+            aggregated_cm = results["cross_validation"].confusion_matrix
+            if hasattr(aggregated_cm, 'tolist'):
+                formatted_results["results"]["aggregated"]["confusion_matrix"] = aggregated_cm.tolist()
+            else:
+                formatted_results["results"]["aggregated"]["confusion_matrix"] = []
+        else:
+            formatted_results["results"]["aggregated"]["confusion_matrix"] = []
+        
+        # Save to database if requested
+        if request.save_to_db:
+            try:
+                # Save aggregated result
+                aggregated_result = results.get("aggregated")
+                if aggregated_result:
+                    evaluation = FISEvaluation(
+                        accuracy=aggregated_result.accuracy,
+                        precision=aggregated_result.precision,
+                        recall=aggregated_result.recall,
+                        f1_score=aggregated_result.f1_score,
+                        confusion_matrix={},  # Will be updated if needed
+                        total_samples=len(mahasiswa_list),
+                        correct_predictions=int(aggregated_result.accuracy * len(mahasiswa_list)),
+                        incorrect_predictions=int((1 - aggregated_result.accuracy) * len(mahasiswa_list)),
+                        evaluation_params={
+                            "method": "enhanced",
+                            "config": {
+                                "use_cross_validation": request.use_cross_validation,
+                                "cv_folds": request.cv_folds,
+                                "use_bootstrap": request.use_bootstrap,
+                                "bootstrap_samples": request.bootstrap_samples,
+                                "use_ensemble": request.use_ensemble,
+                                "ensemble_models": request.ensemble_models,
+                                "use_data_preprocessing": request.use_data_preprocessing,
+                                "use_rule_weighting": request.use_rule_weighting,
+                                "confidence_threshold": request.confidence_threshold,
+                                "random_state": request.random_state
+                            }
+                        },
+                        evaluation_name=request.evaluation_name,
+                        evaluation_notes=request.evaluation_notes
+                    )
+                    db.add(evaluation)
+                    db.commit()
+                    db.refresh(evaluation)
+                    
+                    formatted_results["evaluation_info"]["saved_id"] = evaluation.id
+            except Exception as e:
+                print(f"Warning: Failed to save to database: {e}")
+        
+        return formatted_results
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error in enhanced evaluation: {str(e)}"
+        )
+
+@router.post("/evaluate-quick", description="Evaluasi FIS cepat dengan optimasi dasar")
+def evaluate_fuzzy_quick(
+    request: EvaluationRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Evaluasi FIS cepat dengan optimasi dasar untuk akurasi tinggi
+    """
+    try:
+        start_time = time.time()
+        
+        # Ambil data mahasiswa
+        mahasiswa_list = db.query(Mahasiswa).all()
+        
+        if len(mahasiswa_list) < 10:
+            raise HTTPException(
+                status_code=400,
+                detail="Data tidak cukup untuk evaluasi. Minimal 10 data diperlukan."
+            )
+        
+        # Konfigurasi quick evaluation
+        config = EvaluationConfig(
+            use_cross_validation=True,
+            cv_folds=3,  # Quick CV
+            use_bootstrap=False,  # Skip bootstrap for speed
+            use_ensemble=True,
+            ensemble_models=3,  # Fewer models
+            use_data_preprocessing=True,
+            use_rule_weighting=True,
+            random_state=request.random_state
+        )
+        
+        # Jalankan evaluasi
+        results = run_enhanced_evaluation(mahasiswa_list, config)
+        
+        # Format hasil
+        aggregated_result = results.get("aggregated")
+        
+        formatted_result = {
+            "evaluation_info": {
+                "name": request.evaluation_name or f"Quick Evaluation {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                "total_data": len(mahasiswa_list),
+                "execution_time": time.time() - start_time,
+                "method": "quick_enhanced"
+            },
+            "results": {
+                "accuracy": round(aggregated_result.accuracy, 4),
+                "precision": round(aggregated_result.precision, 4),
+                "recall": round(aggregated_result.recall, 4),
+                "f1_score": round(aggregated_result.f1_score, 4),
+                "confidence_interval": results.get("cross_validation", {}).confidence_interval if "cross_validation" in results else None
+            }
+        }
+        
+        # Save to database if requested
+        if request.save_to_db:
+            try:
+                evaluation = FISEvaluation(
+                    accuracy=aggregated_result.accuracy,
+                    precision=aggregated_result.precision,
+                    recall=aggregated_result.recall,
+                    f1_score=aggregated_result.f1_score,
+                    confusion_matrix={},
+                    total_samples=len(mahasiswa_list),
+                    correct_predictions=int(aggregated_result.accuracy * len(mahasiswa_list)),
+                    incorrect_predictions=int((1 - aggregated_result.accuracy) * len(mahasiswa_list)),
+                    evaluation_params={
+                        "method": "quick_enhanced",
+                        "config": config.__dict__
+                    },
+                    evaluation_name=request.evaluation_name,
+                    evaluation_notes=request.evaluation_notes
+                )
+                db.add(evaluation)
+                db.commit()
+                db.refresh(evaluation)
+                
+                formatted_result["evaluation_info"]["saved_id"] = evaluation.id
+            except Exception as e:
+                print(f"Warning: Failed to save to database: {e}")
+        
+        return formatted_result
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error in quick evaluation: {str(e)}"
         ) 

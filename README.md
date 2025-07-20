@@ -20,11 +20,14 @@ spk/
 │   ├── database/             # Dokumentasi database
 │   ├── deployment/           # Dokumentasi deployment
 │   ├── frontend/             # Dokumentasi frontend
+│   ├── features/             # Dokumentasi fitur
 │   └── troubleshooting/      # Dokumentasi troubleshooting
 ├── postgres_data/            # Data PostgreSQL
 └── src/
     ├── backend/              # Backend FastAPI
+    │   └── tools/            # Development tools dan testing scripts
     └── frontend/             # Frontend HTML/CSS/JS
+        └── test/             # HTML test files
 ```
 
 ## 🚀 Quick Start
@@ -51,6 +54,7 @@ docker-compose up -d
 
 - **[CHANGELOG.md](CHANGELOG.md)** - Riwayat perubahan dan update aplikasi
 - **[docs/README.md](docs/README.md)** - Dokumentasi lengkap aplikasi
+- **[docs/features/README_ENHANCED_EVALUATION.md](docs/features/README_ENHANCED_EVALUATION.md)** - Dokumentasi Enhanced Evaluation System
 
 ## 🔧 Teknologi yang Digunakan
 

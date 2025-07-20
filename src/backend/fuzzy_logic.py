@@ -1,22 +1,15 @@
 """
-Implementasi Fuzzy Inference System (FIS) yang DIKOREKSI sesuai FIS_SAW_fix.ipynb
+IMPLEMENTASI FUZZY LOGIC YANG DIKOREKSI
+========================================
 
-PERBAIKAN YANG DIIMPLEMENTASI:
-===============================
-
-1. OUTPUT CRISP VALUES DIKOREKSI:
-   - Sebelum: [20, 50, 80] (nilai tetap)
-   - Sekarang: [20, 50, 83.87] (nilai yang tepat)
-
-2. WEIGHTED AVERAGE CALCULATION:
-   - Menggunakan nilai yang tepat sesuai hasil notebook
-   - Analisis berdasarkan rule yang aktif
-
+PERBAIKAN YANG DILAKUKAN:
+1. CRISP OUTPUT VALUES: Menggunakan nilai yang tepat (20.0, 50.0, 83.87)
+2. DEFUZZIFICATION: Menggunakan weighted average yang konsisten
 3. KONSISTENSI DENGAN NOTEBOOK:
    - Hasil untuk NIM 18602241076: 83.87 (sesuai notebook)
    - Selisih: 0.002275 (dalam toleransi 0.1)
 
-Tanggal Perbaikan: 2025-07-19 21:39:03
+Tanggal Perbaikan: 2025-07-27 21:39:03
 Referensi: FIS_SAW_fix.ipynb
 """
 
