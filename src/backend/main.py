@@ -135,6 +135,7 @@ print("Nilai router routes:", [route.path for route in nilai_router.routes])
 print("Dashboard router routes:", [route.path for route in dashboard_router.routes])
 print("SAW router routes:", [route.path for route in saw_router.routes])
 print("Comparison router routes:", [route.path for route in comparison_router.routes])
+print("Program Studi router routes:", [route.path for route in program_studi_router.routes])
 
 # Include routers
 app.include_router(fuzzy_router)

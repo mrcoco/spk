@@ -19,7 +19,7 @@ def create_program_studi(program_studi: ProgramStudiCreate, db: Session = Depend
     db.refresh(db_program_studi)
     return db_program_studi
 
-@router.get("/", response_model=List[ProgramStudiSchema])
+@router.get("/", response_model=List[dict])
 def get_program_studi_list(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
@@ -36,7 +36,7 @@ def get_program_studi_list(
         )
     
     program_studi_list = query.offset(skip).limit(limit).all()
-    return program_studi_list
+    return [program.to_dict() for program in program_studi_list]
 
 @router.get("/{program_studi_id}", response_model=ProgramStudiSchema)
 def get_program_studi(program_studi_id: int, db: Session = Depends(get_db)):
