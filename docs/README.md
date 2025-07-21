@@ -37,6 +37,14 @@ Dokumentasi teknis, analisis, dan evaluasi sistem.
 - `DOCUMENTATION_FIS_EVALUATION.md` - Dokumentasi evaluasi FIS
 - `DOCUMENTATION_EVALUASI_FIS.md` - Dokumentasi evaluasi FIS (versi lengkap)
 
+### 📊 **Evaluation** (`docs/evaluation/`)
+Dokumentasi evaluasi dan pengujian sistem.
+
+#### **Fuzzy Inference System (FIS):**
+- `fis/DOKUMENTASI_EVALUASI_FIS.md` - Dokumentasi lengkap evaluasi FIS
+- `fis/README.md` - Ringkasan evaluasi FIS
+- `README.md` - Overview dokumentasi evaluasi
+
 ### 🛠️ **Troubleshooting** (`docs/troubleshooting/`)
 Dokumentasi troubleshooting dan solusi masalah.
 
@@ -81,6 +89,11 @@ Panduan penggunaan dan tutorial.
 - **Resume**: `docs/resume/` - Ringkasan sistem
 
 ## 📋 **File Terbaru**
+
+### **Dokumentasi Evaluasi FIS (2024-12-19):**
+- ✅ `evaluation/fis/DOKUMENTASI_EVALUASI_FIS.md` - Dokumentasi lengkap evaluasi FIS
+- ✅ `evaluation/fis/README.md` - Ringkasan evaluasi FIS
+- ✅ `evaluation/README.md` - Overview dokumentasi evaluasi
 
 ### **Implementasi Fuzzy Logic (2025-01-27):**
 - ✅ `IMPLEMENTASI_PERBAIKAN_FUZZY.md` - Dokumentasi lengkap perbaikan
