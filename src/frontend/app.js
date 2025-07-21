@@ -6,9 +6,12 @@ const routes = {
     '#program-studi': 'programStudiSection',
     '#fis': 'fisSection',
     '#saw': 'sawSection',
+    '#saw-evaluation': 'sawEvaluationSection',
     '#evaluation': 'evaluationSection',
     '#enhanced-evaluation': 'enhancedEvaluationSection',
-    '#comparison': 'comparisonSection'
+    '#comparison': 'comparisonSection',
+    '#user-guide': 'userGuideSection',
+    '#about': 'aboutSection'
 };
 
 // Inisialisasi aplikasi
@@ -53,6 +56,18 @@ $(document).ready(function() {
 
     // Inisialisasi router
     const router = new Router(routes);
+
+    // Inisialisasi SAW Evaluation module
+    try {
+        if (typeof SAWEvaluation !== 'undefined') {
+            window.sawEvaluation = new SAWEvaluation();
+            console.log('SAW Evaluation module initialized successfully');
+        } else {
+            console.warn('SAW Evaluation module not found');
+        }
+    } catch (error) {
+        console.error('Error initializing SAW Evaluation module:', error);
+    }
 
     // Toggle menu
     $('#toggleMenu').click(function(e) {

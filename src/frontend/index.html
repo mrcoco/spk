@@ -58,6 +58,7 @@
             'js/nilai.js',
             'js/fis.js',
             'js/saw.js',
+            'js/saw-evaluation.js',
             'js/evaluation.js',
             'js/enhanced_evaluation.js'
         ];
@@ -160,6 +161,12 @@
                             <span>Program Studi</span>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="#user-guide" class="nav-link">
+                            <i class="fas fa-question-circle"></i>
+                            <span>User Guide</span>
+                        </a>
+                    </li>
                     <li class="nav-item has-submenu">
                         <a href="#" class="nav-link">
                             <i class="fas fa-chart-bar"></i>
@@ -186,6 +193,12 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a href="#saw-evaluation" class="nav-link">
+                                    <i class="fas fa-chart-bar"></i>
+                                    <span>Evaluasi SAW</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a href="#enhanced-evaluation" class="nav-link">
                                     <i class="fas fa-rocket"></i>
                                     <span>Enhanced Evaluation</span>
@@ -205,6 +218,12 @@
                                 </a>
                             </li> -->
                         </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#about" class="nav-link">
+                            <i class="fas fa-info-circle"></i>
+                            <span>About</span>
+                        </a>
                     </li>
                 </ul>
             </div>
@@ -836,6 +855,371 @@
                                             <li>0.45 ≤ Skor < 0.7 = Peluang Lulus Sedang</li>
                                             <li>Skor < 0.45 = Peluang Lulus Kecil</li>
                                         </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SAW Evaluation Section -->
+                <div id="sawEvaluationSection" class="section" style="display: none;">
+                    <div class="content-container">
+                        <h2>Evaluasi Metode SAW</h2>
+                        <div class="section-description">
+                            <p>Evaluasi performa dan keakuratan metode SAW (Simple Additive Weighting) dalam mengklasifikasikan peluang kelulusan mahasiswa.</p>
+                        </div>
+                        
+                        <!-- Loading Indicator -->
+                        <div id="sawEvaluationLoadingIndicator" class="loading-container" style="display: none;">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                            <p>Sedang menghitung evaluasi SAW...</p>
+                        </div>
+
+                        <!-- Control Panel -->
+                        <div class="evaluation-control-panel">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-cogs"></i> Pengaturan Evaluasi SAW</h3>
+                                </div>
+                                <div class="card-body">
+                                    
+                                    <!-- Bobot Kriteria SAW -->
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="sawEvaluationIpkWeight">Bobot IPK (%):</label>
+                                            <input type="number" id="sawEvaluationIpkWeight" value="40" min="0" max="100" class="form-control">
+                                            <small class="form-text">Bobot untuk kriteria IPK (0-100%)</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sawEvaluationSksWeight">Bobot SKS (%):</label>
+                                            <input type="number" id="sawEvaluationSksWeight" value="35" min="0" max="100" class="form-control">
+                                            <small class="form-text">Bobot untuk kriteria SKS (0-100%)</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sawEvaluationDekWeight">Bobot D/E/K (%):</label>
+                                            <input type="number" id="sawEvaluationDekWeight" value="25" min="0" max="100" class="form-control">
+                                            <small class="form-text">Bobot untuk kriteria D/E/K (0-100%)</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="sawEvaluationTestSize">Ukuran Data Test (%):</label>
+                                            <input type="number" id="sawEvaluationTestSize" value="30" min="10" max="50" class="form-control">
+                                            <small class="form-text">Persentase data yang digunakan untuk testing (10-50%)</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sawEvaluationRandomState">Random State:</label>
+                                            <input type="number" id="sawEvaluationRandomState" value="42" class="form-control">
+                                            <small class="form-text">Seed untuk reproduksi hasil yang konsisten</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>
+                                                <input type="checkbox" id="sawEvaluationSaveToDb"> Simpan ke Database
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons Row -->
+                                    <div class="action-buttons-row">
+                                        <div class="action-buttons-group">
+                                            <button id="sawEvaluationCalculateBtn" class="btn btn-primary">
+                                                <i class="fas fa-calculator"></i>
+                                                Hitung Evaluasi SAW
+                                            </button>
+                                            <button id="sawEvaluationExportBtn" class="btn btn-secondary">
+                                                <i class="fas fa-download"></i>
+                                                Export Data
+                                            </button>
+                                            <button id="sawEvaluationPrintBtn" class="btn btn-secondary">
+                                                <i class="fas fa-print"></i>
+                                                Cetak Laporan
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="info-box">
+                                        <h4><i class="fas fa-info-circle"></i> Informasi Evaluasi SAW</h4>
+                                        <p>Evaluasi ini akan mengukur performa dan keakuratan metode SAW dalam mengklasifikasikan peluang kelulusan mahasiswa berdasarkan bobot kriteria IPK, SKS, dan persentase nilai D/E/K.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Summary Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-info-circle"></i> Ringkasan Evaluasi SAW</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="summary-grid">
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-database"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Total Data</h4>
+                                                <span id="sawEvaluationTotalData">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-graduation-cap"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Training Data</h4>
+                                                <span id="sawEvaluationTrainingData">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-flask"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Test Data</h4>
+                                                <span id="sawEvaluationTestData">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-percentage"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Akurasi</h4>
+                                                <span id="sawEvaluationAccuracy">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metrics Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-chart-bar"></i> Metrik Evaluasi SAW</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="metrics-grid">
+                                        <div class="metric-card">
+                                            <div class="metric-header">
+                                                <i class="fas fa-bullseye"></i>
+                                                <h4>Precision</h4>
+                                            </div>
+                                            <div class="metric-value" id="sawEvaluationPrecision">-</div>
+                                            <div class="metric-description">Proporsi prediksi positif yang benar</div>
+                                        </div>
+                                        <div class="metric-card">
+                                            <div class="metric-header">
+                                                <i class="fas fa-search"></i>
+                                                <h4>Recall</h4>
+                                            </div>
+                                            <div class="metric-value" id="sawEvaluationRecall">-</div>
+                                            <div class="metric-description">Proporsi kasus positif yang terdeteksi</div>
+                                        </div>
+                                        <div class="metric-card">
+                                            <div class="metric-header">
+                                                <i class="fas fa-balance-scale"></i>
+                                                <h4>F1-Score</h4>
+                                            </div>
+                                            <div class="metric-value" id="sawEvaluationF1Score">-</div>
+                                            <div class="metric-description">Harmonic mean dari precision dan recall</div>
+                                        </div>
+                                        <div class="metric-card">
+                                            <div class="metric-header">
+                                                <i class="fas fa-chart-line"></i>
+                                                <h4>Specificity</h4>
+                                            </div>
+                                            <div class="metric-value" id="sawEvaluationSpecificity">-</div>
+                                            <div class="metric-description">Proporsi prediksi negatif yang benar</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Confusion Matrix Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-table"></i> Confusion Matrix SAW</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="confusion-matrix-container">
+                                        <div class="confusion-matrix" id="sawEvaluationConfusionMatrix">
+                                            <!-- Confusion matrix akan diisi secara dinamis -->
+                                        </div>
+                                        <div class="confusion-matrix-legend">
+                                            <div class="legend-item">
+                                                <span class="legend-color legend-tp"></span>
+                                                <span>True Positive (TP)</span>
+                                            </div>
+                                            <div class="legend-item">
+                                                <span class="legend-color legend-fp"></span>
+                                                <span>False Positive (FP)</span>
+                                            </div>
+                                            <div class="legend-item">
+                                                <span class="legend-color legend-fn"></span>
+                                                <span>False Negative (FN)</span>
+                                            </div>
+                                            <div class="legend-item">
+                                                <span class="legend-color legend-tn"></span>
+                                                <span>True Negative (TN)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Results Grid Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-list"></i> Hasil Evaluasi SAW</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="sawEvaluationResultsGrid"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-chart-pie"></i> Visualisasi Hasil SAW</h3>
+                                    <div class="card-actions">
+                                        <button class="btn btn-secondary btn-sm" onclick="window.sawEvaluation.exportData()">
+                                            <i class="fas fa-download"></i> Export Data
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="window.sawEvaluation.printReport()">
+                                            <i class="fas fa-print"></i> Print Report
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="charts-container">
+                                        <div class="chart-item">
+                                            <div class="chart-header">
+                                                <h4><i class="fas fa-chart-pie"></i> Distribusi Klasifikasi</h4>
+                                                <div class="chart-info">
+                                                    <span class="info-badge">Total: <span id="sawEvaluationTotalData">-</span></span>
+                                                </div>
+                                            </div>
+                                            <div class="chart-wrapper">
+                                                <canvas id="sawEvaluationClassificationChart"></canvas>
+                                            </div>
+                                            <div class="chart-legend">
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-tinggi"></span>
+                                                    <span>Peluang Lulus Tinggi</span>
+                                                </div>
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-sedang"></span>
+                                                    <span>Peluang Lulus Sedang</span>
+                                                </div>
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-kecil"></span>
+                                                    <span>Peluang Lulus Kecil</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="chart-item">
+                                            <div class="chart-header">
+                                                <h4><i class="fas fa-chart-bar"></i> Perbandingan Metrik Evaluasi</h4>
+                                                <div class="chart-info">
+                                                    <span class="info-badge">Accuracy: <span id="sawEvaluationAccuracy">-</span></span>
+                                                </div>
+                                            </div>
+                                            <div class="chart-wrapper">
+                                                <canvas id="sawEvaluationMetricsChart"></canvas>
+                                            </div>
+                                            <div class="chart-legend">
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-precision"></span>
+                                                    <span>Precision</span>
+                                                </div>
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-recall"></span>
+                                                    <span>Recall</span>
+                                                </div>
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-f1"></span>
+                                                    <span>F1-Score</span>
+                                                </div>
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-specificity"></span>
+                                                    <span>Specificity</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Performance Analysis -->
+                                    <div class="interpretation-list">
+                                        <div class="analysis-header">
+                                            <h4><i class="fas fa-analytics"></i> Analisis Performa SAW</h4>
+                                        </div>
+                                        <div class="analysis-content">
+                                            <div class="interpretation-item">
+                                                <div class="analysis-icon">
+                                                    <i class="fas fa-bullseye"></i>
+                                                </div>
+                                                <div class="analysis-text">
+                                                    <h5>Akurasi Prediksi</h5>
+                                                    <p>Metode SAW menunjukkan akurasi <strong id="sawEvaluationAccuracyText">-</strong> dalam memprediksi klasifikasi peluang lulus mahasiswa. <span id="sawEvaluationAccuracyNarrative">-</span></p>
+                                                </div>
+                                            </div>
+                                            <div class="interpretation-item">
+                                                <div class="analysis-icon">
+                                                    <i class="fas fa-balance-scale"></i>
+                                                </div>
+                                                <div class="analysis-text">
+                                                    <h5>Keseimbangan Precision-Recall</h5>
+                                                    <p>Precision <strong id="sawEvaluationPrecisionText">-</strong> dan Recall <strong id="sawEvaluationRecallText">-</strong> menunjukkan <span id="sawEvaluationPrecisionRecallNarrative">-</span></p>
+                                                </div>
+                                            </div>
+                                            <div class="interpretation-item">
+                                                <div class="analysis-icon">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </div>
+                                                <div class="analysis-text">
+                                                    <h5>F1-Score</h5>
+                                                    <p>Harmonic mean dari precision dan recall adalah <strong id="sawEvaluationF1Text">-</strong>, <span id="sawEvaluationF1Narrative">-</span></p>
+                                                </div>
+                                            </div>
+                                            <div class="interpretation-item">
+                                                <div class="analysis-icon">
+                                                    <i class="fas fa-eye"></i>
+                                                </div>
+                                                <div class="analysis-text">
+                                                    <h5>Specificity</h5>
+                                                    <p>Specificity <strong id="sawEvaluationSpecificityText">-</strong> menunjukkan <span id="sawEvaluationSpecificityNarrative">-</span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Performance Summary -->
+                                        <div class="performance-summary">
+                                            <div class="summary-header">
+                                                <h5 class="text-dark"><i class="fas fa-cogs"></i> Metodologi Evaluasi</h5>
+                                            </div>
+                                            <div class="summary-content">
+                                                <div class="narrative-text">
+                                                    <p id="sawEvaluationOverallNarrative">-</p>
+                                                </div>
+                                                <div class="parameter-card p-4 mt-3">
+                                                    <h4 class="mb-3"><i class="fas fa-lightbulb"></i> Rekomendasi</h4>
+                                                    <ul id="sawEvaluationRecommendations">
+                                                        <!-- Recommendations will be populated dynamically -->
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1812,6 +2196,187 @@
                                     </ul>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Guide Section -->
+                <div id="userGuideSection" class="section" style="display: none;">
+                    <div class="content-container user-guide-container">
+                        <div class="user-guide-header mb-4">
+                            <h2><i class="fas fa-question-circle"></i> User Guide</h2>
+                            <p class="lead">Panduan interaktif & visual penggunaan aplikasi <b>SPK Monitoring Masa Studi</b></p>
+                        </div>
+                        <div class="parameter-card p-4 mb-4" style="background:linear-gradient(135deg,#e3f2fd 0%,#f3e5f5 100%);box-shadow:0 2px 12px rgba(102,126,234,0.08);">
+                            <h4 class="mb-3"><i class="fas fa-route"></i> Alur Penggunaan Aplikasi</h4>
+                            <div class="row g-3 align-items-center text-center">
+                                <div class="col-12 col-md-2 mb-2">
+                                    <span class="badge bg-primary p-3 mb-2"><i class="fas fa-sign-in-alt fa-lg"></i></span>
+                                    <div><b>Login</b></div>
+                                    <small>Masuk aplikasi dengan akun terdaftar</small>
+                                </div>
+                                <div class="col-12 col-md-1 d-none d-md-block"><i class="fas fa-arrow-right fa-2x text-secondary"></i></div>
+                                <div class="col-12 col-md-2 mb-2">
+                                    <span class="badge bg-info p-3 mb-2"><i class="fas fa-users fa-lg"></i></span>
+                                    <div><b>Input Data</b></div>
+                                    <small>Tambah/edit data mahasiswa & nilai</small>
+                                </div>
+                                <div class="col-12 col-md-1 d-none d-md-block"><i class="fas fa-arrow-right fa-2x text-secondary"></i></div>
+                                <div class="col-12 col-md-2 mb-2">
+                                    <span class="badge bg-success p-3 mb-2"><i class="fas fa-layer-group fa-lg"></i></span>
+                                    <div><b>Klasifikasi</b></div>
+                                    <small>Proses klasifikasi peluang lulus berdasarkan data</small>
+                                </div>
+                                <div class="col-12 col-md-1 d-none d-md-block"><i class="fas fa-arrow-right fa-2x text-secondary"></i></div>
+                                <div class="col-12 col-md-2 mb-2">
+                                    <span class="badge bg-success p-3 mb-2"><i class="fas fa-cogs fa-lg"></i></span>
+                                    <div><b>Evaluasi</b></div>
+                                    <small>Pilih metode SAW/FIS, klik <b>Mulai Evaluasi</b></small>
+                                </div>
+                                <div class="col-12 col-md-1 d-none d-md-block"><i class="fas fa-arrow-right fa-2x text-secondary"></i></div>
+                                <div class="col-12 col-md-2 mb-2">
+                                    <span class="badge bg-warning p-3 mb-2"><i class="fas fa-chart-bar fa-lg"></i></span>
+                                    <div><b>Hasil & Analisis</b></div>
+                                    <small>Lihat confusion matrix, metrik, dan narasi</small>
+                                </div>
+                                <div class="col-12 col-md-1 d-none d-md-block"><i class="fas fa-arrow-right fa-2x text-secondary"></i></div>
+                                <div class="col-12 col-md-2 mb-2">
+                                    <span class="badge bg-purple p-3 mb-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;"><i class="fas fa-lightbulb fa-lg"></i></span>
+                                    <div><b>Rekomendasi</b></div>
+                                    <small>Baca saran perbaikan & ringkasan performa</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="parameter-card p-4 mb-4" style="background:linear-gradient(135deg,#f8f9fa 0%,#e3e6f3 100%);box-shadow:0 2px 12px rgba(102,126,234,0.08);">
+                            <h4 class="mb-3"><i class="fas fa-info-circle"></i> Proses Penggunaan Aplikasi</h4>
+                            <ol class="process-narrative-list">
+                                <li><span class="badge bg-primary me-2"><i class="fas fa-sign-in-alt"></i></span> <b>Login</b>: Pengguna masuk ke aplikasi menggunakan akun yang telah terdaftar. Keamanan data dijaga dengan sistem autentikasi dan hak akses sesuai role.</li>
+                                <li><span class="badge bg-info me-2"><i class="fas fa-users"></i></span> <b>Input Data</b>: Pengguna menambahkan atau memperbarui data mahasiswa dan nilai. Data yang lengkap dan valid menjadi fondasi utama untuk proses selanjutnya.</li>
+                                <li><span class="badge bg-success me-2"><i class="fas fa-layer-group"></i></span> <b>Klasifikasi</b>: Sistem melakukan klasifikasi peluang lulus mahasiswa berdasarkan data yang telah diinput. Proses ini menggunakan metode SAW atau FIS sesuai pilihan pengguna.</li>
+                                <li><span class="badge bg-success me-2"><i class="fas fa-cogs"></i></span> <b>Evaluasi</b>: Setelah klasifikasi, pengguna dapat menjalankan evaluasi untuk melihat performa model. Sistem akan menampilkan confusion matrix, metrik akurasi, precision, recall, dan F1-Score secara otomatis.</li>
+                                <li><span class="badge bg-warning me-2"><i class="fas fa-chart-bar"></i></span> <b>Hasil & Analisis</b>: Hasil evaluasi divisualisasikan dalam bentuk tabel, grafik, dan narasi otomatis. Pengguna dapat dengan mudah memahami kekuatan dan kelemahan model dari visualisasi ini.</li>
+                                <li><span class="badge bg-purple me-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;"><i class="fas fa-lightbulb"></i></span> <b>Rekomendasi</b>: Sistem memberikan saran perbaikan dan ringkasan performa berdasarkan hasil analisis. Pengguna dapat mengikuti rekomendasi untuk meningkatkan kualitas data dan akurasi model.</li>
+                            </ol>
+                            <div class="alert alert-info mt-3"><i class="fas fa-lightbulb"></i> <b>Tips:</b> Lakukan evaluasi ulang setiap kali ada perubahan data untuk mendapatkan hasil yang paling akurat dan rekomendasi terbaru.</div>
+                        </div>
+                        <div class="row g-4 mt-2">
+                            <div class="col-md-6">
+                                <div class="parameter-card p-4 mb-4">
+                                    <h4 class="mb-3"><i class="fas fa-eye"></i> Interpretasi Hasil Evaluasi</h4>
+                                    <ul>
+                                        <li><b>Confusion Matrix</b>: Tabel perbandingan prediksi vs realita. Angka diagonal = prediksi benar, non-diagonal = prediksi salah.</li>
+                                        <li><b>Metrik</b>: Akurasi, Precision, Recall, F1-Score. Semua metrik ditampilkan otomatis.</li>
+                                        <li><b>Ringkasan Performa</b>: Narasi otomatis tentang kekuatan & kelemahan model.</li>
+                                        <li><b>Rekomendasi</b>: Saran perbaikan berdasarkan hasil evaluasi dan analisis data.</li>
+                                    </ul>
+                                    <div class="user-guide-matrix-example mt-3">
+                                        <table class="table table-bordered table-sm mt-2">
+                                            <thead class="table-light">
+                                                <tr><th></th><th>Prediksi Lulus</th><th>Prediksi Tidak Lulus</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr><th>Lulus</th><td>120</td><td>10</td></tr>
+                                                <tr><th>Tidak Lulus</th><td>15</td><td>55</td></tr>
+                                            </tbody>
+                                        </table>
+                                        <small class="text-muted">Diagonal = prediksi benar, non-diagonal = prediksi salah</small>
+                                    </div>
+                                    <div class="alert alert-success p-2 mt-2"><i class="fas fa-check-circle"></i> <b>Tips Analisis:</b> Fokus pada baris/kolom dengan angka error tinggi untuk perbaikan data/model.</div>
+                                </div>
+                                <div class="parameter-card p-4 mb-4">
+                                    <h4 class="mb-3"><i class="fas fa-shield-alt"></i> Keamanan & Privasi Data</h4>
+                                    <ul>
+                                        <li>Data mahasiswa dan nilai hanya dapat diakses oleh user yang berwenang.</li>
+                                        <li>Selalu logout setelah selesai menggunakan aplikasi, terutama di komputer bersama.</li>
+                                        <li>Jangan membagikan password ke siapapun, termasuk admin.</li>
+                                        <li>Backup data secara berkala untuk menghindari kehilangan data.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="parameter-card p-4 mb-4">
+                                    <h4 class="mb-3"><i class="fas fa-lightbulb"></i> Rekomendasi & Ringkasan</h4>
+                                    <ul>
+                                        <li>Baca bagian rekomendasi untuk saran perbaikan spesifik (misal: perbaiki data IPK, cek SKS, validasi prodi).</li>
+                                        <li>Ringkasan performa membantu memahami hasil secara cepat dan mengambil keputusan.</li>
+                                        <li>Ikuti rekomendasi untuk meningkatkan akurasi model dan kualitas data.</li>
+                                    </ul>
+                                    <div class="alert alert-info p-2 mt-2"><i class="fas fa-info-circle"></i> <b>Best Practice:</b> Lakukan evaluasi ulang setelah melakukan perbaikan data.</div>
+                                </div>
+                                <div class="parameter-card p-4 mb-4">
+                                    <h4 class="mb-3"><i class="fas fa-tools"></i> Troubleshooting & FAQ</h4>
+                                    <ul>
+                                        <li><b>Data tidak muncul?</b> Cek koneksi, refresh halaman, pastikan data sudah diinput.</li>
+                                        <li><b>Evaluasi gagal?</b> Pastikan semua data wajib sudah terisi dan valid.</li>
+                                        <li><b>Tampilan tidak sesuai?</b> Lakukan hard refresh (<kbd>Ctrl+Shift+R</kbd>/<kbd>Cmd+Shift+R</kbd>).</li>
+                                        <li><b>Bagaimana reset password?</b> Hubungi admin/operator untuk reset password.</li>
+                                        <li><b>Bagaimana menambah prodi baru?</b> Gunakan menu Program Studi, klik <b>Tambah Program Studi</b>.</li>
+                                        <li><b>Siapa yang bisa akses evaluasi?</b> Semua user yang punya hak akses sesuai role.</li>
+                                        <li><b>Kontak bantuan:</b> <a href="mailto:admin@email.com">admin@email.com</a> / <a href="https://wa.me/628123456789">WhatsApp Admin</a></li>
+                                    </ul>
+                                    <div class="alert alert-warning p-2 mt-2"><i class="fas fa-exclamation-triangle"></i> <b>Catatan:</b> Jika menemukan bug/error, segera laporkan ke admin/operator.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="user-guide-footer mt-4">
+                            <span class="badge bg-primary">Panduan ini terakhir diperbarui: 2025-07-21</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- About Section -->
+                <div id="aboutSection" class="section" style="display: none;">
+                    <div class="content-container user-guide-container">
+                        <div class="user-guide-header mb-4">
+                            <h2><i class="fas fa-info-circle"></i> Tentang Aplikasi</h2>
+                            <p class="lead">SPK Monitoring Masa Studi adalah aplikasi modern berbasis SPA untuk evaluasi kelulusan mahasiswa secara otomatis dan komprehensif.</p>
+                        </div>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="parameter-card p-4 mb-4">
+                                    <h4 class="mb-3"><i class="fas fa-lightbulb"></i> Konsep & Tujuan</h4>
+                                    <ul>
+                                        <li>Membantu institusi memonitor masa studi dan peluang kelulusan mahasiswa secara efisien.</li>
+                                        <li>Memberikan evaluasi otomatis berbasis data real dan metode ilmiah (SAW & FIS).</li>
+                                        <li>Menyediakan rekomendasi dan insight berbasis analisis data.</li>
+                                    </ul>
+                                </div>
+                                <div class="parameter-card p-4 mb-4">
+                                    <h4 class="mb-3"><i class="fas fa-cogs"></i> Teknologi & Arsitektur</h4>
+                                    <ul>
+                                        <li><b>SPA (Single Page Application)</b> dengan JavaScript, jQuery, dan Kendo UI.</li>
+                                        <li><b>Frontend</b>: HTML5, CSS3, Bootstrap, FontAwesome, Chart.js.</li>
+                                        <li><b>Backend</b>: Python FastAPI, PostgreSQL, Dockerized.</li>
+                                        <li><b>API</b>: RESTful, endpoint terstandarisasi, dokumentasi otomatis.</li>
+                                        <li><b>Database</b>: PostgreSQL, migrasi & backup terintegrasi.</li>
+                                        <li><b>CI/CD</b>: Docker Compose, pipeline build & deploy otomatis.</li>
+                                    </ul>
+                                    <div class="alert alert-info p-2 mt-2"><i class="fas fa-network-wired"></i> <b>Integrasi:</b> Semua komponen saling terhubung melalui API dan environment yang terisolasi.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="parameter-card p-4 mb-4">
+                                    <h4 class="mb-3"><i class="fas fa-vial"></i> Mekanisme Pengujian</h4>
+                                    <ul>
+                                        <li><b>Unit Test</b>: Pengujian fungsi backend (Python) dan komponen frontend (JS).</li>
+                                        <li><b>Integrasi</b>: Pengujian alur data dari input hingga evaluasi hasil.</li>
+                                        <li><b>Manual Test</b>: Uji coba fitur oleh user/operator dengan skenario nyata.</li>
+                                        <li><b>Data Real</b>: Pengujian menggunakan data mahasiswa dan nilai asli untuk validasi akurasi.</li>
+                                    </ul>
+                                    <div class="alert alert-success p-2 mt-2"><i class="fas fa-check-circle"></i> <b>Best Practice:</b> Setiap perubahan kode diuji di lingkungan staging sebelum ke production.</div>
+                                </div>
+                                <div class="parameter-card p-4 mb-4">
+                                    <h4 class="mb-3"><i class="fas fa-users-cog"></i> Tim & Kontribusi</h4>
+                                    <ul>
+                                        <li>Pengembangan kolaboratif antara tim backend, frontend, dan data science.</li>
+                                        <li>Kontribusi terbuka untuk pengembangan fitur baru dan perbaikan bug.</li>
+                                        <li>Dokumentasi lengkap untuk memudahkan onboarding anggota baru.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="user-guide-footer mt-4">
+                            <span class="badge bg-primary">Versi aplikasi: 1.0.0 &mdash; Terakhir diperbarui: 2025-07-21</span>
                         </div>
                     </div>
                 </div>

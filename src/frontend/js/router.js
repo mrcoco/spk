@@ -98,6 +98,18 @@ class Router {
                     }
                 }
                 break;
+            case 'saw-evaluation':
+                if (typeof window.sawEvaluation !== 'undefined') {
+                    // Initialize SAW evaluation if not already done
+                    if (!window.sawEvaluationInitialized) {
+                        window.sawEvaluationInitialized = true;
+                        console.log('Router: Initializing SAW Evaluation');
+                        // SAW Evaluation sudah diinisialisasi otomatis saat class dibuat
+                    }
+                } else {
+                    console.log('Router: SAW Evaluation module not found');
+                }
+                break;
             case 'enhanced-evaluation':
                 if (typeof window.EnhancedEvaluation !== 'undefined') {
                     // Only initialize if not already initialized
