@@ -493,4 +493,210 @@ def recalculate_all_saw(db: Session):
     results = batch_calculate_saw(db, save_to_db=True)
     
     print(f"Recalculated and saved {len(results)} SAW results to database")
-    return results 
+    return results
+
+# ============================================================================
+# EVALUASI SAW FUNCTIONS
+# ============================================================================
+
+def evaluate_saw_performance(
+    db: Session, 
+    weights: Dict[str, float] = None,
+    test_size: float = 0.3,
+    random_state: int = 42,
+    save_to_db: bool = False
+) -> Dict[str, Any]:
+    """
+    Evaluasi performa metode SAW menggunakan cross-validation
+    
+    Args:
+        db: Database session
+        weights: Dictionary dengan bobot kriteria {'ipk': 0.4, 'sks': 0.35, 'dek': 0.25}
+        test_size: Proporsi data untuk testing (0.1 - 0.5)
+        random_state: Seed untuk reproduksi hasil
+        save_to_db: Apakah menyimpan hasil evaluasi ke database
+    
+    Returns:
+        Dictionary dengan hasil evaluasi
+    """
+    import random
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+    import numpy as np
+    
+    # Set random seed
+    random.seed(random_state)
+    np.random.seed(random_state)
+    
+    # Default weights jika tidak diberikan
+    if weights is None:
+        weights = {'ipk': 0.4, 'sks': 0.35, 'dek': 0.25}
+    
+    # Validasi weights
+    total_weight = sum(weights.values())
+    if abs(total_weight - 1.0) > 0.01:
+        raise ValueError(f"Total bobot harus 1.0, saat ini: {total_weight}")
+    
+    # Ambil semua data mahasiswa
+    mahasiswa_list = db.query(Mahasiswa).all()
+    
+    if len(mahasiswa_list) < 10:
+        raise ValueError("Minimal diperlukan 10 data mahasiswa untuk evaluasi")
+    
+    # Shuffle data
+    random.shuffle(mahasiswa_list)
+    
+    # Split data
+    split_index = int(len(mahasiswa_list) * (1 - test_size))
+    training_data = mahasiswa_list[:split_index]
+    test_data = mahasiswa_list[split_index:]
+    
+    print(f"Training data: {len(training_data)}, Test data: {len(test_data)}")
+    
+    # Hitung nilai maksimum dan minimum dari training data untuk normalisasi
+    max_values = {
+        'ipk': max(m.ipk for m in training_data),
+        'sks': max(m.sks for m in training_data),
+        'dek': max(m.persen_dek for m in training_data)
+    }
+    
+    min_values = {
+        'ipk': min(m.ipk for m in training_data),
+        'sks': min(m.sks for m in training_data),
+        'dek': min(m.persen_dek for m in training_data)
+    }
+    
+    # Fungsi untuk menghitung skor SAW
+    def calculate_saw_score(mahasiswa):
+        # Normalisasi
+        normalized_ipk = (mahasiswa.ipk - min_values['ipk']) / (max_values['ipk'] - min_values['ipk'])
+        normalized_sks = (mahasiswa.sks - min_values['sks']) / (max_values['sks'] - min_values['sks'])
+        normalized_dek = (mahasiswa.persen_dek - min_values['dek']) / (max_values['dek'] - min_values['dek'])
+        
+        # Hitung skor SAW
+        saw_score = (
+            weights['ipk'] * normalized_ipk +
+            weights['sks'] * normalized_sks +
+            weights['dek'] * (1 - normalized_dek)  # D/E/K adalah cost criteria
+        )
+        
+        return saw_score
+    
+    # Fungsi untuk klasifikasi berdasarkan skor SAW
+    def classify_saw_score(score):
+        if score >= 0.7:
+            return "Peluang Lulus Tinggi"
+        elif score >= 0.45:
+            return "Peluang Lulus Sedang"
+        else:
+            return "Peluang Lulus Kecil"
+    
+    # Fungsi untuk klasifikasi berdasarkan data aktual (ground truth)
+    def classify_actual(mahasiswa):
+        # Klasifikasi berdasarkan IPK dan SKS
+        if mahasiswa.ipk >= 3.0 and mahasiswa.sks >= 100:
+            return "Peluang Lulus Tinggi"
+        elif mahasiswa.ipk >= 2.5 and mahasiswa.sks >= 80:
+            return "Peluang Lulus Sedang"
+        else:
+            return "Peluang Lulus Kecil"
+    
+    # Evaluasi pada test data
+    y_true = []
+    y_pred = []
+    results = []
+    
+    for mahasiswa in test_data:
+        # Prediksi menggunakan SAW
+        saw_score = calculate_saw_score(mahasiswa)
+        predicted_class = classify_saw_score(saw_score)
+        
+        # Ground truth
+        actual_class = classify_actual(mahasiswa)
+        
+        y_true.append(actual_class)
+        y_pred.append(predicted_class)
+        
+        results.append({
+            "nim": mahasiswa.nim,
+            "nama": mahasiswa.nama,
+            "ipk": mahasiswa.ipk,
+            "sks": mahasiswa.sks,
+            "dek_percentage": mahasiswa.persen_dek,
+            "actual_class": actual_class,
+            "predicted_class": predicted_class,
+            "saw_score": saw_score,
+            "is_correct": actual_class == predicted_class
+        })
+    
+    # Hitung metrik evaluasi
+    accuracy = accuracy_score(y_true, y_pred)
+    
+    # Precision, Recall, F1-Score (macro average untuk multi-class)
+    precision = precision_score(y_true, y_pred, average='macro', zero_division=0)
+    recall = recall_score(y_true, y_pred, average='macro', zero_division=0)
+    f1 = f1_score(y_true, y_pred, average='macro', zero_division=0)
+    
+    # Confusion Matrix
+    cm = confusion_matrix(y_true, y_pred, labels=["Peluang Lulus Tinggi", "Peluang Lulus Sedang", "Peluang Lulus Kecil"])
+    
+    # Hitung specificity (True Negative Rate)
+    # Specificity = TN / (TN + FP)
+    specificity = 0
+    if len(cm) >= 2:
+        tn = cm[1, 1] + cm[2, 2]  # True negatives for class 0
+        fp = cm[1, 0] + cm[2, 0]  # False positives for class 0
+        if (tn + fp) > 0:
+            specificity = tn / (tn + fp)
+    
+    # Distribusi klasifikasi
+    classification_distribution = {
+        "tinggi": sum(1 for pred in y_pred if pred == "Peluang Lulus Tinggi"),
+        "sedang": sum(1 for pred in y_pred if pred == "Peluang Lulus Sedang"),
+        "kecil": sum(1 for pred in y_pred if pred == "Peluang Lulus Kecil")
+    }
+    
+    # Confusion matrix untuk response
+    confusion_matrix_dict = {
+        "tp": int(cm[0, 0]) if len(cm) > 0 else 0,  # True Positive (Tinggi predicted as Tinggi)
+        "fp": int(cm[0, 1] + cm[0, 2]) if len(cm) > 0 else 0,  # False Positive
+        "fn": int(cm[1, 0] + cm[2, 0]) if len(cm) > 1 else 0,  # False Negative
+        "tn": int(cm[1, 1] + cm[1, 2] + cm[2, 1] + cm[2, 2]) if len(cm) > 1 else 0  # True Negative
+    }
+    
+    evaluation_result = {
+        "total_data": len(mahasiswa_list),
+        "training_data": len(training_data),
+        "test_data": len(test_data),
+        "accuracy": float(accuracy),
+        "precision": float(precision),
+        "recall": float(recall),
+        "f1_score": float(f1),
+        "specificity": float(specificity),
+        "confusion_matrix": confusion_matrix_dict,
+        "classification_distribution": classification_distribution,
+        "results": results,
+        "weights": weights,
+        "test_size": test_size,
+        "random_state": random_state
+    }
+    
+    # Simpan ke database jika diminta
+    if save_to_db:
+        # TODO: Implementasi penyimpanan hasil evaluasi ke database
+        pass
+    
+    return evaluation_result
+
+def get_saw_evaluation_history(db: Session) -> List[Dict[str, Any]]:
+    """
+    Mendapatkan riwayat evaluasi SAW dari database
+    """
+    # TODO: Implementasi untuk mengambil riwayat evaluasi
+    return []
+
+def save_saw_evaluation_result(db: Session, evaluation_data: Dict[str, Any]) -> bool:
+    """
+    Menyimpan hasil evaluasi SAW ke database
+    """
+    # TODO: Implementasi untuk menyimpan hasil evaluasi
+    return True 

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
+from pydantic import BaseModel
 
 from database import get_db
 from models import Mahasiswa, SAWResults, SAWCriteria, SAWFinalResults
@@ -16,8 +17,16 @@ from saw_logic import (
     get_saw_final_result_from_db,
     recalculate_all_saw,
     clear_saw_results,
-    initialize_saw_criteria
+    initialize_saw_criteria,
+    evaluate_saw_performance
 )
+
+# Schema untuk request evaluasi SAW
+class SAWEvaluationRequest(BaseModel):
+    weights: Dict[str, float] = {"ipk": 0.4, "sks": 0.35, "dek": 0.25}
+    test_size: float = 0.3
+    random_state: int = 42
+    save_to_db: bool = False
 
 router = APIRouter(prefix="/api/saw", tags=["saw"])
 
@@ -456,4 +465,59 @@ def get_classification_info():
         raise HTTPException(
             status_code=500,
             detail=f"Terjadi kesalahan saat mengambil informasi klasifikasi: {str(e)}"
+        )
+
+@router.post("/evaluate")
+def evaluate_saw(request: SAWEvaluationRequest, db: Session = Depends(get_db)):
+    """
+    Evaluasi performa metode SAW
+    
+    Args:
+        request: Parameter evaluasi SAW
+        db: Database session
+    
+    Returns:
+        Hasil evaluasi SAW dengan metrik performa
+    """
+    try:
+        # Validasi input
+        if request.test_size < 0.1 or request.test_size > 0.5:
+            raise HTTPException(
+                status_code=400,
+                detail="Test size harus antara 0.1 dan 0.5"
+            )
+        
+        # Validasi weights
+        total_weight = sum(request.weights.values())
+        if abs(total_weight - 1.0) > 0.01:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Total bobot harus 1.0, saat ini: {total_weight}"
+            )
+        
+        # Lakukan evaluasi
+        evaluation_result = evaluate_saw_performance(
+            db=db,
+            weights=request.weights,
+            test_size=request.test_size,
+            random_state=request.random_state,
+            save_to_db=request.save_to_db
+        )
+        
+        return {
+            "message": "Evaluasi SAW berhasil dilakukan",
+            "evaluation": evaluation_result
+        }
+        
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat evaluasi SAW: {str(e)}"
         ) 
