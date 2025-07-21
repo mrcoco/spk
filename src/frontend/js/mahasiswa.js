@@ -533,7 +533,7 @@ $(document).ready(function() {
             },
             {
                 field: "persen_dek",
-                title: "Persentase nilai DEK",
+                title: "Persentase Nilai D/E/K (%):",
                 width: 120,
                 format: "{0:n2}%",
                 headerAttributes: {
@@ -1054,12 +1054,11 @@ function initializeMahasiswaForm() {
                     label: "Program Studi:",
                     editor: "DropDownList",
                     editorOptions: {
-                        dataSource: [
-                            "Teknik Informatika",
-                            "Sistem Informasi",
-                            "Teknologi Informasi"
-                        ],
-                        placeholder: "Pilih program studi"
+                        dataSource: [],
+                        dataTextField: "text",
+                        dataValueField: "value",
+                        placeholder: "Pilih program studi",
+                        filter: "contains"
                     },
                     validation: { required: true }
                 },
@@ -1089,14 +1088,14 @@ function initializeMahasiswaForm() {
                 },
                 {
                     field: "persen_dek",
-                    label: "Persentase Kelulusan (%):",
+                    label: "Persentase Nilai D/E/K (%):",
                     editor: "NumericTextBox",
                     editorOptions: {
                         format: "n2",
                         min: 0,
                         max: 100,
                         step: 0.01,
-                        placeholder: "Masukkan persentase (0-100%)"
+                        placeholder: "Masukkan persentase nilai D/E/K (0-100%)"
                     },
                     validation: { required: true, min: 0, max: 100 }
                 }
@@ -1104,6 +1103,9 @@ function initializeMahasiswaForm() {
         });
         
         console.log('✅ Form mahasiswa berhasil diinisialisasi');
+        
+        // Load program studi data untuk dropdown
+        loadProgramStudiDataForForm();
         
         // Tambahkan event listener untuk form validation
         const form = $("#mahasiswaFormContent").data("kendoForm");
@@ -1245,7 +1247,7 @@ $("#submitMahasiswaBtn").click(function(e) {
             console.log("🔧 ❌ Validasi Persen DEK gagal - nilai:", formData.persen_dek);
             showNotification(
                 "Error",
-                "Persentase DEK harus antara 0-100",
+                "Persentase nilai D/E/K harus antara 0-100",
                 "error"
             );
             return;
@@ -2277,6 +2279,11 @@ function showAddMahasiswaForm() {
     $("#mahasiswaForm").slideDown(300);
     console.log('🔧 Form ditampilkan dengan animasi');
     
+    // Load data program studi setelah form ditampilkan
+    setTimeout(() => {
+        loadProgramStudiDataForForm();
+    }, 400);
+    
     // Fallback: pastikan form benar-benar ditampilkan
     setTimeout(() => {
         const formElement = document.getElementById('mahasiswaForm');
@@ -2404,6 +2411,11 @@ function showEditMahasiswaForm(dataItem) {
     
     console.log('🔧 Form edit ditampilkan dengan animasi');
     
+    // Load data program studi setelah form ditampilkan
+    setTimeout(() => {
+        loadProgramStudiDataForForm(dataItem);
+    }, 400);
+    
     // Fallback: pastikan form benar-benar ditampilkan
     setTimeout(() => {
         const formElement = document.getElementById('mahasiswaForm');
@@ -2426,3 +2438,165 @@ function hideMahasiswaForm() {
     console.log('🔧 hideMahasiswaForm dipanggil...');
     $("#mahasiswaForm").slideUp(300);
 } 
+
+// Fungsi untuk memuat data program studi dari API
+function loadProgramStudiData() {
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: `${CONFIG.API_BASE_URL}/api/program-studi/`,
+            method: 'GET',
+            success: function(data) {
+                console.log('✅ Data program studi berhasil dimuat:', data.length, 'items');
+                resolve(data);
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ Error memuat data program studi:', error);
+                reject(error);
+            }
+        });
+    });
+}
+
+// Fungsi untuk mengupdate dropdown program studi
+function updateProgramStudiDropdown(programStudiData) {
+    try {
+        // Konversi data untuk dropdown
+        const dropdownData = programStudiData.map(item => ({
+            text: `${item.program_studi} (${item.jenjang})`,
+            value: item.program_studi
+        }));
+        
+        console.log('✅ Dropdown program studi diupdate dengan', dropdownData.length, 'items');
+        return dropdownData;
+    } catch (error) {
+        console.error('❌ Error mengupdate dropdown program studi:', error);
+        return [];
+    }
+}
+
+// Fungsi untuk memuat data program studi ke dropdown form
+function loadProgramStudiDataForForm(editData = null) {
+    console.log('🔧 Memuat data program studi untuk dropdown form...');
+    if (editData) {
+        console.log('🔧 Mode edit dengan data:', editData.program_studi);
+    }
+    
+    // Cek apakah CONFIG tersedia
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG tidak tersedia');
+        return;
+    }
+    
+    console.log('🔧 API URL:', `${CONFIG.API_BASE_URL}/api/program-studi/`);
+    
+    $.ajax({
+        url: `${CONFIG.API_BASE_URL}/api/program-studi/`,
+        method: 'GET',
+        success: function(data) {
+            console.log('✅ Data program studi berhasil dimuat:', data.length, 'items');
+            console.log('🔧 Sample data:', data.slice(0, 3));
+            
+            // Transform data untuk dropdown
+            const dropdownData = data.map(item => ({
+                text: `${item.program_studi} (${item.jenjang})`,
+                value: item.program_studi
+            }));
+            
+            console.log('🔧 Dropdown data sample:', dropdownData.slice(0, 3));
+            
+            // Update dropdown di form dengan retry mechanism
+            updateDropdownWithRetry(dropdownData, 0, editData);
+        },
+        error: function(xhr, status, error) {
+            console.error('❌ Error memuat data program studi:', error);
+            console.error('❌ Status:', status);
+            console.error('❌ Response:', xhr.responseText);
+            showNotification(
+                "Error",
+                "Gagal memuat data program studi: " + error,
+                "error"
+            );
+        }
+    });
+}
+
+// Fungsi untuk update dropdown dengan retry mechanism
+function updateDropdownWithRetry(dropdownData, attempt, editData = null) {
+    const maxAttempts = 5;
+    const delay = 200; // 200ms delay between attempts
+    
+    console.log(`🔧 Attempt ${attempt + 1} to update dropdown...`);
+    
+    // Update dropdown di form
+    const form = $("#mahasiswaFormContent").data("kendoForm");
+    if (form) {
+        console.log('✅ Form ditemukan');
+        
+        // Coba beberapa cara untuk menemukan dropdown
+        let programStudiField = null;
+        
+        // Method 1: Cari dengan name attribute
+        programStudiField = form.element.find('[name="program_studi"]').data("kendoDropDownList");
+        
+        // Method 2: Cari dengan class k-dropdown
+        if (!programStudiField) {
+            programStudiField = form.element.find('.k-dropdown').data("kendoDropDownList");
+        }
+        
+        // Method 3: Cari semua dropdown dan ambil yang pertama
+        if (!programStudiField) {
+            const dropdowns = form.element.find('[data-role="dropdownlist"]');
+            if (dropdowns.length > 0) {
+                programStudiField = dropdowns.first().data("kendoDropDownList");
+            }
+        }
+        
+        if (programStudiField) {
+            console.log('✅ Dropdown program studi ditemukan');
+            programStudiField.setDataSource(dropdownData);
+            console.log('✅ Dropdown program studi berhasil diupdate dengan', dropdownData.length, 'items');
+            
+            // Jika ada data edit, set nilai yang sesuai
+            if (editData && editData.program_studi) {
+                console.log('🔧 Setting dropdown value untuk edit:', editData.program_studi);
+                
+                // Tunggu sebentar agar dropdown sudah terupdate
+                setTimeout(() => {
+                    try {
+                        programStudiField.value(editData.program_studi);
+                        console.log('✅ Dropdown value berhasil diset ke:', editData.program_studi);
+                    } catch (error) {
+                        console.warn('⚠️ Gagal set dropdown value:', error);
+                    }
+                }, 100);
+            }
+        } else {
+            console.warn(`⚠️ Dropdown program studi tidak ditemukan (attempt ${attempt + 1})`);
+            
+            // Retry jika belum mencapai max attempts
+            if (attempt < maxAttempts - 1) {
+                setTimeout(() => {
+                    updateDropdownWithRetry(dropdownData, attempt + 1, editData);
+                }, delay);
+            } else {
+                console.error('❌ Gagal menemukan dropdown setelah', maxAttempts, 'attempts');
+                showNotification(
+                    "Warning",
+                    "Dropdown program studi tidak dapat diupdate",
+                    "warning"
+                );
+            }
+        }
+    } else {
+        console.warn(`⚠️ Form tidak ditemukan (attempt ${attempt + 1})`);
+        
+        // Retry jika belum mencapai max attempts
+        if (attempt < maxAttempts - 1) {
+            setTimeout(() => {
+                updateDropdownWithRetry(dropdownData, attempt + 1, editData);
+            }, delay);
+        } else {
+            console.error('❌ Form tidak ditemukan setelah', maxAttempts, 'attempts');
+        }
+    }
+}
