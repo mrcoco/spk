@@ -3,6 +3,7 @@ const routes = {
     '#dashboard': 'dashboardSection',
     '#mahasiswa': 'mahasiswaSection',
     '#nilai': 'nilaiSection',
+    '#program-studi': 'programStudiSection',
     '#fis': 'fisSection',
     '#saw': 'sawSection',
     '#evaluation': 'evaluationSection',

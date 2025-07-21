@@ -226,3 +226,12 @@ class FISEvaluation(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         } 
+
+class ProgramStudi(Base):
+    __tablename__ = "program_studi"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    program_studi = Column(String, nullable=False)
+    jenjang = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow) 

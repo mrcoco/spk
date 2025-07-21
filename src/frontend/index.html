@@ -154,6 +154,12 @@
                             <span>Data Nilai</span>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="#program-studi" class="nav-link">
+                            <i class="fas fa-graduation-cap"></i>
+                            <span>Program Studi</span>
+                        </a>
+                    </li>
                     <li class="nav-item has-submenu">
                         <a href="#" class="nav-link">
                             <i class="fas fa-chart-bar"></i>
@@ -1298,6 +1304,19 @@
                                             </button>
                                         </div>
                                     </div>
+                                    
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <button id="resetConfig" class="btn btn-outline-secondary w-100">
+                                                <i class="fas fa-undo"></i> Reset Konfigurasi
+                                            </button>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <button id="loadSampleData" class="btn btn-outline-info w-100">
+                                                <i class="fas fa-database"></i> Load Sample Data
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1423,6 +1442,14 @@
                                     <h4 class="mb-3">
                                         <i class="fas fa-table"></i> Confusion Matrix
                                     </h4>
+                                    <div class="btn-group btn-group-sm mb-3" role="group" id="confusionMatrixToggle">
+                                        <button type="button" class="btn btn-outline-primary active" data-chart-type="bubble">
+                                            <i class="fas fa-circle"></i> Bubble Chart
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary" data-chart-type="table">
+                                            <i class="fas fa-table"></i> Table Heatmap
+                                        </button>
+                                    </div>
                                     <canvas id="confusionMatrixChart"></canvas>
                                 </div>
                             </div>
@@ -1587,6 +1614,74 @@
                                             </button>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Program Studi Section -->
+                <div id="programStudiSection" class="section" style="display: none;">
+                    <div class="content-container">
+                        <h2>Program Studi</h2>
+                        <div class="section-description">
+                            <p>Kelola data program studi dan jenjang pendidikan.</p>
+                        </div>
+                        <div class="section-content">
+                            <div class="program-studi-container">
+                                <!-- Statistics -->
+                                <div class="stats-container">
+                                    <div class="stat-card">
+                                        <h4 id="totalProgramStudi">0</h4>
+                                        <p>Total Program Studi</p>
+                                    </div>
+                                    <div class="stat-card">
+                                        <h4 id="totalJenjang">0</h4>
+                                        <p>Total Jenjang</p>
+                                    </div>
+                                    <div class="stat-card">
+                                        <h4 id="programStudiS1">0</h4>
+                                        <p>Program S1</p>
+                                    </div>
+                                    <div class="stat-card">
+                                        <h4 id="programStudiS2">0</h4>
+                                        <p>Program S2</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Main Content -->
+                                <div class="program-studi-card">
+                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <h3><i class="fas fa-list"></i> Daftar Program Studi</h3>
+                                        <button id="addProgramStudiBtn" class="k-button k-button-solid k-button-solid-base">
+                                            <i class="fas fa-plus"></i> Tambah Program Studi
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Search and Filter -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <div class="search-container">
+                                                <input type="text" id="searchProgramStudiInput" class="form-control search-input" 
+                                                       placeholder="Cari program studi atau jenjang...">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="jenjang-filter">
+                                                <select id="jenjangFilter" class="form-control">
+                                                    <option value="">Semua Jenjang</option>
+                                                    <option value="S1">S1</option>
+                                                    <option value="S2">S2</option>
+                                                    <option value="S3">S3</option>
+                                                    <option value="D3">D3</option>
+                                                    <option value="D4">D4</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Grid -->
+                                    <div id="programStudiGrid"></div>
                                 </div>
                             </div>
                         </div>
@@ -1814,5 +1909,8 @@
         };
         console.log('✅ Standalone config loaded for enhanced evaluation');
     </script>
+    
+    <!-- Program Studi Script -->
+    <script src="js/program-studi.js"></script>
 </body>
 </html>

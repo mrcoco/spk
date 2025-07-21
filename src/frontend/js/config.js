@@ -96,7 +96,8 @@ const CONFIG = {
             FUZZY_BATCH: `${this.API_PREFIX}/fuzzy/batch-klasifikasi`,
             SAW: `${this.API_PREFIX}/saw`,
             COMPARISON: `${this.API_PREFIX}/comparison`,
-            BATCH_KLASIFIKASI: `${this.API_PREFIX}/batch/klasifikasi`
+            BATCH_KLASIFIKASI: `${this.API_PREFIX}/batch/klasifikasi`,
+            PROGRAM_STUDI: `${this.API_PREFIX}/program-studi`
         };
     },
 

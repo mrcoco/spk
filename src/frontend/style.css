@@ -6864,3 +6864,138 @@ body.drawer-expanded .content-wrapper {
         font-size: 0.85em;
     }
 }
+
+/* Program Studi Styles */
+.program-studi-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.program-studi-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.program-studi-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.program-studi-header p {
+    margin: 10px 0 0 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.program-studi-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    margin-bottom: 20px;
+}
+
+.program-studi-card h3 {
+    color: #333;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.search-container {
+    margin-bottom: 20px;
+}
+
+.search-input {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    padding: 10px 15px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+    border-color: #667eea;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.stat-card h4 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.stat-card p {
+    margin: 5px 0 0 0;
+    opacity: 0.9;
+}
+
+.jenjang-filter {
+    margin-bottom: 20px;
+}
+
+.jenjang-filter select {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+/* Responsive Design for Program Studi */
+@media (max-width: 768px) {
+    .program-studi-container {
+        padding: 10px;
+    }
+    
+    .program-studi-header h1 {
+        font-size: 2rem;
+    }
+    
+    .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .stat-card h4 {
+        font-size: 1.5rem;
+    }
+    
+    .program-studi-card {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .program-studi-header {
+        padding: 20px;
+    }
+    
+    .program-studi-header h1 {
+        font-size: 1.8rem;
+    }
+}

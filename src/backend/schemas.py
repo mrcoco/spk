@@ -260,4 +260,23 @@ class KlasifikasiGridResponse(BaseModel):
                 "data": [],
                 "total": 0
             }
-        } 
+        }
+
+class ProgramStudiBase(BaseModel):
+    program_studi: str
+    jenjang: str
+
+class ProgramStudiCreate(ProgramStudiBase):
+    pass
+
+class ProgramStudiUpdate(ProgramStudiBase):
+    program_studi: Optional[str] = None
+    jenjang: Optional[str] = None
+
+class ProgramStudi(ProgramStudiBase):
+    id: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True 

@@ -11,6 +11,7 @@ from routers.nilai import router as nilai_router
 from routers.dashboard import router as dashboard_router
 from routers.saw import router as saw_router
 from routers.comparison import router as comparison_router
+from routers.program_studi import router as program_studi_router
 from fuzzy_logic import FuzzyKelulusan
 
 # Create database tables
@@ -142,6 +143,7 @@ app.include_router(nilai_router)
 app.include_router(dashboard_router)
 app.include_router(saw_router)
 app.include_router(comparison_router)
+app.include_router(program_studi_router)
 
 if __name__ == "__main__":
     import uvicorn

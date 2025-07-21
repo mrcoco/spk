@@ -22,8 +22,6 @@ class EnhancedEvaluation {
         this.results = null;
         this.charts = {};
         this.isRunning = false;
-        
-        this.initializeEventListeners();
     }
 
     /**
@@ -44,7 +42,7 @@ class EnhancedEvaluation {
             console.error('❌ evaluationType element not found');
         }
 
-        const cvFolds = document.getElementById('cvFolds');
+        const cvFolds = document.getElementById('crossValidationFolds');
         if (cvFolds) {
             cvFolds.addEventListener('change', (e) => {
                 this.config.cvFolds = parseInt(e.target.value);
@@ -177,7 +175,7 @@ class EnhancedEvaluation {
         const evaluationType = this.config.evaluationType;
         
         // Show/hide relevant configuration options
-        const cvFoldsGroup = document.getElementById('cvFolds')?.parentElement;
+        const cvFoldsGroup = document.getElementById('crossValidationFolds')?.parentElement;
         const bootstrapGroup = document.getElementById('bootstrapSamples')?.parentElement;
         const ensembleGroup = document.getElementById('ensembleSize')?.parentElement;
         
@@ -206,12 +204,19 @@ class EnhancedEvaluation {
         };
         
         // Update UI
-        document.getElementById('evaluationType').value = this.config.evaluationType;
-        document.getElementById('cvFolds').value = this.config.cvFolds;
-        document.getElementById('bootstrapSamples').value = this.config.bootstrapSamples;
-        document.getElementById('ensembleSize').value = this.config.ensembleSize;
-        document.getElementById('enablePreprocessing').checked = this.config.enablePreprocessing;
-        document.getElementById('enableRuleWeighting').checked = this.config.enableRuleWeighting;
+        const evaluationTypeEl = document.getElementById('evaluationType');
+        const cvFoldsEl = document.getElementById('crossValidationFolds');
+        const bootstrapSamplesEl = document.getElementById('bootstrapSamples');
+        const ensembleSizeEl = document.getElementById('ensembleSize');
+        const enablePreprocessingEl = document.getElementById('enablePreprocessing');
+        const enableRuleWeightingEl = document.getElementById('enableRuleWeighting');
+        
+        if (evaluationTypeEl) evaluationTypeEl.value = this.config.evaluationType;
+        if (cvFoldsEl) cvFoldsEl.value = this.config.cvFolds;
+        if (bootstrapSamplesEl) bootstrapSamplesEl.value = this.config.bootstrapSamples;
+        if (ensembleSizeEl) ensembleSizeEl.value = this.config.ensembleSize;
+        if (enablePreprocessingEl) enablePreprocessingEl.checked = this.config.enablePreprocessing;
+        if (enableRuleWeightingEl) enableRuleWeightingEl.checked = this.config.enableRuleWeighting;
         
         this.updateConfigurationUI();
         this.showAlert('Konfigurasi telah direset ke default', 'info');
@@ -231,7 +236,10 @@ class EnhancedEvaluation {
             const data = result.data || [];
             const totalData = result.total || data.length || 0;
             
-            document.getElementById('totalData').textContent = totalData.toLocaleString();
+            const totalDataEl = document.getElementById('totalData');
+            if (totalDataEl) {
+                totalDataEl.textContent = totalData.toLocaleString();
+            }
             this.showAlert(`Sample data berhasil dimuat: ${totalData} records`, 'success');
             
         } catch (error) {
@@ -1801,24 +1809,64 @@ class EnhancedEvaluation {
     }
 
     /**
+     * Load configuration from localStorage or use defaults
+     */
+    loadConfiguration() {
+        console.log('🔧 Loading configuration...');
+        
+        try {
+            // Try to load from localStorage
+            const savedConfig = localStorage.getItem('enhancedEvaluationConfig');
+            if (savedConfig) {
+                const parsedConfig = JSON.parse(savedConfig);
+                this.config = { ...this.config, ...parsedConfig };
+                console.log('✅ Configuration loaded from localStorage');
+            } else {
+                console.log('ℹ️ Using default configuration');
+            }
+            
+            // Update UI with current configuration
+            this.updateConfigurationUI();
+            
+        } catch (error) {
+            console.error('❌ Error loading configuration:', error);
+            console.log('ℹ️ Using default configuration due to error');
+        }
+    }
+
+    /**
+     * Save configuration to localStorage
+     */
+    saveConfiguration() {
+        try {
+            localStorage.setItem('enhancedEvaluationConfig', JSON.stringify(this.config));
+            console.log('✅ Configuration saved to localStorage');
+        } catch (error) {
+            console.error('❌ Error saving configuration:', error);
+        }
+    }
+
+    /**
      * Initialize the enhanced evaluation system
      */
     init() {
         console.log('🚀 Initializing Enhanced Evaluation...');
         
-        // Initialize configuration
-        this.loadConfiguration();
-        
-        // Initialize event listeners
-        this.initializeEventListeners();
-        
-        // Initialize confusion matrix toggle
-        this.initializeConfusionMatrixToggle();
-        
-        // Load sample data
-        this.loadSampleData();
-        
-        console.log('✅ Enhanced Evaluation initialized successfully');
+        try {
+            // Initialize configuration
+            this.loadConfiguration();
+            
+            // Initialize event listeners
+            this.initializeEventListeners();
+            
+            // Update configuration UI
+            this.updateConfigurationUI();
+            
+            console.log('✅ Enhanced Evaluation initialized successfully');
+        } catch (error) {
+            console.error('❌ Error initializing Enhanced Evaluation:', error);
+            this.showAlert('Error initializing Enhanced Evaluation: ' + error.message, 'error');
+        }
     }
 }
 

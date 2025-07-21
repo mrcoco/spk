@@ -116,6 +116,15 @@ class Router {
                     }
                 }
                 break;
+            case 'program-studi':
+                if (typeof initializeProgramStudi === 'function') {
+                    // Only initialize if not already initialized
+                    if (!window.programStudiInitialized) {
+                        window.programStudiInitialized = true;
+                        initializeProgramStudi();
+                    }
+                }
+                break;
             // Add other cases as needed
         }
     }
