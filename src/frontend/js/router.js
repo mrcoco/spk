@@ -148,3 +148,20 @@ class Router {
 
 // Export Router untuk digunakan di file lain
 window.Router = Router; 
+
+// Cek JWT token sebelum load halaman utama
+if (!localStorage.getItem('spk_token')) {
+    if (!window.location.pathname.endsWith('login.html')) {
+        window.location.href = 'login.html';
+    }
+} else {
+    // Set token ke header Authorization untuk semua AJAX request
+    $.ajaxSetup({
+        beforeSend: function(xhr) {
+            const token = localStorage.getItem('spk_token');
+            if (token) {
+                xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            }
+        }
+    });
+} 

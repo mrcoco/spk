@@ -60,7 +60,8 @@
             'js/saw.js',
             'js/saw-evaluation.js',
             'js/evaluation.js',
-            'js/enhanced_evaluation.js'
+            'js/enhanced_evaluation.js',
+            'js/users.js'
         ];
         // Load CSS
         cssFiles.forEach(href => {
@@ -224,6 +225,18 @@
                         <a href="#about" class="nav-link">
                             <i class="fas fa-info-circle"></i>
                             <span>About</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#users" class="nav-link">
+                            <i class="fas fa-user-cog"></i>
+                            <span>Users</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#logout" class="nav-link" id="logoutMenu">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
                         </a>
                     </li>
                 </ul>
@@ -2381,6 +2394,101 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Users Section -->
+                <div id="usersSection" class="section" style="display: none;">
+                    <div class="content-container">
+                        <div class="section-header">
+                            <h2><i class="fas fa-user-cog"></i> Manajemen Users</h2>
+                        </div>
+                        <!-- Filter Pencarian -->
+                        <div class="search-filter-container">
+                            <div>
+                                <div class="search-input-group">
+                                    <label for="searchUserInput">
+                                        <i class="fas fa-search"></i> Cari User:
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="searchUserInput" 
+                                        placeholder="Masukkan username, email, atau nama..."
+                                    >
+                                </div>
+                                <div class="search-button-group">
+                                    <button id="searchUserBtn" class="k-button k-primary">
+                                        <i class="fas fa-search"></i> Cari
+                                    </button>
+                                    <button id="clearSearchUserBtn" class="k-button">
+                                        <i class="fas fa-times"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="searchUserInfo">
+                                <i class="fas fa-info-circle"></i> 
+                                <span id="searchUserResultText">Menampilkan hasil pencarian user...</span>
+                            </div>
+                        </div>
+                        <div id="usersGrid"></div>
+                        <!-- Total Record Info -->
+                        <div id="totalUserRecordInfo" class="total-record-info">
+                            <i class="fas fa-database"></i>
+                            <span id="totalUserRecordText">Total: 0 user</span>
+                        </div>
+                        <!-- Form User (modal/inline, placeholder) -->
+                        <div id="userForm" style="display: none;">
+                            <div class="form-overlay">
+                                <div class="form-card">
+                                    <div class="form-header">
+                                        <h3 id="userFormTitle"><i class="fas fa-plus"></i> Tambah User</h3>
+                                        <button type="button" class="close-btn" onclick="hideUserForm()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="k-form-field">
+                                                    <label for="userUsername">Username</label>
+                                                    <input type="text" id="userUsername" class="k-textbox" required>
+                                                </div>
+                                                <div class="k-form-field">
+                                                    <label for="userEmail">Email</label>
+                                                    <input type="email" id="userEmail" class="k-textbox" required>
+                                                </div>
+                                                <div class="k-form-field">
+                                                    <label for="userFullName">Nama Lengkap</label>
+                                                    <input type="text" id="userFullName" class="k-textbox" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="k-form-field">
+                                                    <label for="userRole">Role</label>
+                                                    <select id="userRole" class="k-dropdown">
+                                                        <option value="admin">Admin</option>
+                                                        <option value="staf">Staf</option>
+                                                        <option value="user">User</option>
+                                                    </select>
+                                                </div>
+                                                <div class="k-form-field">
+                                                    <label for="userPassword">Password</label>
+                                                    <input type="password" id="userPassword" class="k-textbox" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-footer">
+                                        <button type="button" class="k-button k-primary" id="saveUserBtn">
+                                            <i class="fas fa-save"></i> Simpan
+                                        </button>
+                                        <button type="button" class="k-button" onclick="hideUserForm()">
+                                            <i class="fas fa-times"></i> Batal
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Notification Container -->
@@ -2478,5 +2586,14 @@
     
     <!-- Program Studi Script -->
     <script src="js/program-studi.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#logoutMenu').on('click', function(e) {
+                e.preventDefault();
+                localStorage.removeItem('spk_token');
+                window.location.href = 'login.html';
+            });
+        });
+    </script>
 </body>
 </html>

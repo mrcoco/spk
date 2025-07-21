@@ -11,7 +11,8 @@ const routes = {
     '#enhanced-evaluation': 'enhancedEvaluationSection',
     '#comparison': 'comparisonSection',
     '#user-guide': 'userGuideSection',
-    '#about': 'aboutSection'
+    '#about': 'aboutSection',
+    '#users': 'usersSection'
 };
 
 // Inisialisasi aplikasi
