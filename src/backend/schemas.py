@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, EmailStr
 from typing import Optional, List, Dict
 from datetime import datetime
 from models import KategoriPeluang
@@ -280,3 +280,26 @@ class ProgramStudi(ProgramStudiBase):
 
     class Config:
         from_attributes = True 
+
+class UserBase(BaseModel):
+    username: str
+    email: EmailStr
+    full_name: str
+    role: str = 'user'
+    is_active: Optional[bool] = True
+
+class UserCreate(UserBase):
+    password: str
+
+class UserRead(UserBase):
+    id: int
+    created_at: datetime
+    class Config:
+        orm_mode = True
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+    password: Optional[str] = None 

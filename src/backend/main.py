@@ -12,6 +12,7 @@ from routers.dashboard import router as dashboard_router
 from routers.saw import router as saw_router
 from routers.comparison import router as comparison_router
 from routers.program_studi import router as program_studi_router
+from routers.users import router as users_router
 from fuzzy_logic import FuzzyKelulusan
 
 # Create database tables
@@ -136,6 +137,7 @@ print("Dashboard router routes:", [route.path for route in dashboard_router.rout
 print("SAW router routes:", [route.path for route in saw_router.routes])
 print("Comparison router routes:", [route.path for route in comparison_router.routes])
 print("Program Studi router routes:", [route.path for route in program_studi_router.routes])
+print("Users router routes:", [route.path for route in users_router.routes])
 
 # Include routers
 app.include_router(fuzzy_router)
@@ -145,6 +147,7 @@ app.include_router(dashboard_router)
 app.include_router(saw_router)
 app.include_router(comparison_router)
 app.include_router(program_studi_router)
+app.include_router(users_router, prefix="/api")
 
 if __name__ == "__main__":
     import uvicorn
