@@ -18,6 +18,8 @@ class Mahasiswa(Base):
     ipk = Column(Float, nullable=False, default=0.0)
     sks = Column(Integer, nullable=False, default=0)
     persen_dek = Column(Float, nullable=False, default=0.0)  # Prosentase total nilai D, E, K
+    status_lulus_aktual = Column(String(20), nullable=True)  # Status lulus yang sebenarnya: "LULUS", "BELUM_LULUS", "DROPOUT"
+    tanggal_lulus = Column(DateTime, nullable=True)  # Tanggal lulus jika sudah lulus
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -43,6 +45,8 @@ class Mahasiswa(Base):
             "ipk": float(self.ipk),
             "sks": self.sks,
             "persen_dek": float(self.persen_dek),
+            "status_lulus_aktual": self.status_lulus_aktual,
+            "tanggal_lulus": self.tanggal_lulus.isoformat() if self.tanggal_lulus else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }

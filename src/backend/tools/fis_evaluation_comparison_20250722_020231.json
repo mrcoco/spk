@@ -1,0 +1,51 @@
+{
+  "evaluation_date": "2025-07-22T02:02:31.849402",
+  "metrics_comparison": {
+    "accuracy": {
+      "previous": 0.23333333333333334,
+      "actual": 0.2637,
+      "difference": 0.0304
+    },
+    "precision": {
+      "previous": 0.5830029619503304,
+      "actual": 0.0986,
+      "difference": -0.4844
+    },
+    "recall": {
+      "previous": 0.5871345029239766,
+      "actual": 0.8129,
+      "difference": 0.2258
+    },
+    "f1_score": {
+      "previous": 0.3523554075718338,
+      "actual": 0.1759,
+      "difference": -0.1765
+    }
+  },
+  "data_comparison": {
+    "total_data": {
+      "previous": 400,
+      "actual": 1604
+    },
+    "test_data": {
+      "previous": 120,
+      "actual": "N/A"
+    },
+    "execution_time": {
+      "previous": 0.016,
+      "actual": "N/A"
+    }
+  },
+  "summary": {
+    "better_metrics": [
+      "accuracy",
+      "recall"
+    ],
+    "worse_metrics": [
+      "precision",
+      "f1_score"
+    ],
+    "equal_metrics": [],
+    "overall_assessment": "Kedua evaluasi memiliki performa yang sebanding"
+  }
+}

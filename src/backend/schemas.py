@@ -10,6 +10,8 @@ class MahasiswaBase(BaseModel):
     ipk: float = Field(..., ge=0.0, le=4.0)
     sks: int = Field(..., ge=0, le=200)
     persen_dek: float = Field(..., ge=0.0, le=100.0)
+    status_lulus_aktual: Optional[str] = Field(None, max_length=20)
+    tanggal_lulus: Optional[datetime] = None
 
     @validator('nim')
     def validate_nim(cls, v):
@@ -34,6 +36,8 @@ class MahasiswaUpdate(BaseModel):
     ipk: Optional[float] = Field(None, ge=0.0, le=4.0)
     sks: Optional[int] = Field(None, ge=0, le=200)
     persen_dek: Optional[float] = Field(None, ge=0.0, le=100.0)
+    status_lulus_aktual: Optional[str] = Field(None, max_length=20)
+    tanggal_lulus: Optional[datetime] = None
 
     @validator('ipk')
     def validate_ipk(cls, v):

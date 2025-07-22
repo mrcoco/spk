@@ -1411,3 +1411,489 @@ function updateFISGridWithNewData(newData) {
         loadFISGridData();
     }
 } 
+
+// Fungsi untuk evaluasi FIS dengan status lulus aktual
+function evaluateFISWithActualStatus() {
+    console.log('🔍 Memulai evaluasi FIS dengan status lulus aktual...');
+    
+    // Tampilkan loading
+    showNotification("Info", "Memulai evaluasi FIS dengan data aktual...", "info");
+    
+    // Disable button
+    $('#btnEvaluateFISActual').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Evaluasi...');
+    
+    $.ajax({
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY) + '/evaluate-with-actual-status',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            test_size: 0.3,
+            random_state: 42
+        }),
+        success: function(response) {
+            console.log('✅ Evaluasi FIS berhasil:', response);
+            
+            if (response.success) {
+                displayFISEvaluationResults(response.result);
+                showNotification(
+                    "Sukses", 
+                    `Evaluasi FIS berhasil dengan ${response.result.evaluation_info.total_data} data`, 
+                    "success"
+                );
+            } else {
+                showNotification("Error", "Evaluasi FIS gagal", "error");
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('❌ Error evaluasi FIS:', {xhr, status, error});
+            
+            let errorMessage = "Gagal melakukan evaluasi FIS";
+            if (xhr.responseJSON && xhr.responseJSON.detail) {
+                errorMessage += ": " + xhr.responseJSON.detail;
+            }
+            
+            showNotification("Error", errorMessage, "error");
+        },
+        complete: function() {
+            // Enable button
+            $('#btnEvaluateFISActual').prop('disabled', false).html('<i class="fas fa-chart-line"></i> Evaluasi FIS dengan Data Aktual');
+        }
+    });
+}
+
+// Fungsi untuk menampilkan hasil evaluasi FIS
+function displayFISEvaluationResults(result) {
+    console.log('📊 Menampilkan hasil evaluasi FIS:', result);
+    
+    const container = $('#fisEvaluationResults');
+    if (container.length === 0) {
+        // Buat container jika belum ada
+        $('#fisSection .section-content').append(`
+            <div id="fisEvaluationResults" class="evaluation-results-container">
+                <div class="evaluation-header">
+                    <h3><i class="fas fa-chart-line"></i> Hasil Evaluasi FIS dengan Data Aktual</h3>
+                </div>
+                <div class="evaluation-content"></div>
+            </div>
+        `);
+    }
+    
+    const content = $('#fisEvaluationResults .evaluation-content');
+    
+    // Buat HTML untuk hasil evaluasi
+    const html = `
+        <div class="evaluation-summary">
+            <div class="summary-stats">
+                <div class="stat-item">
+                    <div class="stat-value">${result.metrics.accuracy * 100}%</div>
+                    <div class="stat-label">Akurasi</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${result.metrics.precision * 100}%</div>
+                    <div class="stat-label">Precision</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${result.metrics.recall * 100}%</div>
+                    <div class="stat-label">Recall</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${result.metrics.f1_score * 100}%</div>
+                    <div class="stat-label">F1-Score</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="evaluation-details">
+            <div class="confusion-matrix-section">
+                <h4><i class="fas fa-table"></i> Confusion Matrix</h4>
+                <div class="confusion-matrix">
+                    <table class="confusion-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Prediksi: Belum Lulus</th>
+                                <th>Prediksi: Lulus</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Aktual: Belum Lulus</strong></td>
+                                <td class="correct">${result.confusion_matrix.matrix[0][0]}</td>
+                                <td class="incorrect">${result.confusion_matrix.matrix[0][1]}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Aktual: Lulus</strong></td>
+                                <td class="incorrect">${result.confusion_matrix.matrix[1][0]}</td>
+                                <td class="correct">${result.confusion_matrix.matrix[1][1]}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="category-analysis-section">
+                <h4><i class="fas fa-chart-pie"></i> Analisis per Kategori</h4>
+                <div class="category-grid">
+                    ${Object.entries(result.category_analysis).map(([category, data]) => `
+                        <div class="category-card">
+                            <h5>${category}</h5>
+                            <div class="category-stats">
+                                <div class="stat">
+                                    <span class="label">Total Prediksi:</span>
+                                    <span class="value">${data.total_predictions}</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="label">Akurasi:</span>
+                                    <span class="value">${(data.accuracy * 100).toFixed(1)}%</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="label">Lulus Aktual:</span>
+                                    <span class="value">${data.actual_lulus}</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="label">Belum Lulus Aktual:</span>
+                                    <span class="value">${data.actual_belum_lulus}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div class="data-statistics-section">
+                <h4><i class="fas fa-info-circle"></i> Statistik Data</h4>
+                <div class="statistics-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">${result.statistics.total_actual_lulus}</div>
+                            <div class="stat-label">Total Lulus Aktual</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">${result.statistics.total_actual_belum_lulus}</div>
+                            <div class="stat-label">Total Belum Lulus Aktual</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">${result.statistics.percentage_actual_lulus}%</div>
+                            <div class="stat-label">Persentase Lulus</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sample-data-section">
+                <h4><i class="fas fa-list"></i> Sample Data Evaluasi</h4>
+                <div class="sample-table">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>NIM</th>
+                                <th>Nama</th>
+                                <th>Prediksi FIS</th>
+                                <th>Status Aktual</th>
+                                <th>Fuzzy Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${result.sample_data.map(item => `
+                                <tr>
+                                    <td>${item.nim}</td>
+                                    <td>${item.nama}</td>
+                                    <td>
+                                        <span class="badge ${item.predicted_category === 'Peluang Lulus Tinggi' ? 'bg-success' : item.predicted_category === 'Peluang Lulus Sedang' ? 'bg-warning' : 'bg-danger'}">
+                                            ${item.predicted_category}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge ${item.actual_status === 'LULUS' ? 'bg-success' : 'bg-secondary'}">
+                                            ${item.actual_status}
+                                        </span>
+                                    </td>
+                                    <td>${item.fuzzy_score.toFixed(3)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    content.html(html);
+    
+    // Tampilkan container
+    $('#fisEvaluationResults').show();
+}
+
+// Tambahkan button evaluasi ke form FIS
+function addFISEvaluationButton() {
+    const formContainer = $('#fisForm');
+    if (formContainer.length > 0) {
+        // Tambahkan button evaluasi setelah form
+        formContainer.after(`
+            <div class="evaluation-actions" style="margin-top: 20px; text-align: center;">
+                <button id="btnEvaluateFISActual" class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync" 
+                        onclick="evaluateFISWithActualStatus()">
+                    <i class="fas fa-chart-line"></i> Evaluasi FIS dengan Data Aktual
+                </button>
+                <p class="text-muted mt-2">
+                    <i class="fas fa-info-circle"></i> 
+                    Evaluasi ini membandingkan hasil klasifikasi FIS dengan status lulus yang sebenarnya
+                </p>
+            </div>
+        `);
+    }
+}
+
+// Panggil fungsi saat halaman FIS dimuat
+$(document).ready(function() {
+    // Tunggu sampai form FIS siap
+    setTimeout(function() {
+        addFISEvaluationButton();
+    }, 1000);
+});
+
+// Initialize FIS Actual Evaluation Section
+function initializeFISActualEvaluation() {
+    console.log('🔧 Initializing FIS Actual Evaluation Section...');
+    
+    // Initialize event handlers
+    initializeFISActualEvaluationHandlers();
+    
+    console.log('✅ FIS Actual Evaluation Section initialized successfully');
+}
+
+// Initialize event handlers for FIS Actual Evaluation
+function initializeFISActualEvaluationHandlers() {
+    console.log('🔧 Initializing FIS Actual Evaluation handlers...');
+    
+    // Event handler untuk tombol evaluasi FIS dengan data aktual
+    $("#fisActualEvaluationBtn").click(function() {
+        console.log('🔍 Tombol evaluasi FIS dengan data aktual diklik');
+        evaluateFISWithActualStatusFromSection();
+    });
+    
+    // Event handler untuk tombol export
+    $("#fisActualExportBtn").click(function() {
+        console.log('📤 Tombol export hasil evaluasi FIS diklik');
+        exportFISActualEvaluationResults();
+    });
+    
+    // Event handler untuk tombol print
+    $("#fisActualPrintBtn").click(function() {
+        console.log('🖨️ Tombol print hasil evaluasi FIS diklik');
+        printFISActualEvaluationResults();
+    });
+}
+
+// Fungsi untuk evaluasi FIS dengan status aktual dari section baru
+function evaluateFISWithActualStatusFromSection() {
+    console.log('🔍 Memulai evaluasi FIS dengan status lulus aktual dari section...');
+    
+    // Ambil parameter dari form
+    const testSize = parseFloat($('#fisActualTestSize').val()) / 100; // Convert percentage to decimal
+    const randomState = parseInt($('#fisActualRandomState').val());
+    
+    // Validasi parameter
+    if (isNaN(testSize) || testSize < 0.1 || testSize > 0.5) {
+        showNotification("Error", "Ukuran data test harus antara 10% - 50%", "error");
+        return;
+    }
+    
+    if (isNaN(randomState) || randomState < 0) {
+        showNotification("Error", "Random state harus berupa angka positif", "error");
+        return;
+    }
+    
+    // Tampilkan loading
+    $('#fisActualEvaluationLoadingIndicator').show();
+    $('#fisActualSummarySection, #fisActualMetricsSection, #fisActualCategorySection, #fisActualSampleSection, #fisActualInterpretationSection').hide();
+    
+    // Disable button
+    $('#fisActualEvaluationBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Evaluasi...');
+    
+    $.ajax({
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY) + '/evaluate-with-actual-status',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            test_size: testSize,
+            random_state: randomState
+        }),
+        success: function(response) {
+            console.log('✅ Evaluasi FIS berhasil:', response);
+            
+            if (response.success) {
+                displayFISActualEvaluationResults(response.result);
+                showNotification(
+                    "Sukses", 
+                    `Evaluasi FIS berhasil dengan ${response.result.evaluation_info.total_data} data`, 
+                    "success"
+                );
+            } else {
+                showNotification("Error", "Evaluasi FIS gagal", "error");
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('❌ Error evaluasi FIS:', {xhr, status, error});
+            
+            let errorMessage = "Gagal melakukan evaluasi FIS";
+            if (xhr.responseJSON && xhr.responseJSON.detail) {
+                errorMessage += ": " + xhr.responseJSON.detail;
+            }
+            
+            showNotification("Error", errorMessage, "error");
+        },
+        complete: function() {
+            // Hide loading
+            $('#fisActualEvaluationLoadingIndicator').hide();
+            
+            // Enable button
+            $('#fisActualEvaluationBtn').prop('disabled', false).html('<i class="fas fa-chart-line"></i> Evaluasi FIS dengan Data Aktual');
+        }
+    });
+}
+
+// Fungsi untuk menampilkan hasil evaluasi FIS dengan data aktual
+function displayFISActualEvaluationResults(result) {
+    console.log('📊 Menampilkan hasil evaluasi FIS dengan data aktual:', result);
+    
+    // Update summary section
+    updateFISActualSummarySection(result);
+    
+    // Update metrics section
+    updateFISActualMetricsSection(result);
+    
+    // Update category analysis section
+    updateFISActualCategorySection(result);
+    
+    // Update sample data section
+    updateFISActualSampleSection(result);
+    
+    // Show all sections
+    $('#fisActualSummarySection, #fisActualMetricsSection, #fisActualCategorySection, #fisActualSampleSection, #fisActualInterpretationSection').show();
+}
+
+// Update summary section
+function updateFISActualSummarySection(result) {
+    const stats = result.statistics;
+    
+    $('#fisActualTotalData').text(stats.total_actual_lulus + stats.total_actual_belum_lulus);
+    $('#fisActualLulusData').text(stats.total_actual_lulus);
+    $('#fisActualBelumLulusData').text(stats.total_actual_belum_lulus);
+    $('#fisActualPersentaseLulus').text(stats.percentage_actual_lulus.toFixed(2) + '%');
+}
+
+// Update metrics section
+function updateFISActualMetricsSection(result) {
+    const metrics = result.metrics;
+    const cm = result.confusion_matrix;
+    
+    // Update overall metrics
+    $('#fisActualAccuracy').text((metrics.accuracy * 100).toFixed(2) + '%');
+    $('#fisActualPrecision').text((metrics.precision * 100).toFixed(2) + '%');
+    $('#fisActualRecall').text((metrics.recall * 100).toFixed(2) + '%');
+    $('#fisActualF1Score').text((metrics.f1_score * 100).toFixed(2) + '%');
+    
+    // Update confusion matrix
+    if (cm && cm.matrix) {
+        $('#fisActual-tp').text(cm.matrix[1][1] || 0); // True Positive
+        $('#fisActual-fn').text(cm.matrix[1][0] || 0); // False Negative
+        $('#fisActual-fp').text(cm.matrix[0][1] || 0); // False Positive
+        $('#fisActual-tn').text(cm.matrix[0][0] || 0); // True Negative
+    }
+}
+
+// Update category analysis section
+function updateFISActualCategorySection(result) {
+    const categoryAnalysis = result.category_analysis;
+    
+    if (categoryAnalysis['Peluang Lulus Tinggi']) {
+        const tinggi = categoryAnalysis['Peluang Lulus Tinggi'];
+        $('#fisActualTinggiTotal').text(tinggi.total_predictions);
+        $('#fisActualTinggiLulus').text(tinggi.actual_lulus);
+        $('#fisActualTinggiAkurasi').text((tinggi.accuracy * 100).toFixed(2) + '%');
+    }
+    
+    if (categoryAnalysis['Peluang Lulus Sedang']) {
+        const sedang = categoryAnalysis['Peluang Lulus Sedang'];
+        $('#fisActualSedangTotal').text(sedang.total_predictions);
+        $('#fisActualSedangLulus').text(sedang.actual_lulus);
+        $('#fisActualSedangAkurasi').text((sedang.accuracy * 100).toFixed(2) + '%');
+    }
+    
+    if (categoryAnalysis['Peluang Lulus Kecil']) {
+        const kecil = categoryAnalysis['Peluang Lulus Kecil'];
+        $('#fisActualKecilTotal').text(kecil.total_predictions);
+        $('#fisActualKecilLulus').text(kecil.actual_lulus);
+        $('#fisActualKecilAkurasi').text((kecil.accuracy * 100).toFixed(2) + '%');
+    }
+}
+
+// Update sample data section
+function updateFISActualSampleSection(result) {
+    const sampleData = result.sample_data;
+    
+    if (sampleData && sampleData.length > 0) {
+        let html = '<div class="table-responsive"><table class="table table-striped table-hover">';
+        html += '<thead><tr><th>NIM</th><th>Nama</th><th>IPK</th><th>SKS</th><th>% D/E/K</th><th>Prediksi FIS</th><th>Status Aktual</th><th>Fuzzy Score</th></tr></thead>';
+        html += '<tbody>';
+        
+        sampleData.slice(0, 10).forEach(item => { // Show first 10 samples
+            html += `<tr>
+                <td>${item.nim}</td>
+                <td>${item.nama}</td>
+                <td>${item.ipk.toFixed(2)}</td>
+                <td>${item.sks}</td>
+                <td>${item.persen_dek.toFixed(2)}%</td>
+                <td><span class="badge ${getFISClassificationBadgeClass(item.predicted_category)}">${item.predicted_category}</span></td>
+                <td><span class="badge ${item.actual_status === 'LULUS' ? 'bg-success' : 'bg-warning'}">${item.actual_status}</span></td>
+                <td>${item.fuzzy_score.toFixed(2)}</td>
+            </tr>`;
+        });
+        
+        html += '</tbody></table></div>';
+        
+        $('#fisActualSampleDataContainer').html(html);
+    } else {
+        $('#fisActualSampleDataContainer').html('<p class="text-muted">Tidak ada sample data tersedia</p>');
+    }
+}
+
+// Helper function untuk badge class
+function getFISClassificationBadgeClass(category) {
+    switch(category) {
+        case 'Peluang Lulus Tinggi':
+            return 'bg-success';
+        case 'Peluang Lulus Sedang':
+            return 'bg-warning';
+        case 'Peluang Lulus Kecil':
+            return 'bg-danger';
+        default:
+            return 'bg-secondary';
+    }
+}
+
+// Export hasil evaluasi FIS
+function exportFISActualEvaluationResults() {
+    console.log('📤 Export hasil evaluasi FIS...');
+    showNotification("Info", "Fitur export akan segera tersedia", "info");
+}
+
+// Print hasil evaluasi FIS
+function printFISActualEvaluationResults() {
+    console.log('🖨️ Print hasil evaluasi FIS...');
+    window.print();
+} 

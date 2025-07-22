@@ -8532,4 +8532,1137 @@ body.drawer-expanded .content-wrapper {
     border-left-color: #764ba2;
 }
 
-.saw-evaluation-section .summary-recommendations li:last-
+.saw-evaluation-section .summary-recommendations li:last-child {
+    margin-bottom: 0;
+}
+
+/* FIS Actual Evaluation Section Styles */
+#fisActualEvaluationSection {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+    padding: 20px 0;
+}
+
+#fisActualEvaluationSection .content-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+#fisActualEvaluationSection h2 {
+    color: #2c3e50;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+#fisActualEvaluationSection h2 i {
+    margin-right: 15px;
+    color: #667eea;
+    -webkit-text-fill-color: #667eea;
+}
+
+#fisActualEvaluationSection .section-description {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+#fisActualEvaluationSection .section-description p {
+    font-size: 1.1rem;
+    color: #6c757d;
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* Loading Indicator */
+#fisActualEvaluationLoadingIndicator {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#fisActualEvaluationLoadingIndicator .loading-spinner i {
+    font-size: 3rem;
+    color: #667eea;
+    margin-bottom: 20px;
+    animation: spin 1s linear infinite;
+}
+
+#fisActualEvaluationLoadingIndicator p {
+    font-size: 1.2rem;
+    color: #495057;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Control Panel */
+#fisActualEvaluationSection .evaluation-control-panel {
+    margin-bottom: 30px;
+}
+
+#fisActualEvaluationSection .evaluation-control-panel .card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+#fisActualEvaluationSection .evaluation-control-panel .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+#fisActualEvaluationSection .evaluation-control-panel .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 25px;
+    border-bottom: none;
+}
+
+#fisActualEvaluationSection .evaluation-control-panel .card-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+#fisActualEvaluationSection .evaluation-control-panel .card-header h3 i {
+    margin-right: 10px;
+}
+
+#fisActualEvaluationSection .evaluation-control-panel .card-body {
+    padding: 25px;
+}
+
+/* Form Controls */
+#fisActualEvaluationSection .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+#fisActualEvaluationSection .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+#fisActualEvaluationSection .form-group label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+#fisActualEvaluationSection .form-group input {
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+#fisActualEvaluationSection .form-group input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+}
+
+#fisActualEvaluationSection .form-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+/* Action Buttons */
+#fisActualEvaluationSection .action-buttons-row {
+    margin-bottom: 25px;
+}
+
+#fisActualEvaluationSection .action-buttons-group {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+#fisActualEvaluationSection .action-buttons-group .btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#fisActualEvaluationSection .action-buttons-group .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+#fisActualEvaluationSection .action-buttons-group .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+#fisActualEvaluationSection .action-buttons-group .btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+}
+
+#fisActualEvaluationSection .action-buttons-group .btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3);
+}
+
+/* Info Box */
+#fisActualEvaluationSection .info-box {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 10px;
+    padding: 20px;
+    border-left: 4px solid #2196f3;
+}
+
+#fisActualEvaluationSection .info-box h4 {
+    color: #1976d2;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+#fisActualEvaluationSection .info-box h4 i {
+    margin-right: 8px;
+}
+
+#fisActualEvaluationSection .info-box p {
+    color: #424242;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* Summary Section */
+#fisActualSummarySection .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+#fisActualSummarySection .summary-item {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#fisActualSummarySection .summary-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+#fisActualSummarySection .summary-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    color: white;
+    font-size: 1.5rem;
+}
+
+#fisActualSummarySection .summary-content h4 {
+    color: #495057;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+#fisActualSummarySection .summary-content span {
+    color: #667eea;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+/* Metrics Section */
+#fisActualMetricsSection .metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+#fisActualMetricsSection .metrics-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#fisActualMetricsSection .metrics-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+#fisActualMetricsSection .metrics-card h4 {
+    color: #495057;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#fisActualMetricsSection .metrics-card h4 i {
+    color: #667eea;
+}
+
+#fisActualMetricsSection .metric-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+#fisActualMetricsSection .metric-item:last-child {
+    border-bottom: none;
+}
+
+#fisActualMetricsSection .metric-label {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+#fisActualMetricsSection .metric-value {
+    color: #667eea;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+/* Confusion Matrix */
+#fisActualMetricsSection .confusion-matrix-simple {
+    overflow-x: auto;
+}
+
+#fisActualMetricsSection .confusion-table-simple {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+#fisActualMetricsSection .confusion-table-simple th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+#fisActualMetricsSection .confusion-table-simple td {
+    padding: 15px;
+    text-align: center;
+    border: 1px solid #e9ecef;
+    background: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+#fisActualMetricsSection .confusion-table-simple td:first-child {
+    background: #f8f9fa;
+    font-weight: 700;
+    color: #495057;
+}
+
+/* Category Analysis */
+#fisActualCategorySection .category-analysis-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+#fisActualCategorySection .category-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#fisActualCategorySection .category-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+#fisActualCategorySection .category-card h4 {
+    color: #495057;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#fisActualCategorySection .category-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#fisActualCategorySection .stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+#fisActualCategorySection .stat-item:last-child {
+    border-bottom: none;
+}
+
+#fisActualCategorySection .stat-label {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+#fisActualCategorySection .stat-value {
+    color: #667eea;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+/* Sample Data Section */
+#fisActualSampleSection .card-body {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Interpretation Section */
+#fisActualInterpretationSection .interpretation-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+#fisActualInterpretationSection .interpretation-item {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    padding: 20px;
+    border-left: 4px solid #667eea;
+}
+
+#fisActualInterpretationSection .interpretation-item h4 {
+    color: #495057;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#fisActualInterpretationSection .interpretation-item h4 i {
+    color: #667eea;
+}
+
+#fisActualInterpretationSection .interpretation-item ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+#fisActualInterpretationSection .interpretation-item li {
+    color: #6c757d;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+#fisActualInterpretationSection .interpretation-item p {
+    color: #6c757d;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    #fisActualEvaluationSection .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    #fisActualMetricsSection .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    #fisActualInterpretationSection .interpretation-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    #fisActualEvaluationSection h2 {
+        font-size: 2rem;
+    }
+    
+    #fisActualEvaluationSection .action-buttons-group {
+        flex-direction: column;
+    }
+    
+    #fisActualEvaluationSection .action-buttons-group .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    #fisActualSummarySection .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    #fisActualCategorySection .category-analysis-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    #fisActualEvaluationSection h2 {
+        font-size: 1.8rem;
+    }
+    
+    #fisActualEvaluationSection .content-container {
+        padding: 0 15px;
+    }
+    
+    #fisActualEvaluationSection .evaluation-control-panel .card-body {
+        padding: 20px;
+    }
+    
+    #fisActualSummarySection .summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    #fisActualMetricsSection .confusion-table-simple th,
+    #fisActualMetricsSection .confusion-table-simple td {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+}
+
+/* FIS Comparison Section Styles */
+#fisComparisonSection {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+}
+
+#fisComparisonSection .evaluation-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+#fisComparisonSection .evaluation-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: all 0.6s ease;
+}
+
+#fisComparisonSection .evaluation-card:hover::before {
+    left: 100%;
+}
+
+#fisComparisonSection .parameter-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+#fisComparisonSection .parameter-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+#fisComparisonSection .metric-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+#fisComparisonSection .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+#fisComparisonSection .metric-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+#fisComparisonSection .metric-card h4 {
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #495057;
+}
+
+#fisComparisonSection .metric-values {
+    text-align: left;
+}
+
+#fisComparisonSection .metric-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+#fisComparisonSection .metric-item:last-child {
+    border-bottom: none;
+}
+
+#fisComparisonSection .metric-label {
+    font-weight: 500;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+#fisComparisonSection .metric-value {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.95rem;
+}
+
+#fisComparisonSection .metric-difference {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    position: relative;
+    overflow: hidden;
+}
+
+#fisComparisonSection .metric-difference::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+}
+
+#fisComparisonSection .metric-difference:hover::before {
+    transform: translateX(100%);
+}
+
+#fisComparisonSection .metric-difference .metric-value {
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+#fisComparisonSection .metric-difference .metric-value.positive {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.15) 0%, rgba(40, 167, 69, 0.25) 100%);
+    color: #155724;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
+}
+
+#fisComparisonSection .metric-difference .metric-value.positive::before {
+    content: '↗';
+    margin-right: 4px;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+}
+
+#fisComparisonSection .metric-difference .metric-value.negative {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.15) 0%, rgba(220, 53, 69, 0.25) 100%);
+    color: #721c24;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.1);
+}
+
+#fisComparisonSection .metric-difference .metric-value.negative::before {
+    content: '↘';
+    margin-right: 4px;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+}
+
+#fisComparisonSection .metric-difference .metric-value.neutral {
+    background: linear-gradient(135deg, rgba(108, 117, 125, 0.15) 0%, rgba(108, 117, 125, 0.25) 100%);
+    color: #495057;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.1);
+}
+
+#fisComparisonSection .metric-difference .metric-value.neutral::before {
+    content: '→';
+    margin-right: 4px;
+    font-weight: bold;
+}
+
+#fisComparisonSection .metric-difference:hover .metric-value {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+}
+
+#fisComparisonSection .data-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+#fisComparisonSection .data-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+#fisComparisonSection .data-card h5 {
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #495057;
+}
+
+#fisComparisonSection .data-values {
+    text-align: left;
+}
+
+#fisComparisonSection .data-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+#fisComparisonSection .data-item:last-child {
+    border-bottom: none;
+}
+
+#fisComparisonSection .data-label {
+    font-weight: 500;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+#fisComparisonSection .data-value {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.95rem;
+}
+
+#fisComparisonSection .summary-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+#fisComparisonSection .summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+#fisComparisonSection .summary-card h5 {
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#fisComparisonSection .summary-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#fisComparisonSection .summary-list li {
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    font-weight: 500;
+    color: #495057;
+    transition: all 0.3s ease;
+}
+
+#fisComparisonSection .summary-list li:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: translateX(5px);
+}
+
+#fisComparisonSection .assessment-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    color: white;
+}
+
+#fisComparisonSection .assessment-card h5 {
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#fisComparisonSection .analysis-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+#fisComparisonSection .analysis-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+#fisComparisonSection .analysis-card h5 {
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#fisComparisonSection .analysis-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#fisComparisonSection .analysis-list li {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    font-weight: 500;
+    color: #495057;
+    transition: all 0.3s ease;
+    position: relative;
+    padding-left: 30px;
+}
+
+#fisComparisonSection .analysis-list li::before {
+    content: '✓';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #28a745;
+    font-weight: bold;
+}
+
+#fisComparisonSection .analysis-list li:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: translateX(5px);
+}
+
+#fisComparisonSection .recommendation-card {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    color: white;
+}
+
+#fisComparisonSection .recommendation-card h5 {
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#fisComparisonSection .recommendation-content {
+    line-height: 1.6;
+}
+
+#fisComparisonSection .info-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+#fisComparisonSection .info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+#fisComparisonSection .info-card h4 {
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #495057;
+}
+
+#fisComparisonSection .info-card h5 {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #495057;
+}
+
+#fisComparisonSection .info-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#fisComparisonSection .info-card ul li {
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    font-weight: 500;
+    color: #495057;
+    transition: all 0.3s ease;
+    position: relative;
+    padding-left: 25px;
+}
+
+#fisComparisonSection .info-card ul li::before {
+    content: '•';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #667eea;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+#fisComparisonSection .info-card ul li:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: translateX(5px);
+}
+
+#fisComparisonSection .btn {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 10px 20px;
+    transition: all 0.3s ease;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+#fisComparisonSection .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: all 0.6s ease;
+}
+
+#fisComparisonSection .btn:hover::before {
+    left: 100%;
+}
+
+#fisComparisonSection .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+#fisComparisonSection .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+#fisComparisonSection .btn-outline-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+#fisComparisonSection .btn-outline-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+#fisComparisonSection .btn-outline-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+}
+
+#fisComparisonSection .btn-outline-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+}
+
+#fisComparisonSection .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    color: #667eea;
+}
+
+/* Responsive Design for FIS Comparison Section */
+@media (max-width: 1024px) {
+    #fisComparisonSection .metric-card,
+    #fisComparisonSection .data-card {
+        margin-bottom: 20px;
+    }
+    
+    #fisComparisonSection .summary-card,
+    #fisComparisonSection .analysis-card {
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    #fisComparisonSection .evaluation-card h1 {
+        font-size: 1.8rem;
+    }
+    
+    #fisComparisonSection .evaluation-card p {
+        font-size: 0.9rem;
+    }
+    
+    #fisComparisonSection .parameter-card {
+        padding: 20px;
+    }
+    
+    #fisComparisonSection .metric-card,
+    #fisComparisonSection .data-card {
+        padding: 15px;
+    }
+    
+    #fisComparisonSection .summary-card,
+    #fisComparisonSection .analysis-card {
+        padding: 15px;
+    }
+    
+    #fisComparisonSection .btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #fisComparisonSection .evaluation-card h1 {
+        font-size: 1.5rem;
+    }
+    
+    #fisComparisonSection .evaluation-card p {
+        font-size: 0.8rem;
+    }
+    
+    #fisComparisonSection .parameter-card {
+        padding: 15px;
+    }
+    
+    #fisComparisonSection .metric-card,
+    #fisComparisonSection .data-card {
+        padding: 12px;
+    }
+    
+    #fisComparisonSection .summary-card,
+    #fisComparisonSection .analysis-card {
+        padding: 12px;
+    }
+    
+    #fisComparisonSection .metric-item,
+    #fisComparisonSection .data-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    #fisComparisonSection .metric-difference {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px;
+    }
+    
+    #fisComparisonSection .metric-difference .metric-value {
+        font-size: 0.9rem;
+        padding: 6px 10px;
+        align-self: flex-end;
+    }
+    
+    #fisComparisonSection .btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+}

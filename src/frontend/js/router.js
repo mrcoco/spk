@@ -119,6 +119,24 @@ class Router {
                     }
                 }
                 break;
+            case 'fis-actual-evaluation':
+                if (typeof initializeFISActualEvaluation === 'function') {
+                    // Only initialize if not already initialized
+                    if (!window.fisActualEvaluationInitialized) {
+                        window.fisActualEvaluationInitialized = true;
+                        initializeFISActualEvaluation();
+                    }
+                }
+                break;
+            case 'fis-comparison':
+                if (typeof initializeFISComparison === 'function') {
+                    // Only initialize if not already initialized
+                    if (!window.fisComparisonInitialized) {
+                        window.fisComparisonInitialized = true;
+                        initializeFISComparison();
+                    }
+                }
+                break;
             case 'comparison':
                 if (typeof initializeComparison === 'function') {
                     // Only initialize if not already initialized

@@ -1,16 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List, Optional
 import numpy as np
-from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import train_test_split
 import time
 import json
 from pydantic import BaseModel
+import pandas as pd
 
 from database import get_db
-from models import Mahasiswa, KlasifikasiKelulusan, FISEvaluation
+from models import Mahasiswa, KlasifikasiKelulusan, FISEvaluation, KategoriPeluang
 from schemas import KlasifikasiKelulusanResponse, KlasifikasiGridResponse, FuzzyResponse
 from fuzzy_logic import FuzzyKelulusan
 from enhanced_fuzzy_evaluation import EnhancedFuzzyEvaluator, EvaluationConfig, run_enhanced_evaluation
@@ -1580,4 +1581,415 @@ def evaluate_fuzzy_quick(
         raise HTTPException(
             status_code=500,
             detail=f"Error in quick evaluation: {str(e)}"
+        ) 
+
+@router.post("/evaluate-with-actual-status")
+def evaluate_fis_with_actual_status(
+    request: dict = Body(...),
+    db: Session = Depends(get_db)
+):
+    # Extract parameters from request body
+    test_size = request.get("test_size", 0.3)
+    random_state = request.get("random_state", 42)
+    """
+    Evaluasi FIS dengan membandingkan hasil klasifikasi dengan status lulus aktual
+    """
+    try:
+        # Ambil data mahasiswa yang memiliki status lulus aktual
+        mahasiswa_with_status = db.query(Mahasiswa).filter(
+            Mahasiswa.status_lulus_aktual.isnot(None)
+        ).all()
+        
+        if len(mahasiswa_with_status) < 10:
+            raise HTTPException(
+                status_code=400,
+                detail="Minimal diperlukan 10 data mahasiswa dengan status lulus aktual untuk evaluasi"
+            )
+        
+        # Persiapkan data untuk evaluasi
+        data = []
+        for mhs in mahasiswa_with_status:
+            # Ambil klasifikasi FIS yang sudah ada
+            klasifikasi = db.query(KlasifikasiKelulusan).filter(
+                KlasifikasiKelulusan.nim == mhs.nim
+            ).first()
+            
+            if klasifikasi:
+                data.append({
+                    'nim': mhs.nim,
+                    'nama': mhs.nama,
+                    'ipk': mhs.ipk,
+                    'sks': mhs.sks,
+                    'persen_dek': mhs.persen_dek,
+                    'predicted_category': klasifikasi.kategori,
+                    'actual_status': mhs.status_lulus_aktual,
+                    'fuzzy_score': klasifikasi.nilai_fuzzy
+                })
+        
+        if len(data) < 10:
+            raise HTTPException(
+                status_code=400,
+                detail="Minimal diperlukan 10 data dengan klasifikasi FIS untuk evaluasi"
+            )
+        
+        # Konversi ke DataFrame
+        df = pd.DataFrame(data)
+        
+        # Mapping kategori ke binary (LULUS vs BELUM_LULUS)
+        def map_to_binary(status):
+            if status == "LULUS":
+                return 1
+            else:
+                return 0
+        
+        # Mapping kategori FIS ke binary
+        def map_fis_to_binary(category):
+            if category == "Peluang Lulus Tinggi":
+                return 1
+            else:
+                return 0
+        
+        # Tambahkan kolom binary
+        df['actual_binary'] = df['actual_status'].apply(map_to_binary)
+        df['predicted_binary'] = df['predicted_category'].apply(map_fis_to_binary)
+        
+        # Split data untuk evaluasi
+        X = df[['ipk', 'sks', 'persen_dek']].values
+        y_actual = df['actual_binary'].values
+        y_predicted = df['predicted_binary'].values
+        
+        # Hitung metrics
+        accuracy = accuracy_score(y_actual, y_predicted)
+        precision = precision_score(y_actual, y_predicted, zero_division=0)
+        recall = recall_score(y_actual, y_predicted, zero_division=0)
+        f1 = f1_score(y_actual, y_predicted, zero_division=0)
+        
+        # Confusion Matrix
+        cm = confusion_matrix(y_actual, y_predicted)
+        
+        # Classification Report
+        report = classification_report(y_actual, y_predicted, output_dict=True)
+        
+        # Analisis per kategori
+        category_analysis = {}
+        for category in df['predicted_category'].unique():
+            category_data = df[df['predicted_category'] == category]
+            if len(category_data) > 0:
+                correct_predictions = len(category_data[category_data['actual_status'] == 'LULUS'])
+                total_predictions = len(category_data)
+                accuracy_category = correct_predictions / total_predictions if total_predictions > 0 else 0
+                
+                category_analysis[category] = {
+                    'total_predictions': total_predictions,
+                    'correct_predictions': correct_predictions,
+                    'accuracy': accuracy_category,
+                    'actual_lulus': len(category_data[category_data['actual_status'] == 'LULUS']),
+                    'actual_belum_lulus': len(category_data[category_data['actual_status'] != 'LULUS'])
+                }
+        
+        # Statistik umum
+        total_data = len(df)
+        total_actual_lulus = len(df[df['actual_status'] == 'LULUS'])
+        total_actual_belum_lulus = len(df[df['actual_status'] != 'LULUS'])
+        
+        # Hasil evaluasi
+        evaluation_result = {
+            'evaluation_info': {
+                'total_data': total_data,
+                'test_size': test_size,
+                'random_state': random_state,
+                'evaluation_date': datetime.utcnow().isoformat()
+            },
+            'metrics': {
+                'accuracy': round(accuracy, 4),
+                'precision': round(precision, 4),
+                'recall': round(recall, 4),
+                'f1_score': round(f1, 4)
+            },
+            'confusion_matrix': {
+                'matrix': cm.tolist(),
+                'labels': ['Belum Lulus', 'Lulus']
+            },
+            'classification_report': report,
+            'category_analysis': category_analysis,
+            'statistics': {
+                'total_actual_lulus': total_actual_lulus,
+                'total_actual_belum_lulus': total_actual_belum_lulus,
+                'percentage_actual_lulus': round((total_actual_lulus / total_data) * 100, 2),
+                'percentage_actual_belum_lulus': round((total_actual_belum_lulus / total_data) * 100, 2)
+            },
+            'sample_data': df.head(10).to_dict('records')
+        }
+        
+        return {
+            'success': True,
+            'message': f'Evaluasi FIS berhasil dengan {total_data} data',
+            'result': evaluation_result
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat evaluasi FIS: {str(e)}"
+        )
+
+@router.get("/evaluation-history")
+def get_evaluation_history(db: Session = Depends(get_db)):
+    """
+    Mendapatkan riwayat evaluasi FIS
+    """
+    try:
+        from models import FISEvaluation
+        
+        evaluations = db.query(FISEvaluation).order_by(
+            FISEvaluation.created_at.desc()
+        ).all()
+        
+        return {
+            'success': True,
+            'data': [eval.to_dict() for eval in evaluations]
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat mengambil riwayat evaluasi: {str(e)}"
+        )
+
+@router.post("/compare-evaluations")
+def compare_fis_evaluations(
+    request: dict = Body(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Membandingkan evaluasi FIS yang sebelumnya dengan evaluasi menggunakan data aktual
+    """
+    try:
+        # Extract parameters
+        test_size = request.get("test_size", 0.3)
+        random_state = request.get("random_state", 42)
+        
+        print(f"🔍 Starting FIS comparison with test_size={test_size}, random_state={random_state}")
+        
+        # Run previous evaluation (synthetic data)
+        print("📊 Running previous evaluation (synthetic data)...")
+        previous_start_time = time.time()
+        
+        # Get synthetic data (400 records as in previous implementation)
+        synthetic_data = db.query(Mahasiswa).limit(400).all()
+        
+        if len(synthetic_data) < 100:
+            raise HTTPException(
+                status_code=400,
+                detail="Data tidak cukup untuk evaluasi (minimal 100 data)"
+            )
+        
+        # Create synthetic ground truth (as in previous implementation)
+        synthetic_ground_truth = []
+        synthetic_predictions = []
+        
+        for mahasiswa in synthetic_data:
+            # Synthetic ground truth (as in previous implementation)
+            if mahasiswa.ipk >= 3.0 and mahasiswa.sks >= 120 and mahasiswa.persen_dek <= 10:
+                synthetic_ground_truth.append(1)  # Lulus
+            else:
+                synthetic_ground_truth.append(0)  # Tidak lulus
+            
+            # FIS prediction
+            kategori, nilai_fuzzy, ipk_membership, sks_membership, nilai_dk_membership = fuzzy_system.calculate_graduation_chance(
+                mahasiswa.ipk, 
+                mahasiswa.sks, 
+                mahasiswa.persen_dek
+            )
+            
+            # Map FIS category to binary
+            if kategori == KategoriPeluang.TINGGI:
+                synthetic_predictions.append(1)
+            else:
+                synthetic_predictions.append(0)
+        
+        # Calculate previous metrics
+        previous_accuracy = accuracy_score(synthetic_ground_truth, synthetic_predictions)
+        previous_precision = precision_score(synthetic_ground_truth, synthetic_predictions, zero_division=0)
+        previous_recall = recall_score(synthetic_ground_truth, synthetic_predictions, zero_division=0)
+        previous_f1 = f1_score(synthetic_ground_truth, synthetic_predictions, zero_division=0)
+        
+        previous_execution_time = time.time() - previous_start_time
+        
+        print(f"✅ Previous evaluation completed in {previous_execution_time:.2f}s")
+        print(f"   Accuracy: {previous_accuracy:.4f}, Precision: {previous_precision:.4f}, Recall: {previous_recall:.4f}, F1: {previous_f1:.4f}")
+        
+        # Run actual evaluation (with real graduation status)
+        print("📊 Running actual evaluation (real graduation status)...")
+        actual_start_time = time.time()
+        
+        # Get data with actual graduation status
+        actual_data = db.query(Mahasiswa).filter(
+            Mahasiswa.status_lulus_aktual.isnot(None)
+        ).all()
+        
+        if len(actual_data) < 100:
+            raise HTTPException(
+                status_code=400,
+                detail="Data dengan status lulus aktual tidak cukup (minimal 100 data)"
+            )
+        
+        # Create actual ground truth and predictions
+        actual_ground_truth = []
+        actual_predictions = []
+        
+        for mahasiswa in actual_data:
+            # Actual ground truth
+            if mahasiswa.status_lulus_aktual == 'LULUS':
+                actual_ground_truth.append(1)
+            else:
+                actual_ground_truth.append(0)
+            
+            # FIS prediction
+            kategori, nilai_fuzzy, ipk_membership, sks_membership, nilai_dk_membership = fuzzy_system.calculate_graduation_chance(
+                mahasiswa.ipk, 
+                mahasiswa.sks, 
+                mahasiswa.persen_dek
+            )
+            
+            # Map FIS category to binary
+            if kategori == KategoriPeluang.TINGGI:
+                actual_predictions.append(1)
+            else:
+                actual_predictions.append(0)
+        
+        # Calculate actual metrics
+        actual_accuracy = accuracy_score(actual_ground_truth, actual_predictions)
+        actual_precision = precision_score(actual_ground_truth, actual_predictions, zero_division=0)
+        actual_recall = recall_score(actual_ground_truth, actual_predictions, zero_division=0)
+        actual_f1 = f1_score(actual_ground_truth, actual_predictions, zero_division=0)
+        
+        actual_execution_time = time.time() - actual_start_time
+        
+        print(f"✅ Actual evaluation completed in {actual_execution_time:.2f}s")
+        print(f"   Accuracy: {actual_accuracy:.4f}, Precision: {actual_precision:.4f}, Recall: {actual_recall:.4f}, F1: {actual_f1:.4f}")
+        
+        # Calculate differences
+        accuracy_diff = actual_accuracy - previous_accuracy
+        precision_diff = actual_precision - previous_precision
+        recall_diff = actual_recall - previous_recall
+        f1_diff = actual_f1 - previous_f1
+        
+        # Determine which metrics are better with actual data
+        better_with_actual = []
+        better_with_previous = []
+        
+        if accuracy_diff > 0:
+            better_with_actual.append("Accuracy")
+        elif accuracy_diff < 0:
+            better_with_previous.append("Accuracy")
+            
+        if precision_diff > 0:
+            better_with_actual.append("Precision")
+        elif precision_diff < 0:
+            better_with_previous.append("Precision")
+            
+        if recall_diff > 0:
+            better_with_actual.append("Recall")
+        elif recall_diff < 0:
+            better_with_previous.append("Recall")
+            
+        if f1_diff > 0:
+            better_with_actual.append("F1-Score")
+        elif f1_diff < 0:
+            better_with_previous.append("F1-Score")
+        
+        # Overall assessment
+        actual_better_count = len(better_with_actual)
+        previous_better_count = len(better_with_previous)
+        
+        if actual_better_count > previous_better_count:
+            overall_assessment = f"Evaluasi dengan data aktual menunjukkan performa yang lebih baik ({actual_better_count} dari 4 metrik lebih tinggi)."
+        elif previous_better_count > actual_better_count:
+            overall_assessment = f"Evaluasi sebelumnya menunjukkan performa yang lebih baik ({previous_better_count} dari 4 metrik lebih tinggi)."
+        else:
+            overall_assessment = "Kedua evaluasi menunjukkan performa yang sebanding."
+        
+        # Prepare response
+        comparison_result = {
+            "total_data": len(actual_data),
+            "overall_accuracy": actual_accuracy,
+            "metrics_comparison": {
+                "accuracy": {
+                    "previous": previous_accuracy,
+                    "actual": actual_accuracy,
+                    "difference": accuracy_diff
+                },
+                "precision": {
+                    "previous": previous_precision,
+                    "actual": actual_precision,
+                    "difference": precision_diff
+                },
+                "recall": {
+                    "previous": previous_recall,
+                    "actual": actual_recall,
+                    "difference": recall_diff
+                },
+                "f1_score": {
+                    "previous": previous_f1,
+                    "actual": actual_f1,
+                    "difference": f1_diff
+                }
+            },
+            "data_comparison": {
+                "total_data": {
+                    "previous": len(synthetic_data),
+                    "actual": len(actual_data)
+                },
+                "test_data": {
+                    "previous": int(len(synthetic_data) * test_size),
+                    "actual": int(len(actual_data) * test_size)
+                },
+                "execution_time": {
+                    "previous": previous_execution_time,
+                    "actual": actual_execution_time
+                }
+            },
+            "summary": {
+                "better_with_actual": better_with_actual,
+                "better_with_previous": better_with_previous,
+                "overall_assessment": overall_assessment
+            },
+            "detailed_analysis": {
+                "actual_advantages": [
+                    "Menggunakan status lulus yang sebenarnya dari database",
+                    f"Dataset yang lebih besar ({len(actual_data)} vs {len(synthetic_data)} data)",
+                    "Validitas yang lebih tinggi untuk analisis produksi",
+                    "Refleksi kondisi nyata mahasiswa"
+                ],
+                "previous_advantages": [
+                    "Execution time yang lebih cepat",
+                    "Dataset yang lebih kecil untuk testing cepat",
+                    "Ground truth yang konsisten dan predictable",
+                    "Cocok untuk development dan prototyping"
+                ],
+                "recommendations": [
+                    "Gunakan evaluasi dengan data aktual untuk validasi produksi dan analisis final",
+                    "Gunakan evaluasi sebelumnya untuk development cepat dan testing fitur baru",
+                    "Pertimbangkan ukuran dataset yang lebih besar untuk meningkatkan keandalan hasil",
+                    "Lakukan evaluasi berkala dengan data aktual untuk monitoring performa sistem"
+                ]
+            }
+        }
+        
+        print("✅ FIS comparison completed successfully")
+        
+        return {
+            "success": True,
+            "message": "Perbandingan evaluasi FIS berhasil",
+            "result": comparison_result
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error in FIS comparison: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat melakukan perbandingan evaluasi FIS: {str(e)}"
         ) 

@@ -61,6 +61,7 @@
             'js/saw-evaluation.js',
             'js/evaluation.js',
             'js/enhanced_evaluation.js',
+            'js/fis-comparison.js',
             'js/users.js'
         ];
         // Load CSS
@@ -189,6 +190,12 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a href="#fis-actual-evaluation" class="nav-link">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>Evaluasi FIS Aktual</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a href="#saw-evaluation" class="nav-link">
                                     <i class="fas fa-chart-bar"></i>
                                     <span>Evaluasi SAW</span>
@@ -198,6 +205,12 @@
                                 <a href="#enhanced-evaluation" class="nav-link">
                                     <i class="fas fa-rocket"></i>
                                     <span>Enhanced Evaluation</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#fis-comparison" class="nav-link">
+                                    <i class="fas fa-balance-scale"></i>
+                                    <span>Perbandingan Evaluasi FIS</span>
                                 </a>
                             </li>
                             <!-- Test Button untuk Bypass Submenu -->
@@ -1570,6 +1583,282 @@
                     </div>
                 </div>
 
+                <!-- FIS Evaluation with Actual Status Section -->
+                <div id="fisActualEvaluationSection" class="section" style="display: none;">
+                    <div class="content-container">
+                        <h2><i class="fas fa-chart-line"></i> Evaluasi FIS dengan Status Lulus Aktual</h2>
+                        <div class="section-description">
+                            <p>Evaluasi performa metode FIS dengan membandingkan hasil klasifikasi terhadap status lulus yang sebenarnya dari mahasiswa.</p>
+                        </div>
+                        
+                        <!-- Loading Indicator -->
+                        <div id="fisActualEvaluationLoadingIndicator" class="loading-container" style="display: none;">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                            <p>Sedang menghitung evaluasi FIS dengan data aktual...</p>
+                        </div>
+
+                        <!-- Control Panel -->
+                        <div class="evaluation-control-panel">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-cogs"></i> Pengaturan Evaluasi FIS dengan Data Aktual</h3>
+                                </div>
+                                <div class="card-body">
+                                    
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="fisActualTestSize">Ukuran Data Test (%):</label>
+                                            <input type="number" id="fisActualTestSize" value="30" min="10" max="50" class="form-control">
+                                            <small class="form-text">Persentase data yang digunakan untuk testing (10-50%)</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="fisActualRandomState">Random State:</label>
+                                            <input type="number" id="fisActualRandomState" value="42" class="form-control">
+                                            <small class="form-text">Seed untuk reproduksi hasil yang konsisten</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons Row -->
+                                    <div class="action-buttons-row">
+                                        <div class="action-buttons-group">
+                                            <button id="fisActualEvaluationBtn" class="btn btn-primary">
+                                                <i class="fas fa-chart-line"></i>
+                                                Evaluasi FIS dengan Data Aktual
+                                            </button>
+                                            <button id="fisActualExportBtn" class="btn btn-secondary">
+                                                <i class="fas fa-download"></i>
+                                                Export Hasil
+                                            </button>
+                                            <button id="fisActualPrintBtn" class="btn btn-secondary">
+                                                <i class="fas fa-print"></i>
+                                                Cetak Laporan
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="info-box">
+                                        <h4><i class="fas fa-info-circle"></i> Informasi Evaluasi dengan Data Aktual</h4>
+                                        <p>Evaluasi ini membandingkan hasil klasifikasi FIS dengan status lulus yang sebenarnya dari mahasiswa. Pastikan data status lulus aktual sudah diisi di database.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Summary Section -->
+                        <div class="evaluation-section" id="fisActualSummarySection" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-info-circle"></i> Ringkasan Evaluasi dengan Data Aktual</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="summary-grid">
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-database"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Total Data</h4>
+                                                <span id="fisActualTotalData">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-graduation-cap"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Data Lulus</h4>
+                                                <span id="fisActualLulusData">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-clock"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Data Belum Lulus</h4>
+                                                <span id="fisActualBelumLulusData">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-percentage"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Persentase Lulus</h4>
+                                                <span id="fisActualPersentaseLulus">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metrics Section -->
+                        <div class="evaluation-section" id="fisActualMetricsSection" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-chart-bar"></i> Metrik Evaluasi dengan Data Aktual</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="metrics-grid">
+                                        <div class="metrics-card overall">
+                                            <h4><i class="fas fa-chart-pie"></i> Overall Metrics</h4>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Accuracy:</span>
+                                                <span class="metric-value" id="fisActualAccuracy">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Precision:</span>
+                                                <span class="metric-value" id="fisActualPrecision">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Recall:</span>
+                                                <span class="metric-value" id="fisActualRecall">-</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">F1-Score:</span>
+                                                <span class="metric-value" id="fisActualF1Score">-</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="metrics-card confusion">
+                                            <h4><i class="fas fa-table"></i> Confusion Matrix</h4>
+                                            <div class="confusion-matrix-simple">
+                                                <table class="confusion-table-simple">
+                                                    <thead>
+                                                        <tr>
+                                                            <th></th>
+                                                            <th>Predicted Lulus</th>
+                                                            <th>Predicted Belum Lulus</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td><strong>Actual Lulus</strong></td>
+                                                            <td id="fisActual-tp">-</td>
+                                                            <td id="fisActual-fn">-</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><strong>Actual Belum Lulus</strong></td>
+                                                            <td id="fisActual-fp">-</td>
+                                                            <td id="fisActual-tn">-</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category Analysis Section -->
+                        <div class="evaluation-section" id="fisActualCategorySection" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-list"></i> Analisis per Kategori FIS</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="category-analysis-grid">
+                                        <div class="category-card" id="fisActualCategoryTinggi">
+                                            <h4><i class="fas fa-star" style="color: #28a745;"></i> Peluang Lulus Tinggi</h4>
+                                            <div class="category-stats">
+                                                <div class="stat-item">
+                                                    <span class="stat-label">Total Prediksi:</span>
+                                                    <span class="stat-value" id="fisActualTinggiTotal">-</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label">Benar Lulus:</span>
+                                                    <span class="stat-value" id="fisActualTinggiLulus">-</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label">Akurasi:</span>
+                                                    <span class="stat-value" id="fisActualTinggiAkurasi">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="category-card" id="fisActualCategorySedang">
+                                            <h4><i class="fas fa-star" style="color: #ffc107;"></i> Peluang Lulus Sedang</h4>
+                                            <div class="category-stats">
+                                                <div class="stat-item">
+                                                    <span class="stat-label">Total Prediksi:</span>
+                                                    <span class="stat-value" id="fisActualSedangTotal">-</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label">Benar Lulus:</span>
+                                                    <span class="stat-value" id="fisActualSedangLulus">-</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label">Akurasi:</span>
+                                                    <span class="stat-value" id="fisActualSedangAkurasi">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="category-card" id="fisActualCategoryKecil">
+                                            <h4><i class="fas fa-star" style="color: #dc3545;"></i> Peluang Lulus Kecil</h4>
+                                            <div class="category-stats">
+                                                <div class="stat-item">
+                                                    <span class="stat-label">Total Prediksi:</span>
+                                                    <span class="stat-value" id="fisActualKecilTotal">-</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label">Benar Lulus:</span>
+                                                    <span class="stat-value" id="fisActualKecilLulus">-</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label">Akurasi:</span>
+                                                    <span class="stat-value" id="fisActualKecilAkurasi">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sample Data Section -->
+                        <div class="evaluation-section" id="fisActualSampleSection" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-table"></i> Sample Data Evaluasi</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="fisActualSampleDataContainer">
+                                        <!-- Sample data will be displayed here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interpretation Section -->
+                        <div class="evaluation-section" id="fisActualInterpretationSection" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-lightbulb"></i> Interpretasi Hasil</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="interpretation-content">
+                                        <div class="interpretation-item">
+                                            <h4><i class="fas fa-chart-bar"></i> Metrik Evaluasi</h4>
+                                            <ul>
+                                                <li><strong>Accuracy:</strong> Proporsi prediksi yang benar dari total prediksi</li>
+                                                <li><strong>Precision:</strong> Proporsi prediksi lulus yang benar</li>
+                                                <li><strong>Recall:</strong> Proporsi mahasiswa lulus yang berhasil diprediksi</li>
+                                                <li><strong>F1-Score:</strong> Rata-rata harmonik dari precision dan recall</li>
+                                            </ul>
+                                        </div>
+                                        <div class="interpretation-item">
+                                            <h4><i class="fas fa-exclamation-triangle"></i> Catatan Penting</h4>
+                                            <p>Evaluasi ini menggunakan data status lulus yang sebenarnya dari mahasiswa. Hasil ini memberikan gambaran akurat tentang performa sistem FIS dalam memprediksi kelulusan.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Enhanced Evaluation Section -->
                 <div id="enhancedEvaluationSection" class="section" style="display: none;">
                     <div class="content-container">
@@ -2010,6 +2299,377 @@
                                             <button class="btn btn-outline-warning w-100" id="shareResults">
                                                 <i class="fas fa-share"></i> Share Results
                                             </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FIS Evaluation Comparison Section -->
+                <div id="fisComparisonSection" class="section" style="display: none;">
+                    <div class="content-container">
+                        <!-- Header -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="evaluation-card text-white p-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <h1 class="mb-2">
+                                                <i class="fas fa-balance-scale"></i> Perbandingan Evaluasi FIS
+                                            </h1>
+                                            <p class="mb-0">
+                                                Membandingkan hasil evaluasi FIS yang sebelumnya dengan evaluasi menggunakan data aktual 
+                                                untuk analisis performa yang komprehensif.
+                                            </p>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <div class="d-flex justify-content-end">
+                                                <div class="me-3">
+                                                    <h4 class="mb-0" id="comparisonTotalData">0</h4>
+                                                    <small>Total Data</small>
+                                                </div>
+                                                <div>
+                                                    <h4 class="mb-0" id="comparisonAccuracy">0%</h4>
+                                                    <small>Accuracy</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configuration Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="parameter-card p-4">
+                                    <h3 class="mb-3">
+                                        <i class="fas fa-cogs"></i> Konfigurasi Perbandingan
+                                    </h3>
+                                    
+                                    <div class="row">
+                                        <!-- Test Size -->
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">
+                                                <i class="fas fa-percentage"></i> Ukuran Data Test (%)
+                                            </label>
+                                            <input type="number" class="form-control" id="comparisonTestSize" value="30" min="10" max="50">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle"></i> Persentase data yang digunakan untuk testing (10-50%).
+                                            </small>
+                                        </div>
+                                        
+                                        <!-- Random State -->
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">
+                                                <i class="fas fa-dice"></i> Random State
+                                            </label>
+                                            <input type="number" class="form-control" id="comparisonRandomState" value="42" min="0">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle"></i> Seed untuk reproduksi hasil yang konsisten.
+                                            </small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="row mt-3">
+                                        <div class="col-12">
+                                            <div class="d-flex gap-2">
+                                                <button id="runComparisonBtn" class="btn btn-primary">
+                                                    <i class="fas fa-play"></i> Jalankan Perbandingan
+                                                </button>
+                                                <button id="exportComparisonBtn" class="btn btn-outline-success" style="display: none;">
+                                                    <i class="fas fa-download"></i> Export Hasil
+                                                </button>
+                                                <button id="printComparisonBtn" class="btn btn-outline-info" style="display: none;">
+                                                    <i class="fas fa-print"></i> Cetak Laporan
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loading Indicator -->
+                        <div class="row mb-4" id="comparisonLoadingIndicator" style="display: none;">
+                            <div class="col-12">
+                                <div class="text-center p-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Menjalankan perbandingan evaluasi FIS...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Results Section -->
+                        <div id="comparisonResultsSection" style="display: none;">
+                            <!-- Metrics Comparison -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="parameter-card p-4">
+                                        <h3 class="mb-3">
+                                            <i class="fas fa-chart-bar"></i> Perbandingan Metrik
+                                        </h3>
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3">
+                                                <div class="metric-card text-center p-3">
+                                                    <h4 class="text-primary">Accuracy</h4>
+                                                    <div class="metric-values">
+                                                        <div class="metric-item">
+                                                            <span class="metric-label">Sebelumnya:</span>
+                                                            <span class="metric-value" id="comparisonAccuracyPrevious">-</span>
+                                                        </div>
+                                                        <div class="metric-item">
+                                                            <span class="metric-label">Data Aktual:</span>
+                                                            <span class="metric-value" id="comparisonAccuracyActual">-</span>
+                                                        </div>
+                                                        <div class="metric-difference">
+                                                            <span class="metric-label">Perbedaan:</span>
+                                                            <span class="metric-value" id="comparisonAccuracyDiff">-</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <div class="metric-card text-center p-3">
+                                                    <h4 class="text-success">Precision</h4>
+                                                    <div class="metric-values">
+                                                        <div class="metric-item">
+                                                            <span class="metric-label">Sebelumnya:</span>
+                                                            <span class="metric-value" id="comparisonPrecisionPrevious">-</span>
+                                                        </div>
+                                                        <div class="metric-item">
+                                                            <span class="metric-label">Data Aktual:</span>
+                                                            <span class="metric-value" id="comparisonPrecisionActual">-</span>
+                                                        </div>
+                                                        <div class="metric-difference">
+                                                            <span class="metric-label">Perbedaan:</span>
+                                                            <span class="metric-value" id="comparisonPrecisionDiff">-</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <div class="metric-card text-center p-3">
+                                                    <h4 class="text-warning">Recall</h4>
+                                                    <div class="metric-values">
+                                                        <div class="metric-item">
+                                                            <span class="metric-label">Sebelumnya:</span>
+                                                            <span class="metric-value" id="comparisonRecallPrevious">-</span>
+                                                        </div>
+                                                        <div class="metric-item">
+                                                            <span class="metric-label">Data Aktual:</span>
+                                                            <span class="metric-value" id="comparisonRecallActual">-</span>
+                                                        </div>
+                                                        <div class="metric-difference">
+                                                            <span class="metric-label">Perbedaan:</span>
+                                                            <span class="metric-value" id="comparisonRecallDiff">-</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <div class="metric-card text-center p-3">
+                                                    <h4 class="text-info">F1-Score</h4>
+                                                    <div class="metric-values">
+                                                        <div class="metric-item">
+                                                            <span class="metric-label">Sebelumnya:</span>
+                                                            <span class="metric-value" id="comparisonF1Previous">-</span>
+                                                        </div>
+                                                        <div class="metric-item">
+                                                            <span class="metric-label">Data Aktual:</span>
+                                                            <span class="metric-value" id="comparisonF1Actual">-</span>
+                                                        </div>
+                                                        <div class="metric-difference">
+                                                            <span class="metric-label">Perbedaan:</span>
+                                                            <span class="metric-value" id="comparisonF1Diff">-</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Data Comparison -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="parameter-card p-4">
+                                        <h3 class="mb-3">
+                                            <i class="fas fa-database"></i> Perbandingan Data
+                                        </h3>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <div class="data-card text-center p-3">
+                                                    <h5 class="text-primary">Total Data</h5>
+                                                    <div class="data-values">
+                                                        <div class="data-item">
+                                                            <span class="data-label">Sebelumnya:</span>
+                                                            <span class="data-value" id="comparisonTotalDataPrevious">-</span>
+                                                        </div>
+                                                        <div class="data-item">
+                                                            <span class="data-label">Data Aktual:</span>
+                                                            <span class="data-value" id="comparisonTotalDataActual">-</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <div class="data-card text-center p-3">
+                                                    <h5 class="text-success">Test Data</h5>
+                                                    <div class="data-values">
+                                                        <div class="data-item">
+                                                            <span class="data-label">Sebelumnya:</span>
+                                                            <span class="data-value" id="comparisonTestDataPrevious">-</span>
+                                                        </div>
+                                                        <div class="data-item">
+                                                            <span class="data-label">Data Aktual:</span>
+                                                            <span class="data-value" id="comparisonTestDataActual">-</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <div class="data-card text-center p-3">
+                                                    <h5 class="text-warning">Execution Time</h5>
+                                                    <div class="data-values">
+                                                        <div class="data-item">
+                                                            <span class="data-label">Sebelumnya:</span>
+                                                            <span class="data-value" id="comparisonExecTimePrevious">-</span>
+                                                        </div>
+                                                        <div class="data-item">
+                                                            <span class="data-label">Data Aktual:</span>
+                                                            <span class="data-value" id="comparisonExecTimeActual">-</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Summary -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="parameter-card p-4">
+                                        <h3 class="mb-3">
+                                            <i class="fas fa-clipboard-list"></i> Ringkasan Perbandingan
+                                        </h3>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <div class="summary-card p-3">
+                                                    <h5 class="text-success">
+                                                        <i class="fas fa-check-circle"></i> Metrik yang Lebih Baik dengan Data Aktual
+                                                    </h5>
+                                                    <div id="comparisonBetterMetrics" class="summary-list">
+                                                        <!-- Will be populated by JavaScript -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <div class="summary-card p-3">
+                                                    <h5 class="text-warning">
+                                                        <i class="fas fa-exclamation-triangle"></i> Metrik yang Lebih Baik Sebelumnya
+                                                    </h5>
+                                                    <div id="comparisonWorseMetrics" class="summary-list">
+                                                        <!-- Will be populated by JavaScript -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-3">
+                                            <div class="col-12">
+                                                <div class="assessment-card p-3">
+                                                    <h5 class="text-primary">
+                                                        <i class="fas fa-balance-scale"></i> Penilaian Keseluruhan
+                                                    </h5>
+                                                    <p id="comparisonOverallAssessment" class="mb-0">
+                                                        <!-- Will be populated by JavaScript -->
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Analysis -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="parameter-card p-4">
+                                        <h3 class="mb-3">
+                                            <i class="fas fa-microscope"></i> Analisis Detail
+                                        </h3>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <div class="analysis-card p-3">
+                                                    <h5 class="text-info">
+                                                        <i class="fas fa-chart-line"></i> Kelebihan Evaluasi dengan Data Aktual
+                                                    </h5>
+                                                    <ul id="comparisonActualAdvantages" class="analysis-list">
+                                                        <!-- Will be populated by JavaScript -->
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <div class="analysis-card p-3">
+                                                    <h5 class="text-warning">
+                                                        <i class="fas fa-chart-bar"></i> Kelebihan Evaluasi Sebelumnya
+                                                    </h5>
+                                                    <ul id="comparisonPreviousAdvantages" class="analysis-list">
+                                                        <!-- Will be populated by JavaScript -->
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-3">
+                                            <div class="col-12">
+                                                <div class="recommendation-card p-3">
+                                                    <h5 class="text-success">
+                                                        <i class="fas fa-lightbulb"></i> Rekomendasi Penggunaan
+                                                    </h5>
+                                                    <div id="comparisonRecommendations" class="recommendation-content">
+                                                        <!-- Will be populated by JavaScript -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="info-card p-4">
+                                    <h4 class="mb-3">
+                                        <i class="fas fa-info-circle"></i> Informasi Perbandingan Evaluasi FIS
+                                    </h4>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h5 class="text-primary">Evaluasi Sebelumnya</h5>
+                                            <ul>
+                                                <li>Menggunakan ground truth sintetis</li>
+                                                <li>Dataset yang lebih kecil (400 data)</li>
+                                                <li>Execution time yang cepat</li>
+                                                <li>Cocok untuk development dan prototyping</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="text-success">Evaluasi dengan Data Aktual</h5>
+                                            <ul>
+                                                <li>Menggunakan status lulus yang sebenarnya</li>
+                                                <li>Dataset yang lebih besar (1,604 data)</li>
+                                                <li>Validitas yang lebih tinggi</li>
+                                                <li>Cocok untuk production dan validasi</li>
+                                            </ul>
                                         </div>
                                     </div>
                                 </div>
