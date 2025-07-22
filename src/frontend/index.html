@@ -52,17 +52,19 @@
             'js/env-updater.js',
             'js/config.js',
             'js/router.js',
-            'app.js',
             'js/dashboard.js',
             'js/mahasiswa.js',
             'js/nilai.js',
             'js/fis.js',
             'js/saw.js',
             'js/saw-evaluation.js',
+            'js/saw-evaluation-actual.js',
+            'js/saw-comparison.js',
             'js/evaluation.js',
             'js/enhanced_evaluation.js',
             'js/fis-comparison.js',
-            'js/users.js'
+            'js/users.js',
+            'app.js' // <-- moved to the end
         ];
         // Load CSS
         cssFiles.forEach(href => {
@@ -202,6 +204,12 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a href="#saw-evaluation-actual" class="nav-link">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>Evaluasi SAW dengan Data Aktual</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a href="#enhanced-evaluation" class="nav-link">
                                     <i class="fas fa-rocket"></i>
                                     <span>Enhanced Evaluation</span>
@@ -211,6 +219,12 @@
                                 <a href="#fis-comparison" class="nav-link">
                                     <i class="fas fa-balance-scale"></i>
                                     <span>Perbandingan Evaluasi FIS</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#saw-comparison" class="nav-link">
+                                    <i class="fas fa-chart-pie"></i>
+                                    <span>Perbandingan Evaluasi SAW</span>
                                 </a>
                             </li>
                             <!-- Test Button untuk Bypass Submenu -->
@@ -1245,6 +1259,608 @@
                                                         <!-- Recommendations will be populated dynamically -->
                                                     </ul>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SAW Evaluation with Actual Data Section -->
+                <div id="sawEvaluationActualSection" class="section" style="display: none;">
+                    <div class="content-container">
+                        <h2><i class="fas fa-chart-line"></i> Evaluasi SAW dengan Data Aktual</h2>
+                        <div class="section-description">
+                            <p>Evaluasi performa metode SAW dengan membandingkan hasil klasifikasi terhadap status lulus yang sebenarnya dari mahasiswa.</p>
+                        </div>
+                        
+                        <!-- Loading Indicator -->
+                        <div id="sawEvaluationActualLoadingIndicator" class="loading-container" style="display: none;">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                            <p>Sedang menghitung evaluasi SAW dengan data aktual...</p>
+                        </div>
+
+                        <!-- Control Panel -->
+                        <div class="evaluation-control-panel">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-cogs"></i> Pengaturan Evaluasi SAW dengan Data Aktual</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="sawEvaluationActualIpkWeight">Bobot IPK (%):</label>
+                                            <input type="number" id="sawEvaluationActualIpkWeight" value="40" min="0" max="100" class="form-control">
+                                            <small class="form-text">Bobot untuk kriteria IPK (0-100%)</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sawEvaluationActualSksWeight">Bobot SKS (%):</label>
+                                            <input type="number" id="sawEvaluationActualSksWeight" value="35" min="0" max="100" class="form-control">
+                                            <small class="form-text">Bobot untuk kriteria SKS (0-100%)</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sawEvaluationActualDekWeight">Bobot DEK (%):</label>
+                                            <input type="number" id="sawEvaluationActualDekWeight" value="25" min="0" max="100" class="form-control">
+                                            <small class="form-text">Bobot untuk kriteria DEK (0-100%)</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="sawEvaluationActualTestSize">Ukuran Data Test (%):</label>
+                                            <input type="number" id="sawEvaluationActualTestSize" value="30" min="10" max="50" class="form-control">
+                                            <small class="form-text">Persentase data yang digunakan untuk testing (10-50%)</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sawEvaluationActualRandomState">Random State:</label>
+                                            <input type="number" id="sawEvaluationActualRandomState" value="42" class="form-control">
+                                            <small class="form-text">Seed untuk reproduksi hasil yang konsisten</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>
+                                                <input type="checkbox" id="sawEvaluationActualSaveToDb"> Simpan ke Database
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons Row -->
+                                    <div class="action-buttons-row">
+                                        <div class="action-buttons-group">
+                                            <button id="sawEvaluationActualCalculateBtn" class="btn btn-primary">
+                                                <i class="fas fa-calculator"></i>
+                                                Hitung Evaluasi SAW dengan Data Aktual
+                                            </button>
+                                            <button id="sawEvaluationActualExportBtn" class="btn btn-secondary">
+                                                <i class="fas fa-download"></i>
+                                                Export Data
+                                            </button>
+                                            <button id="sawEvaluationActualPrintBtn" class="btn btn-secondary">
+                                                <i class="fas fa-print"></i>
+                                                Cetak Laporan
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="info-box">
+                                        <h4><i class="fas fa-info-circle"></i> Informasi Evaluasi SAW dengan Data Aktual</h4>
+                                        <p>Evaluasi ini akan mengukur performa metode SAW dengan membandingkan hasil klasifikasi terhadap status lulus yang sebenarnya dari mahasiswa. Data aktual diambil dari field <code>status_lulus_aktual</code> di database.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Summary Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-info-circle"></i> Ringkasan Evaluasi SAW dengan Data Aktual</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="summary-grid">
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-database"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Total Data</h4>
+                                                <span id="sawEvaluationActualTotalData">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-graduation-cap"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Training Data</h4>
+                                                <span id="sawEvaluationActualTrainingData">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-flask"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Test Data</h4>
+                                                <span id="sawEvaluationActualTestData">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="summary-item">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-percentage"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h4>Akurasi</h4>
+                                                <span id="sawEvaluationActualAccuracy">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metrics Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-chart-bar"></i> Metrik Evaluasi SAW dengan Data Aktual</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="metrics-grid">
+                                        <div class="metric-card">
+                                            <div class="metric-header">
+                                                <i class="fas fa-bullseye"></i>
+                                                <h4>Precision</h4>
+                                            </div>
+                                            <div class="metric-value" id="sawEvaluationActualPrecision">-</div>
+                                            <div class="metric-description">Proporsi prediksi positif yang benar</div>
+                                        </div>
+                                        <div class="metric-card">
+                                            <div class="metric-header">
+                                                <i class="fas fa-search"></i>
+                                                <h4>Recall</h4>
+                                            </div>
+                                            <div class="metric-value" id="sawEvaluationActualRecall">-</div>
+                                            <div class="metric-description">Proporsi kasus positif yang terdeteksi</div>
+                                        </div>
+                                        <div class="metric-card">
+                                            <div class="metric-header">
+                                                <i class="fas fa-balance-scale"></i>
+                                                <h4>F1-Score</h4>
+                                            </div>
+                                            <div class="metric-value" id="sawEvaluationActualF1Score">-</div>
+                                            <div class="metric-description">Harmonic mean dari precision dan recall</div>
+                                        </div>
+                                        <div class="metric-card">
+                                            <div class="metric-header">
+                                                <i class="fas fa-chart-line"></i>
+                                                <h4>Specificity</h4>
+                                            </div>
+                                            <div class="metric-value" id="sawEvaluationActualSpecificity">-</div>
+                                            <div class="metric-description">Proporsi prediksi negatif yang benar</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Confusion Matrix Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-table"></i> Confusion Matrix SAW dengan Data Aktual</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="confusion-matrix-container">
+                                        <div class="confusion-matrix" id="sawEvaluationActualConfusionMatrix">
+                                            <!-- Confusion matrix akan diisi secara dinamis -->
+                                        </div>
+                                        <div class="confusion-matrix-legend">
+                                            <div class="legend-item">
+                                                <span class="legend-color legend-tp"></span>
+                                                <span>True Positive (TP)</span>
+                                            </div>
+                                            <div class="legend-item">
+                                                <span class="legend-color legend-fp"></span>
+                                                <span>False Positive (FP)</span>
+                                            </div>
+                                            <div class="legend-item">
+                                                <span class="legend-color legend-fn"></span>
+                                                <span>False Negative (FN)</span>
+                                            </div>
+                                            <div class="legend-item">
+                                                <span class="legend-color legend-tn"></span>
+                                                <span>True Negative (TN)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Results Grid Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-list"></i> Hasil Evaluasi SAW dengan Data Aktual</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="sawEvaluationActualResultsGrid"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Section -->
+                        <div class="evaluation-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-chart-pie"></i> Visualisasi Hasil SAW dengan Data Aktual</h3>
+                                    <div class="card-actions">
+                                        <button class="btn btn-secondary btn-sm" onclick="window.sawEvaluationActual.exportData()">
+                                            <i class="fas fa-download"></i> Export Data
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="window.sawEvaluationActual.printReport()">
+                                            <i class="fas fa-print"></i> Print Report
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="charts-container">
+                                        <div class="chart-item">
+                                            <div class="chart-header">
+                                                <h4><i class="fas fa-chart-pie"></i> Distribusi Klasifikasi</h4>
+                                                <div class="chart-info">
+                                                    <span class="info-badge">Total: <span id="sawEvaluationActualTotalData">-</span></span>
+                                                </div>
+                                            </div>
+                                            <div class="chart-wrapper">
+                                                <canvas id="sawEvaluationActualClassificationChart"></canvas>
+                                            </div>
+                                            <div class="chart-legend">
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-tinggi"></span>
+                                                    <span>Peluang Lulus Tinggi</span>
+                                                </div>
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-sedang"></span>
+                                                    <span>Peluang Lulus Sedang</span>
+                                                </div>
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-kecil"></span>
+                                                    <span>Peluang Lulus Kecil</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="chart-item">
+                                            <div class="chart-header">
+                                                <h4><i class="fas fa-chart-bar"></i> Perbandingan Metrik Evaluasi</h4>
+                                                <div class="chart-info">
+                                                    <span class="info-badge">Accuracy: <span id="sawEvaluationActualAccuracy">-</span></span>
+                                                </div>
+                                            </div>
+                                            <div class="chart-wrapper">
+                                                <canvas id="sawEvaluationActualMetricsChart"></canvas>
+                                            </div>
+                                            <div class="chart-legend">
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-precision"></span>
+                                                    <span>Precision</span>
+                                                </div>
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-recall"></span>
+                                                    <span>Recall</span>
+                                                </div>
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-f1"></span>
+                                                    <span>F1-Score</span>
+                                                </div>
+                                                <div class="legend-item">
+                                                    <span class="legend-color legend-specificity"></span>
+                                                    <span>Specificity</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Performance Analysis -->
+                                    <div class="interpretation-list">
+                                        <div class="analysis-header">
+                                            <h4><i class="fas fa-analytics"></i> Analisis Performa SAW dengan Data Aktual</h4>
+                                        </div>
+                                        <div class="analysis-content">
+                                            <div class="interpretation-item">
+                                                <div class="analysis-icon">
+                                                    <i class="fas fa-bullseye"></i>
+                                                </div>
+                                                <div class="analysis-text">
+                                                    <h5>Akurasi Prediksi</h5>
+                                                    <p>Metode SAW menunjukkan akurasi <strong id="sawEvaluationActualAccuracyText">-</strong> dalam memprediksi klasifikasi peluang lulus mahasiswa berdasarkan data aktual. <span id="sawEvaluationActualAccuracyNarrative">-</span></p>
+                                                </div>
+                                            </div>
+                                            <div class="interpretation-item">
+                                                <div class="analysis-icon">
+                                                    <i class="fas fa-balance-scale"></i>
+                                                </div>
+                                                <div class="analysis-text">
+                                                    <h5>Keseimbangan Precision-Recall</h5>
+                                                    <p>Precision <strong id="sawEvaluationActualPrecisionText">-</strong> dan Recall <strong id="sawEvaluationActualRecallText">-</strong> menunjukkan <span id="sawEvaluationActualPrecisionRecallNarrative">-</span></p>
+                                                </div>
+                                            </div>
+                                            <div class="interpretation-item">
+                                                <div class="analysis-icon">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </div>
+                                                <div class="analysis-text">
+                                                    <h5>F1-Score</h5>
+                                                    <p>Harmonic mean dari precision dan recall adalah <strong id="sawEvaluationActualF1Text">-</strong>, <span id="sawEvaluationActualF1Narrative">-</span></p>
+                                                </div>
+                                            </div>
+                                            <div class="interpretation-item">
+                                                <div class="analysis-icon">
+                                                    <i class="fas fa-eye"></i>
+                                                </div>
+                                                <div class="analysis-text">
+                                                    <h5>Specificity</h5>
+                                                    <p>Specificity <strong id="sawEvaluationActualSpecificityText">-</strong> menunjukkan <span id="sawEvaluationActualSpecificityNarrative">-</span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Performance Summary -->
+                                        <div class="performance-summary">
+                                            <div class="summary-header">
+                                                <h5 class="text-dark"><i class="fas fa-cogs"></i> Metodologi Evaluasi dengan Data Aktual</h5>
+                                            </div>
+                                            <div class="summary-content">
+                                                <div class="narrative-text">
+                                                    <p id="sawEvaluationActualOverallNarrative">-</p>
+                                                </div>
+                                                <div class="parameter-card p-4 mt-3">
+                                                    <h4 class="mb-3"><i class="fas fa-lightbulb"></i> Rekomendasi</h4>
+                                                    <ul id="sawEvaluationActualRecommendations">
+                                                        <!-- Recommendations will be populated dynamically -->
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SAW Comparison Section -->
+                <div id="sawComparisonSection" class="section" style="display: none;">
+                    <div class="content-container">
+                        <div class="saw-comparison-header">
+                            <h1><i class="fas fa-chart-pie"></i> Perbandingan Evaluasi SAW</h1>
+                            <p>Bandingkan hasil evaluasi SAW dengan data sintetik vs data aktual untuk analisis performa yang komprehensif</p>
+                        </div>
+                        
+                        <!-- Control Panel -->
+                        <div class="saw-comparison-control-panel">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-cogs"></i> Panel Kontrol Perbandingan</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label for="sawComparisonIpkWeight">Bobot IPK (%):</label>
+                                            <input type="number" id="sawComparisonIpkWeight" class="form-control" value="40" min="0" max="100">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="sawComparisonSksWeight">Bobot SKS (%):</label>
+                                            <input type="number" id="sawComparisonSksWeight" class="form-control" value="35" min="0" max="100">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="sawComparisonDekWeight">Bobot DEK (%):</label>
+                                            <input type="number" id="sawComparisonDekWeight" class="form-control" value="25" min="0" max="100">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="sawComparisonTestSize">Test Size (%):</label>
+                                            <input type="number" id="sawComparisonTestSize" class="form-control" value="30" min="10" max="50">
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-12">
+                                            <button id="sawComparisonCalculateBtn" class="btn btn-primary">
+                                                <i class="fas fa-balance-scale"></i> Hitung Perbandingan
+                                            </button>
+                                            <button id="sawComparisonExportBtn" class="btn btn-success">
+                                                <i class="fas fa-download"></i> Export Hasil
+                                            </button>
+                                            <button id="sawComparisonPrintBtn" class="btn btn-info">
+                                                <i class="fas fa-print"></i> Cetak Laporan
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Comparison Results -->
+                        <div id="sawComparisonResults" style="display: none;">
+                            <!-- Summary Cards -->
+                            <div class="saw-comparison-summary">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="comparison-card synthetic-card">
+                                            <div class="card-header">
+                                                <h4><i class="fas fa-database"></i> Evaluasi SAW (Data Sintetik)</h4>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-3">
+                                                        <div class="summary-card">
+                                                            <div class="summary-icon">
+                                                                <i class="fas fa-percentage"></i>
+                                                            </div>
+                                                            <div class="summary-content">
+                                                                <h4 id="sawComparisonSyntheticAccuracy">-</h4>
+                                                                <p>Akurasi</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="summary-card">
+                                                            <div class="summary-icon">
+                                                                <i class="fas fa-bullseye"></i>
+                                                            </div>
+                                                            <div class="summary-content">
+                                                                <h4 id="sawComparisonSyntheticPrecision">-</h4>
+                                                                <p>Precision</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="summary-card">
+                                                            <div class="summary-icon">
+                                                                <i class="fas fa-undo"></i>
+                                                            </div>
+                                                            <div class="summary-content">
+                                                                <h4 id="sawComparisonSyntheticRecall">-</h4>
+                                                                <p>Recall</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="summary-card">
+                                                            <div class="summary-icon">
+                                                                <i class="fas fa-balance-scale"></i>
+                                                            </div>
+                                                            <div class="summary-content">
+                                                                <h4 id="sawComparisonSyntheticF1Score">-</h4>
+                                                                <p>F1-Score</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="comparison-card actual-card">
+                                            <div class="card-header">
+                                                <h4><i class="fas fa-chart-line"></i> Evaluasi SAW (Data Aktual)</h4>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-3">
+                                                        <div class="summary-card">
+                                                            <div class="summary-icon">
+                                                                <i class="fas fa-percentage"></i>
+                                                            </div>
+                                                            <div class="summary-content">
+                                                                <h4 id="sawComparisonActualAccuracy">-</h4>
+                                                                <p>Akurasi</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="summary-card">
+                                                            <div class="summary-icon">
+                                                                <i class="fas fa-bullseye"></i>
+                                                            </div>
+                                                            <div class="summary-content">
+                                                                <h4 id="sawComparisonActualPrecision">-</h4>
+                                                                <p>Precision</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="summary-card">
+                                                            <div class="summary-icon">
+                                                                <i class="fas fa-undo"></i>
+                                                            </div>
+                                                            <div class="summary-content">
+                                                                <h4 id="sawComparisonActualRecall">-</h4>
+                                                                <p>Recall</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="summary-card">
+                                                            <div class="summary-icon">
+                                                                <i class="fas fa-balance-scale"></i>
+                                                            </div>
+                                                            <div class="summary-content">
+                                                                <h4 id="sawComparisonActualF1Score">-</h4>
+                                                                <p>F1-Score</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Metrics Comparison -->
+                            <div class="saw-comparison-metrics">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4><i class="fas fa-chart-bar"></i> Perbandingan Metrik</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <canvas id="sawComparisonMetricsChart"></canvas>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div id="sawComparisonMetricsTable"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Charts Comparison -->
+                            <div class="chart-comparison-card">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4><i class="fas fa-chart-pie"></i> Perbandingan Distribusi Klasifikasi</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h5>Sintetik</h5>
+                                                <canvas id="sawComparisonSyntheticChart"></canvas>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h5>Aktual</h5>
+                                                <canvas id="sawComparisonActualChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Analysis & Recommendations -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="analysis-card">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h4><i class="fas fa-search"></i> Analisis Perbandingan</h4>
+                                            </div>
+                                            <div class="card-body">
+                                                <div id="sawComparisonAnalysis"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="recommendations-card">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h4><i class="fas fa-lightbulb"></i> Rekomendasi</h4>
+                                            </div>
+                                            <div class="card-body">
+                                                <div id="sawComparisonRecommendations"></div>
                                             </div>
                                         </div>
                                     </div>

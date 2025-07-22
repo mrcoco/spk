@@ -501,9 +501,11 @@ def recalculate_all_saw(db: Session):
 
 def evaluate_saw_performance(
     db: Session, 
+    mahasiswa_list: List[Mahasiswa] = None,
     weights: Dict[str, float] = None,
     test_size: float = 0.3,
     random_state: int = 42,
+    use_actual_data: bool = False,
     save_to_db: bool = False
 ) -> Dict[str, Any]:
     """
@@ -536,8 +538,14 @@ def evaluate_saw_performance(
     if abs(total_weight - 1.0) > 0.01:
         raise ValueError(f"Total bobot harus 1.0, saat ini: {total_weight}")
     
-    # Ambil semua data mahasiswa
-    mahasiswa_list = db.query(Mahasiswa).all()
+    # Ambil data mahasiswa jika tidak diberikan
+    if mahasiswa_list is None:
+        if use_actual_data:
+            mahasiswa_list = db.query(Mahasiswa).filter(
+                Mahasiswa.status_lulus_aktual.isnot(None)
+            ).all()
+        else:
+            mahasiswa_list = db.query(Mahasiswa).all()
     
     if len(mahasiswa_list) < 10:
         raise ValueError("Minimal diperlukan 10 data mahasiswa untuk evaluasi")
@@ -592,13 +600,20 @@ def evaluate_saw_performance(
     
     # Fungsi untuk klasifikasi berdasarkan data aktual (ground truth)
     def classify_actual(mahasiswa):
-        # Klasifikasi berdasarkan IPK dan SKS
-        if mahasiswa.ipk >= 3.0 and mahasiswa.sks >= 100:
-            return "Peluang Lulus Tinggi"
-        elif mahasiswa.ipk >= 2.5 and mahasiswa.sks >= 80:
-            return "Peluang Lulus Sedang"
+        if use_actual_data and mahasiswa.status_lulus_aktual:
+            # Gunakan status_lulus_aktual jika tersedia
+            if mahasiswa.status_lulus_aktual.upper() == 'LULUS':
+                return "Peluang Lulus Tinggi"
+            else:
+                return "Peluang Lulus Kecil"
         else:
-            return "Peluang Lulus Kecil"
+            # Klasifikasi berdasarkan IPK dan SKS (synthetic)
+            if mahasiswa.ipk >= 3.0 and mahasiswa.sks >= 100:
+                return "Peluang Lulus Tinggi"
+            elif mahasiswa.ipk >= 2.5 and mahasiswa.sks >= 80:
+                return "Peluang Lulus Sedang"
+            else:
+                return "Peluang Lulus Kecil"
     
     # Evaluasi pada test data
     y_true = []
@@ -616,17 +631,19 @@ def evaluate_saw_performance(
         y_true.append(actual_class)
         y_pred.append(predicted_class)
         
-        results.append({
+        result_item = {
             "nim": mahasiswa.nim,
             "nama": mahasiswa.nama,
             "ipk": mahasiswa.ipk,
             "sks": mahasiswa.sks,
-            "dek_percentage": mahasiswa.persen_dek,
+            "persen_dek": mahasiswa.persen_dek,
+            "actual_status": mahasiswa.status_lulus_aktual if use_actual_data else None,
             "actual_class": actual_class,
             "predicted_class": predicted_class,
-            "saw_score": saw_score,
+            "final_value": saw_score,
             "is_correct": actual_class == predicted_class
-        })
+        }
+        results.append(result_item)
     
     # Hitung metrik evaluasi
     accuracy = accuracy_score(y_true, y_pred)
@@ -672,7 +689,8 @@ def evaluate_saw_performance(
         "recall": float(recall),
         "f1_score": float(f1),
         "specificity": float(specificity),
-        "confusion_matrix": confusion_matrix_dict,
+        "confusion_matrix": cm.tolist(),  # array 2D
+        "confusion_matrix_dict": confusion_matrix_dict,  # dictionary (opsional)
         "classification_distribution": classification_distribution,
         "results": results,
         "weights": weights,

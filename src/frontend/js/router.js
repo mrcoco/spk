@@ -110,6 +110,30 @@ class Router {
                     console.log('Router: SAW Evaluation module not found');
                 }
                 break;
+            case 'saw-evaluation-actual':
+                if (typeof window.sawEvaluationActual !== 'undefined') {
+                    // Initialize SAW evaluation with actual data if not already done
+                    if (!window.sawEvaluationActualInitialized) {
+                        window.sawEvaluationActualInitialized = true;
+                        console.log('Router: Initializing SAW Evaluation with Actual Data');
+                        // SAW Evaluation Actual sudah diinisialisasi otomatis saat class dibuat
+                    }
+                } else {
+                    console.log('Router: SAW Evaluation with Actual Data module not found');
+                }
+                break;
+            case 'saw-comparison':
+                if (typeof window.sawComparison !== 'undefined') {
+                    // Initialize SAW comparison if not already done
+                    if (!window.sawComparisonInitialized) {
+                        window.sawComparisonInitialized = true;
+                        console.log('Router: Initializing SAW Comparison');
+                        // SAW Comparison sudah diinisialisasi otomatis saat class dibuat
+                    }
+                } else {
+                    console.log('Router: SAW Comparison module not found');
+                }
+                break;
             case 'enhanced-evaluation':
                 if (typeof window.EnhancedEvaluation !== 'undefined') {
                     // Only initialize if not already initialized

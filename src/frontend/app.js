@@ -7,6 +7,8 @@ const routes = {
     '#fis': 'fisSection',
     '#saw': 'sawSection',
     '#saw-evaluation': 'sawEvaluationSection',
+    '#saw-evaluation-actual': 'sawEvaluationActualSection',
+    '#saw-comparison': 'sawComparisonSection',
     '#evaluation': 'evaluationSection',
     '#fis-actual-evaluation': 'fisActualEvaluationSection',
     '#enhanced-evaluation': 'enhancedEvaluationSection',
@@ -71,6 +73,32 @@ $(document).ready(function() {
     } catch (error) {
         console.error('Error initializing SAW Evaluation module:', error);
     }
+
+    // Inisialisasi SAW Evaluation with Actual Data module
+    try {
+        if (typeof SAWEvaluationActual !== 'undefined') {
+            window.sawEvaluationActual = new SAWEvaluationActual();
+            console.log('SAW Evaluation with Actual Data module initialized successfully');
+        } else {
+            console.warn('SAW Evaluation with Actual Data module not found');
+        }
+    } catch (error) {
+        console.error('Error initializing SAW Evaluation with Actual Data module:', error);
+    }
+
+    // Inisialisasi SAW Comparison module dengan delay untuk memastikan DOM siap
+    setTimeout(() => {
+        try {
+            if (typeof SAWComparison !== 'undefined') {
+                window.sawComparison = new SAWComparison();
+                console.log('SAW Comparison module initialized successfully');
+            } else {
+                console.warn('SAW Comparison module not found');
+            }
+        } catch (error) {
+            console.error('Error initializing SAW Comparison module:', error);
+        }
+    }, 100); // Delay 100ms untuk memastikan DOM siap
 
     // Toggle menu
     $('#toggleMenu').click(function(e) {

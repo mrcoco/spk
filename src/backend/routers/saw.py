@@ -470,6 +470,154 @@ def get_classification_info():
 @router.post("/evaluate")
 def evaluate_saw(request: SAWEvaluationRequest, db: Session = Depends(get_db)):
     """
+    Evaluasi performa metode SAW dengan data synthetic
+    """
+    try:
+        # Ambil data mahasiswa untuk evaluasi
+        mahasiswa_list = db.query(Mahasiswa).all()
+        
+        if not mahasiswa_list:
+            raise HTTPException(
+                status_code=404,
+                detail="Tidak ada data mahasiswa untuk evaluasi"
+            )
+        
+        # Jalankan evaluasi SAW
+        evaluation_result = evaluate_saw_performance(
+            db=db, 
+            mahasiswa_list=mahasiswa_list, 
+            weights=request.weights, 
+            test_size=request.test_size, 
+            random_state=request.random_state,
+            use_actual_data=False,
+            save_to_db=request.save_to_db
+        )
+        
+        return {
+            "success": True,
+            "evaluation": evaluation_result
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat evaluasi SAW: {str(e)}"
+        )
+
+@router.post("/evaluate-actual")
+def evaluate_saw_actual(request: SAWEvaluationRequest, db: Session = Depends(get_db)):
+    """
+    Evaluasi performa metode SAW dengan data aktual (status_lulus_aktual)
+    """
+    try:
+        # Ambil data mahasiswa yang memiliki status_lulus_aktual
+        mahasiswa_list = db.query(Mahasiswa).filter(
+            Mahasiswa.status_lulus_aktual.isnot(None)
+        ).all()
+        
+        if not mahasiswa_list:
+            raise HTTPException(
+                status_code=404,
+                detail="Tidak ada data mahasiswa dengan status_lulus_aktual untuk evaluasi"
+            )
+        
+        # Jalankan evaluasi SAW dengan data aktual
+        evaluation_result = evaluate_saw_performance(
+            db=db, 
+            mahasiswa_list=mahasiswa_list, 
+            weights=request.weights, 
+            test_size=request.test_size, 
+            random_state=request.random_state,
+            use_actual_data=True,
+            save_to_db=request.save_to_db
+        )
+        
+        return {
+            "success": True,
+            "evaluation": evaluation_result
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat evaluasi SAW dengan data aktual: {str(e)}"
+        )
+
+@router.get("/export-evaluation-actual")
+def export_saw_evaluation_actual(db: Session = Depends(get_db)):
+    """
+    Export hasil evaluasi SAW dengan data aktual
+    """
+    try:
+        # Ambil data mahasiswa yang memiliki status_lulus_aktual
+        mahasiswa_list = db.query(Mahasiswa).filter(
+            Mahasiswa.status_lulus_aktual.isnot(None)
+        ).all()
+        
+        if not mahasiswa_list:
+            raise HTTPException(
+                status_code=404,
+                detail="Tidak ada data mahasiswa dengan status_lulus_aktual untuk export"
+            )
+        
+        # Jalankan evaluasi SAW dengan data aktual untuk export
+        evaluation_result = evaluate_saw_performance(
+            db=db, 
+            mahasiswa_list=mahasiswa_list, 
+            weights={'ipk': 0.4, 'sks': 0.35, 'dek': 0.25}, 
+            test_size=0.3, 
+            random_state=42,
+            use_actual_data=True,
+            save_to_db=False
+        )
+        
+        return {
+            "success": True,
+            "data": evaluation_result.get("results", [])
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat export evaluasi SAW dengan data aktual: {str(e)}"
+        )
+    """
+    Evaluasi performa metode SAW dengan data aktual (status_lulus_aktual)
+    """
+    try:
+        # Ambil data mahasiswa yang memiliki status_lulus_aktual
+        mahasiswa_list = db.query(Mahasiswa).filter(
+            Mahasiswa.status_lulus_aktual.isnot(None)
+        ).all()
+        
+        if not mahasiswa_list:
+            raise HTTPException(
+                status_code=404,
+                detail="Tidak ada data mahasiswa dengan status_lulus_aktual untuk evaluasi"
+            )
+        
+        # Jalankan evaluasi SAW dengan data aktual
+        evaluation_result = evaluate_saw_performance(
+            db=db, 
+            mahasiswa_list=mahasiswa_list, 
+            weights=request.weights, 
+            test_size=request.test_size, 
+            random_state=request.random_state,
+            use_actual_data=True,
+            save_to_db=request.save_to_db
+        )
+        
+        return {
+            "success": True,
+            "evaluation": evaluation_result
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat evaluasi SAW dengan data aktual: {str(e)}"
+        )
+    """
     Evaluasi performa metode SAW
     
     Args:

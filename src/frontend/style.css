@@ -9320,10 +9320,11 @@ body.drawer-expanded .content-wrapper {
 
 #fisComparisonSection .summary-card {
     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
     border: 1px solid rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
+    padding: 16px;
 }
 
 #fisComparisonSection .summary-card:hover {
@@ -9333,10 +9334,11 @@ body.drawer-expanded .content-wrapper {
 
 #fisComparisonSection .summary-card h5 {
     font-weight: 600;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 1rem;
 }
 
 #fisComparisonSection .summary-list {
@@ -9346,13 +9348,14 @@ body.drawer-expanded .content-wrapper {
 }
 
 #fisComparisonSection .summary-list li {
-    padding: 8px 12px;
-    margin-bottom: 5px;
+    padding: 6px 10px;
+    margin-bottom: 4px;
     background: rgba(0, 0, 0, 0.05);
-    border-radius: 6px;
+    border-radius: 5px;
     font-weight: 500;
     color: #495057;
     transition: all 0.3s ease;
+    font-size: 0.9rem;
 }
 
 #fisComparisonSection .summary-list li:hover {
@@ -9609,7 +9612,7 @@ body.drawer-expanded .content-wrapper {
     
     #fisComparisonSection .summary-card,
     #fisComparisonSection .analysis-card {
-        padding: 15px;
+        padding: 12px;
     }
     
     #fisComparisonSection .btn {
@@ -9638,7 +9641,7 @@ body.drawer-expanded .content-wrapper {
     
     #fisComparisonSection .summary-card,
     #fisComparisonSection .analysis-card {
-        padding: 12px;
+        padding: 10px;
     }
     
     #fisComparisonSection .metric-item,
@@ -9664,5 +9667,1028 @@ body.drawer-expanded .content-wrapper {
     #fisComparisonSection .btn {
         padding: 6px 12px;
         font-size: 0.8rem;
+    }
+}
+
+/* SAW Evaluation with Actual Data - Chart Legend Styles */
+.saw-evaluation-section .chart-legend {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 15px;
+    padding: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+}
+
+.saw-evaluation-section .chart-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.saw-evaluation-section .chart-legend .legend-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.saw-evaluation-section .chart-legend .legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.saw-evaluation-section .chart-legend .legend-tinggi {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.saw-evaluation-section .chart-legend .legend-sedang {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+}
+
+.saw-evaluation-section .chart-legend .legend-kecil {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+}
+
+.saw-evaluation-section .chart-legend .legend-precision {
+    background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+}
+
+.saw-evaluation-section .chart-legend .legend-recall {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.saw-evaluation-section .chart-legend .legend-f1 {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+}
+
+.saw-evaluation-section .chart-legend .legend-specificity {
+    background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+}
+
+/* Chart container improvements */
+.saw-evaluation-section .chart-wrapper {
+    position: relative;
+    min-height: 300px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e9ecef;
+}
+
+.saw-evaluation-section .chart-wrapper canvas {
+    max-height: 400px !important;
+}
+
+/* Chart header improvements */
+.saw-evaluation-section .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.saw-evaluation-section .chart-header h4 {
+    margin: 0;
+    color: #495057;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.saw-evaluation-section .chart-header h4 i {
+    margin-right: 8px;
+    color: #007bff;
+}
+
+.saw-evaluation-section .chart-info {
+    display: flex;
+    gap: 10px;
+}
+
+.saw-evaluation-section .info-badge {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .saw-evaluation-section .chart-legend {
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .saw-evaluation-section .chart-legend .legend-item {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .saw-evaluation-section .chart-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .saw-evaluation-section .chart-info {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .saw-evaluation-section .chart-wrapper {
+        padding: 15px;
+        min-height: 250px;
+    }
+    
+    .saw-evaluation-section .chart-wrapper canvas {
+        max-height: 300px !important;
+    }
+    
+    .saw-evaluation-section .chart-legend .legend-item {
+        padding: 6px 10px;
+        font-size: 0.9rem;
+    }
+    
+    .saw-evaluation-section .chart-legend .legend-color {
+        width: 14px;
+        height: 14px;
+    }
+}
+
+/* SAW Comparison Section Styles */
+#sawComparisonSection {
+    /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+    min-height: 100vh;
+    padding: 30px 0;
+}
+
+#sawComparisonSection.section {
+    padding: 0;
+}
+
+#sawComparisonSection .content-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+    /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+    border-radius: 0;
+    box-shadow: none;
+    min-height: 100vh;
+}
+
+/* Override content-wrapper padding for SAW Comparison */
+#sawComparisonSection ~ .content-wrapper,
+.content-wrapper #sawComparisonSection {
+    padding: 0;
+}
+
+/* Override main-container for SAW Comparison */
+.main-container #sawComparisonSection {
+    margin-top: 0;
+}
+
+/* Override responsive CSS for SAW Comparison */
+@media (max-width: 768px) {
+    #sawComparisonSection {
+        padding: 20px 0;
+    }
+    
+    #sawComparisonSection .content-container {
+        padding: 0 15px;
+    }
+    
+    .content-wrapper #sawComparisonSection {
+        padding: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    #sawComparisonSection {
+        padding: 15px 0;
+    }
+    
+    #sawComparisonSection .content-container {
+        padding: 0 10px;
+    }
+}
+
+.saw-comparison-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    text-align: center;
+}
+
+.saw-comparison-header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 15px;
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.saw-comparison-header h1 i {
+    margin-right: 15px;
+    color: #ffffff;
+}
+
+.saw-comparison-header p {
+    font-size: 1rem;
+    color: #ffffff;
+    text-align: center;
+    margin: 0;
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.saw-comparison-control-panel {
+    margin-bottom: 30px;
+}
+
+.saw-comparison-control-panel .card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 20px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+}
+
+.saw-comparison-control-panel .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15);
+}
+
+.saw-comparison-control-panel .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 25px 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.saw-comparison-control-panel .card-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.saw-comparison-control-panel .card-header h3 i {
+    color: #ffffff;
+    font-size: 1.2em;
+}
+
+.saw-comparison-control-panel .card-body {
+    padding: 30px;
+}
+
+.saw-comparison-control-panel .form-group {
+    margin-bottom: 20px;
+}
+
+.saw-comparison-control-panel .form-group label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.saw-comparison-control-panel .form-control {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    padding: 12px 15px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.saw-comparison-control-panel .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.saw-comparison-control-panel .action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.saw-comparison-control-panel .btn {
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: none;
+    min-width: 150px;
+}
+
+.saw-comparison-control-panel .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.saw-comparison-control-panel .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.saw-comparison-control-panel .btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.saw-comparison-control-panel .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+}
+
+.saw-comparison-control-panel .btn-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+    color: white;
+}
+
+.saw-comparison-control-panel .btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(23, 162, 184, 0.4);
+}
+
+/* Comparison Results Styles */
+.saw-comparison-summary {
+    margin-bottom: 30px;
+}
+
+.comparison-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 20px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    margin-bottom: 30px;
+    height: 100%;
+}
+
+.comparison-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15);
+}
+
+.synthetic-card .card-header {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    padding: 25px 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.actual-card .card-header {
+    background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+    padding: 25px 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.comparison-card .card-header h4 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.comparison-card .card-header h4 i {
+    color: #ffffff;
+    font-size: 1.2em;
+}
+
+.comparison-card .card-body {
+    padding: 30px;
+}
+
+.summary-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.stat-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.stat-value {
+    font-weight: 700;
+    color: #667eea;
+    font-size: 1.1rem;
+}
+
+/* Metrics Comparison Styles */
+.saw-comparison-metrics {
+    margin-bottom: 30px;
+}
+
+.saw-comparison-metrics .card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 20px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    margin-bottom: 30px;
+}
+
+.saw-comparison-metrics .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15);
+}
+
+.saw-comparison-metrics .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 25px 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.saw-comparison-metrics .card-header h4 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.saw-comparison-metrics .card-header h4 i {
+    color: #ffffff;
+    font-size: 1.2em;
+}
+
+.saw-comparison-metrics .card-body {
+    padding: 30px;
+}
+
+.metric-comparison-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.metric-comparison-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: #667eea;
+}
+
+.metric-comparison-card h5 {
+    color: #495057;
+    font-weight: 700;
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+.metric-values {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.metric-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 6px;
+    border-left: 3px solid #dee2e6;
+}
+
+.metric-label {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.metric-value {
+    font-weight: 700;
+    color: #495057;
+}
+
+.metric-difference {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-radius: 6px;
+    border-left: 3px solid #ffc107;
+    margin-top: 5px;
+}
+
+.metric-difference .metric-label {
+    color: #856404;
+    font-weight: 700;
+}
+
+.metric-difference .metric-value {
+    color: #856404;
+    font-weight: 700;
+}
+
+/* Charts Comparison Styles */
+.saw-comparison-charts {
+    margin-bottom: 30px;
+}
+
+.chart-comparison-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 20px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    margin-bottom: 30px;
+    height: 100%;
+}
+
+.chart-comparison-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15);
+}
+
+.chart-comparison-card .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 25px 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chart-comparison-card .card-header h4 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chart-comparison-card .card-header h4 i {
+    color: #ffffff;
+    font-size: 1.2em;
+}
+
+.chart-comparison-card .card-body {
+    padding: 25px;
+    min-height: 320px;
+}
+
+.chart-comparison-card .card-body .row {
+    height: 100%;
+}
+
+.chart-comparison-card .card-body .col-md-6 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 280px;
+}
+
+.chart-comparison-card .card-body h5 {
+    margin-bottom: 15px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+    text-align: center;
+}
+
+.chart-comparison-card .card-body canvas {
+    max-width: 100%;
+    height: auto !important;
+    min-height: 220px;
+    max-height: 250px;
+}
+
+/* Metrics Comparison Styles */
+.metrics-comparison-table {
+    margin-top: 10px;
+}
+
+.metrics-comparison-table .table {
+    font-size: 0.85rem;
+    margin-bottom: 0;
+}
+
+.metrics-comparison-table .table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    border: none;
+    padding: 12px 8px;
+}
+
+.metrics-comparison-table .table td {
+    padding: 10px 8px;
+    vertical-align: middle;
+    border-color: #e9ecef;
+}
+
+.metrics-comparison-table .table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.metrics-comparison-table .text-success {
+    color: #28a745 !important;
+    font-weight: 600;
+}
+
+.metrics-comparison-table .text-danger {
+    color: #dc3545 !important;
+    font-weight: 600;
+}
+
+/* SAW Comparison Metrics Chart */
+#sawComparisonMetricsChart {
+    min-height: 250px;
+    max-height: 300px;
+}
+
+/* Analysis and Recommendations Styles */
+.saw-comparison-analysis {
+    margin-bottom: 30px;
+}
+
+.analysis-card, .recommendations-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 20px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    margin-bottom: 30px;
+    height: 100%;
+}
+
+.analysis-card:hover, .recommendations-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15);
+}
+
+.analysis-card .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 25px 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.recommendations-card .card-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    padding: 25px 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.analysis-card .card-header h4, .recommendations-card .card-header h4 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.analysis-card .card-header h4 i, .recommendations-card .card-header h4 i {
+    color: #ffffff;
+    font-size: 1.2em;
+}
+
+.analysis-card .card-body, .recommendations-card .card-body {
+    padding: 30px;
+}
+
+.analysis-content h5, .recommendations-content h5 {
+    color: #495057;
+    font-weight: 700;
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+.analysis-content p, .recommendations-content p {
+    color: #6c757d;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.recommendations-content ul {
+    list-style: none;
+    padding: 0;
+}
+
+.recommendations-content li {
+    padding: 10px 0;
+    border-bottom: 1px solid #e9ecef;
+    color: #6c757d;
+    line-height: 1.6;
+}
+
+.recommendations-content li:last-child {
+    border-bottom: none;
+}
+
+.recommendations-content li strong {
+    color: #495057;
+}
+
+/* SAW Comparison Summary Cards - Consistent with SAW Evaluation */
+#sawComparisonSection .summary-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+#sawComparisonSection .summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+#sawComparisonSection .summary-card:hover::before {
+    left: 100%;
+}
+
+#sawComparisonSection .summary-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+#sawComparisonSection .summary-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+#sawComparisonSection .summary-icon::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
+}
+
+#sawComparisonSection .summary-card:hover .summary-icon::after {
+    width: 100%;
+    height: 100%;
+}
+
+#sawComparisonSection .summary-icon i {
+    color: #ffffff;
+    font-size: 1.3rem;
+    z-index: 1;
+    position: relative;
+}
+
+#sawComparisonSection .summary-content h4 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 4px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+#sawComparisonSection .summary-content p {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .saw-comparison-control-panel .action-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .saw-comparison-control-panel .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .saw-comparison-header {
+        padding: 30px;
+        margin-bottom: 25px;
+    }
+    
+    .saw-comparison-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .saw-comparison-header p {
+        font-size: 1rem;
+    }
+    
+    .saw-comparison-control-panel .card-body {
+        padding: 20px;
+    }
+    
+    .comparison-card .card-body {
+        padding: 20px;
+    }
+    
+    .chart-comparison-card .card-body {
+        padding: 20px;
+        min-height: 280px;
+    }
+    
+    .chart-comparison-card .card-body .col-md-6 {
+        min-height: 240px;
+        margin-bottom: 20px;
+    }
+    
+    .chart-comparison-card .card-body canvas {
+        min-height: 180px;
+        max-height: 200px;
+    }
+    
+    .metrics-comparison-table .table {
+        font-size: 0.8rem;
+    }
+    
+    .metrics-comparison-table .table th,
+    .metrics-comparison-table .table td {
+        padding: 8px 6px;
+    }
+    
+    #sawComparisonMetricsChart {
+        min-height: 200px;
+        max-height: 250px;
+    }
+    
+    .analysis-card .card-body, .recommendations-card .card-body {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .saw-comparison-header {
+        padding: 25px 15px;
+        margin-bottom: 15px;
+    }
+    
+    .saw-comparison-header h1 {
+        font-size: 1.6rem;
+    }
+    
+    .saw-comparison-header h1 i {
+        margin-right: 10px;
+    }
+    
+    .saw-comparison-header p {
+        font-size: 1rem;
+    }
+    
+    .saw-comparison-control-panel .card-body {
+        padding: 15px;
+    }
+    
+    .saw-comparison-control-panel .btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        min-width: 120px;
+    }
+    
+    .comparison-card .card-body {
+        padding: 15px;
+    }
+    
+    .chart-comparison-card .card-body {
+        padding: 15px;
+        min-height: 240px;
+    }
+    
+    .chart-comparison-card .card-body .col-md-6 {
+        min-height: 200px;
+        margin-bottom: 15px;
+    }
+    
+    .chart-comparison-card .card-body canvas {
+        min-height: 150px;
+        max-height: 180px;
+    }
+    
+    .metrics-comparison-table .table {
+        font-size: 0.75rem;
+    }
+    
+    .metrics-comparison-table .table th,
+    .metrics-comparison-table .table td {
+        padding: 6px 4px;
+    }
+    
+    #sawComparisonMetricsChart {
+        min-height: 180px;
+        max-height: 220px;
+    }
+    
+    .analysis-card .card-body, .recommendations-card .card-body {
+        padding: 15px;
     }
 }
