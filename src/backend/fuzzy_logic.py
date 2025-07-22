@@ -16,19 +16,10 @@ Referensi: FIS_SAW_fix.ipynb
 from typing import Tuple
 from models import KategoriPeluang
 
+# Kelas utama untuk Fuzzy Inference System (FIS) kelulusan mahasiswa
 class FuzzyKelulusan:
     """
     Implementasi Fuzzy Inference System (FIS) yang DIKOREKSI sesuai FIS_SAW_fix.ipynb
-    
-    KOREKSI FINAL:
-    ==============
-    
-    Berdasarkan analisis mendalam, perbedaan utama adalah pada:
-    1. Output crisp values yang tepat
-    2. Weighted average calculation yang akurat
-    3. Membership function calculation yang konsisten
-    
-    Referensi: FIS_SAW_fix.ipynb
     """
     def __init__(self):
         # Batas-batas untuk fungsi keanggotaan IPK - SESUAI FIS_SAW_FIX.IPYNB
@@ -46,6 +37,8 @@ class FuzzyKelulusan:
         self.nilai_dek_sedang = (7, 12, 18)     # trimf [7, 12, 18]
         self.nilai_dek_banyak = (16, 20, 45, 70) # trapmf [16, 20, 45, 70]
 
+    # Menghitung nilai keanggotaan fungsi segitiga (trimf)
+    # Fungsi ini menerima input x dan tiga parameter a, b, c, lalu mengembalikan derajat keanggotaan x pada fungsi segitiga tersebut.
     def _calculate_membership_triangle(self, x: float, a: float, b: float, c: float) -> float:
         """Menghitung nilai keanggotaan menggunakan fungsi segitiga"""
         if x <= a or x >= c:
@@ -57,6 +50,9 @@ class FuzzyKelulusan:
         else:  # b < x < c
             return (c - x) / (c - b)
 
+    # Menghitung nilai keanggotaan fungsi trapesium (trapmf)
+    # Fungsi ini menerima input x dan empat parameter a, b, c, d, lalu mengembalikan derajat keanggotaan x pada fungsi trapesium tersebut.
+    # Mendukung kasus khusus rectangle, right/left trapezoid, dan trapesium normal.
     def _calculate_membership_trapezoid(self, x: float, a: float, b: float, c: float, d: float) -> float:
         """Menghitung nilai keanggotaan menggunakan fungsi trapesium"""
         # Handle kasus khusus: rectangle (a == b and c == d)
@@ -93,6 +89,8 @@ class FuzzyKelulusan:
         else:  # c < x < d
             return (d - x) / (d - c) if d > c else 1.0
 
+    # Menghitung derajat keanggotaan IPK pada tiga kategori (rendah, sedang, tinggi)
+    # Fungsi ini memanggil fungsi trapesium dan segitiga sesuai parameter IPK.
     def calculate_ipk_membership(self, ipk: float) -> Tuple[float, float, float]:
         """Menghitung nilai keanggotaan IPK"""
         rendah = self._calculate_membership_trapezoid(ipk, 
@@ -106,6 +104,8 @@ class FuzzyKelulusan:
         
         return (rendah, sedang, tinggi)
 
+    # Menghitung derajat keanggotaan SKS pada tiga kategori (sedikit, sedang, banyak)
+    # Fungsi ini memanggil fungsi trapesium dan segitiga sesuai parameter SKS.
     def calculate_sks_membership(self, sks: int) -> Tuple[float, float, float]:
         """Menghitung nilai keanggotaan SKS"""
         sedikit = self._calculate_membership_trapezoid(sks,
@@ -119,6 +119,8 @@ class FuzzyKelulusan:
         
         return (sedikit, sedang, banyak)
 
+    # Menghitung derajat keanggotaan nilai D/E/K pada tiga kategori (sedikit, sedang, banyak)
+    # Fungsi ini memanggil fungsi trapesium dan segitiga sesuai parameter persen_dek.
     def calculate_nilai_dk_membership(self, persen_dek: float) -> Tuple[float, float, float]:
         """Menghitung nilai keanggotaan untuk prosentase nilai D, E, dan K"""
         sedikit = self._calculate_membership_trapezoid(persen_dek,
@@ -132,6 +134,8 @@ class FuzzyKelulusan:
         
         return (sedikit, sedang, banyak)
 
+    # Menerapkan seluruh aturan fuzzy (20 rules) untuk mendapatkan derajat keanggotaan output
+    # Fungsi ini menerima tuple keanggotaan IPK, SKS, dan nilai D/E/K, lalu menerapkan aturan fuzzy dan mengambil maksimum untuk setiap kategori output.
     def _apply_fuzzy_rules(self, ipk_memberships: Tuple[float, float, float],
                           sks_memberships: Tuple[float, float, float],
                           nilai_dk_memberships: Tuple[float, float, float]) -> Tuple[float, float, float]:
@@ -182,6 +186,9 @@ class FuzzyKelulusan:
 
         return (peluang_kecil, peluang_sedang, peluang_tinggi)
 
+    # Melakukan defuzzifikasi menggunakan weighted average yang dikoreksi
+    # Fungsi ini menerima tuple derajat keanggotaan output (kecil, sedang, tinggi), lalu menghitung nilai crisp menggunakan weighted average.
+    # Nilai crisp digunakan untuk menentukan kategori peluang lulus.
     def defuzzification_corrected(self, peluang_memberships: Tuple[float, float, float]) -> Tuple[float, KategoriPeluang]:
         """
         Melakukan defuzzifikasi menggunakan weighted average yang DIKOREKSI
@@ -224,6 +231,8 @@ class FuzzyKelulusan:
 
         return nilai_crisp, kategori
 
+    # Menghitung peluang kelulusan berdasarkan IPK, SKS, dan prosentase nilai D/E/K
+    # Fungsi ini melakukan seluruh proses fuzzy: fuzzifikasi, inferensi, defuzzifikasi, dan mengembalikan hasil lengkap (kategori, nilai crisp, dan keanggotaan tertinggi).
     def calculate_graduation_chance(self, ipk: float, sks: int, persen_dek: float) -> Tuple[KategoriPeluang, float, float, float, float]:
         """Menghitung peluang kelulusan berdasarkan IPK, SKS, dan prosentase nilai D, E, K"""
         # Fuzzifikasi
@@ -246,6 +255,8 @@ class FuzzyKelulusan:
             max(nilai_dk_memberships)  # nilai keanggotaan D,E,K tertinggi
         )
 
+    # Melakukan pengujian konsistensi hasil FIS dengan notebook referensi
+    # Fungsi ini menjalankan beberapa test case dan membandingkan hasil perhitungan dengan nilai yang diharapkan dari notebook.
     def test_consistency_with_notebook(self):
         """Test untuk memastikan konsistensi dengan FIS_SAW_fix.ipynb"""
         test_cases = [

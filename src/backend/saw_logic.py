@@ -10,6 +10,10 @@ _stats_cache = {}
 _stats_cache_timestamp = None
 _cache_duration = 300  # 5 menit
 
+# Mengambil statistik min/max dengan cache untuk efisiensi query
+# Fungsi ini akan mengambil nilai maksimum dan minimum dari kolom IPK, SKS, dan Nilai D/E/K pada tabel Mahasiswa.
+# Untuk menghemat query ke database, hasilnya disimpan dalam cache selama 5 menit.
+# Jika cache masih valid, data diambil dari cache, jika tidak maka query baru dilakukan ke database.
 def get_cached_stats(db: Session):
     """
     Mendapatkan statistik min/max dengan caching untuk performa
@@ -42,6 +46,8 @@ def get_cached_stats(db: Session):
     
     return _stats_cache
 
+# Menghapus cache statistik min/max
+# Fungsi ini menghapus isi cache statistik dan timestamp-nya, sehingga query berikutnya akan mengambil data baru dari database.
 def clear_stats_cache():
     """
     Clear cache statistik
@@ -50,6 +56,9 @@ def clear_stats_cache():
     _stats_cache = {}
     _stats_cache_timestamp = None
 
+# Inisialisasi kriteria SAW di database jika belum ada
+# Fungsi ini akan mengecek apakah tabel kriteria SAW sudah terisi.
+# Jika belum, maka akan menambahkan tiga kriteria default (IPK, SKS, Nilai D/E/K) beserta bobot dan tipe cost/benefit-nya.
 def initialize_saw_criteria(db: Session):
     """
     Inisialisasi kriteria SAW jika belum ada
@@ -73,6 +82,9 @@ def initialize_saw_criteria(db: Session):
         db.commit()
         print("SAW criteria initialized successfully")
 
+# Menyimpan hasil perhitungan SAW ke database (update jika sudah ada)
+# Fungsi ini menyimpan hasil perhitungan SAW (nilai akhir dan ranking) untuk satu mahasiswa ke tabel SAWResults.
+# Jika data untuk NIM tersebut sudah ada, maka akan diupdate, jika belum maka akan dibuat data baru.
 def save_saw_result(db: Session, nim: str, final_score: float, ranking: int) -> SAWResults:
     """
     Menyimpan hasil SAW ke database
@@ -100,6 +112,9 @@ def save_saw_result(db: Session, nim: str, final_score: float, ranking: int) -> 
         db.refresh(new_result)
         return new_result
 
+# Menyimpan hasil akhir SAW ke database (update jika sudah ada)
+# Fungsi ini mirip dengan save_saw_result, namun menyimpan ke tabel SAWFinalResults.
+# Data yang disimpan adalah NIM, skor akhir, dan ranking. Jika sudah ada, akan diupdate.
 def save_saw_final_result(db: Session, nim: str, final_score: float, rank: int) -> SAWFinalResults:
     """
     Menyimpan hasil SAW final ke database
@@ -127,6 +142,11 @@ def save_saw_final_result(db: Session, nim: str, final_score: float, rank: int) 
         db.refresh(new_result)
         return new_result
 
+# Menghitung nilai SAW untuk satu mahasiswa berdasarkan kriteria dan bobot
+# Fungsi ini mengambil data mahasiswa berdasarkan NIM, lalu melakukan normalisasi nilai IPK, SKS, dan Nilai D/E/K.
+# Nilai normalisasi dikalikan dengan bobot, lalu dijumlahkan untuk mendapatkan skor akhir.
+# Skor akhir digunakan untuk menentukan klasifikasi peluang lulus (Tinggi/Sedang/Kecil).
+# Jika save_to_db=True, hasilnya juga disimpan ke database.
 def calculate_saw(db: Session, nim: str, save_to_db: bool = True) -> Optional[Dict[str, Any]]:
     """
     Menghitung nilai SAW berdasarkan implementasi di FIS_SAW_fix.ipynb
@@ -228,6 +248,10 @@ def calculate_saw(db: Session, nim: str, save_to_db: bool = True) -> Optional[Di
         "klasifikasi": klasifikasi
     }
 
+# Menghitung SAW untuk semua mahasiswa sekaligus (batch processing)
+# Fungsi ini mengambil seluruh data mahasiswa, lalu menghitung skor SAW untuk masing-masing mahasiswa secara batch.
+# Nilai min/max diambil sekali untuk seluruh batch agar efisien.
+# Hasil perhitungan (termasuk normalisasi, skor, dan klasifikasi) disimpan ke database jika save_to_db=True.
 def batch_calculate_saw(db: Session, save_to_db: bool = True) -> List[Dict[str, Any]]:
     """
     Menghitung SAW untuk semua mahasiswa sekaligus (batch processing)
@@ -357,22 +381,32 @@ def batch_calculate_saw(db: Session, save_to_db: bool = True) -> List[Dict[str, 
     
     return results
 
+# Mengambil hasil SAW dari database dengan pagination
+# Fungsi ini mengambil data hasil perhitungan SAW dari tabel SAWResults, diurutkan berdasarkan ranking, dan bisa dipaging.
 def get_saw_results_from_db(db: Session, skip: int = 0, limit: int = 10) -> List[SAWResults]:
     """Mengambil hasil SAW dari database"""
     return db.query(SAWResults).order_by(SAWResults.ranking).offset(skip).limit(limit).all()
 
+# Mengambil hasil SAW untuk satu mahasiswa dari database
+# Fungsi ini mengambil satu baris hasil SAW dari tabel SAWResults berdasarkan NIM mahasiswa.
 def get_saw_result_from_db(db: Session, nim: str) -> Optional[SAWResults]:
     """Mengambil hasil SAW untuk mahasiswa tertentu dari database"""
     return db.query(SAWResults).filter(SAWResults.nim == nim).first()
 
+# Mengambil hasil akhir SAW dari database dengan pagination
+# Fungsi ini mengambil data hasil akhir SAW dari tabel SAWFinalResults, diurutkan berdasarkan ranking, dan bisa dipaging.
 def get_saw_final_results_from_db(db: Session, skip: int = 0, limit: int = 10) -> List[SAWFinalResults]:
     """Mengambil hasil SAW final dari database"""
     return db.query(SAWFinalResults).order_by(SAWFinalResults.rank).offset(skip).limit(limit).all()
 
+# Mengambil hasil akhir SAW untuk satu mahasiswa dari database
+# Fungsi ini mengambil satu baris hasil akhir SAW dari tabel SAWFinalResults berdasarkan NIM mahasiswa.
 def get_saw_final_result_from_db(db: Session, nim: str) -> Optional[SAWFinalResults]:
     """Mengambil hasil SAW final untuk mahasiswa tertentu dari database"""
     return db.query(SAWFinalResults).filter(SAWFinalResults.nim == nim).first()
 
+# Mendapatkan detail kriteria, normalisasi, dan bobot SAW untuk satu mahasiswa
+# Fungsi ini memanggil calculate_saw dengan save_to_db=False untuk mendapatkan detail nilai kriteria, hasil normalisasi, bobot, dan skor akhir untuk satu mahasiswa.
 def get_criteria_details(db: Session, nim: str) -> Optional[CriteriaDetailsResponse]:
     """Mendapatkan detail kriteria SAW untuk mahasiswa"""
     result = calculate_saw(db, nim, save_to_db=False)  # Tidak perlu save saat get detail
@@ -387,6 +421,8 @@ def get_criteria_details(db: Session, nim: str) -> Optional[CriteriaDetailsRespo
         final_value=result["final_value"]
     )
 
+# Membuat kriteria SAW baru di database
+# Fungsi ini menambahkan satu kriteria baru ke tabel SAWCriteria dengan nama, bobot, dan tipe cost/benefit sesuai parameter.
 def create_saw_criteria(db: Session, name: str, weight: float, is_cost: bool = False) -> SAWCriteria:
     """Membuat kriteria SAW baru"""
     db_criteria = SAWCriteria(name=name, weight=weight, is_cost=is_cost)
@@ -395,10 +431,14 @@ def create_saw_criteria(db: Session, name: str, weight: float, is_cost: bool = F
     db.refresh(db_criteria)
     return db_criteria
 
+# Mengambil semua kriteria SAW dari database
+# Fungsi ini mengambil seluruh data kriteria SAW dari tabel SAWCriteria.
 def get_saw_criteria(db: Session) -> List[SAWCriteria]:
     """Mengambil semua kriteria SAW"""
     return db.query(SAWCriteria).all()
 
+# Mendapatkan nama kolom database dari nama kriteria SAW
+# Fungsi ini mengembalikan nama kolom pada tabel Mahasiswa yang sesuai dengan nama kriteria SAW (misal: "IPK" -> "ipk").
 def get_column_name(criteria_name: str) -> str:
     """
     Mendapatkan nama kolom di database berdasarkan nama kriteria
@@ -410,6 +450,9 @@ def get_column_name(criteria_name: str) -> str:
     }
     return mapping.get(criteria_name, "")
 
+# Mengambil distribusi klasifikasi hasil SAW dari database (atau hitung jika belum ada)
+# Fungsi ini menghitung jumlah mahasiswa pada masing-masing kategori klasifikasi SAW (Tinggi/Sedang/Kecil).
+# Jika data belum ada di database, maka akan dilakukan perhitungan batch terlebih dahulu.
 def get_saw_distribution(db: Session) -> Dict[str, Any]:
     """
     Mendapatkan distribusi klasifikasi SAW dari database
@@ -477,6 +520,8 @@ def get_saw_distribution(db: Session) -> Dict[str, Any]:
         "total": total
     }
 
+# Menghapus semua hasil SAW dari database
+# Fungsi ini menghapus seluruh data pada tabel SAWResults dan SAWFinalResults.
 def clear_saw_results(db: Session):
     """Menghapus semua hasil SAW dari database"""
     db.query(SAWResults).delete()
@@ -484,6 +529,8 @@ def clear_saw_results(db: Session):
     db.commit()
     print("SAW results cleared from database")
 
+# Hitung ulang seluruh hasil SAW dan simpan ke database
+# Fungsi ini akan menghapus seluruh hasil SAW lama, lalu melakukan perhitungan batch dan menyimpan hasil baru ke database.
 def recalculate_all_saw(db: Session):
     """Hitung ulang semua hasil SAW dan simpan ke database"""
     # Hapus hasil lama
@@ -498,7 +545,9 @@ def recalculate_all_saw(db: Session):
 # ============================================================================
 # EVALUASI SAW FUNCTIONS
 # ============================================================================
-
+# Melakukan evaluasi performa metode SAW menggunakan cross-validation dan data aktual/sintetik
+# Fungsi ini membagi data mahasiswa menjadi data latih dan data uji, lalu menghitung skor SAW pada data uji.
+# Hasil prediksi dibandingkan dengan ground truth (synthetic/aktual) untuk menghasilkan metrik evaluasi seperti akurasi, presisi, recall, F1, dan confusion matrix.
 def evaluate_saw_performance(
     db: Session, 
     mahasiswa_list: List[Mahasiswa] = None,
@@ -705,6 +754,8 @@ def evaluate_saw_performance(
     
     return evaluation_result
 
+# Mengambil riwayat evaluasi SAW dari database (belum diimplementasikan)
+# Fungsi ini disiapkan untuk mengambil riwayat hasil evaluasi SAW, namun belum diimplementasikan.
 def get_saw_evaluation_history(db: Session) -> List[Dict[str, Any]]:
     """
     Mendapatkan riwayat evaluasi SAW dari database
@@ -712,6 +763,8 @@ def get_saw_evaluation_history(db: Session) -> List[Dict[str, Any]]:
     # TODO: Implementasi untuk mengambil riwayat evaluasi
     return []
 
+# Menyimpan hasil evaluasi SAW ke database (belum diimplementasikan)
+# Fungsi ini disiapkan untuk menyimpan hasil evaluasi SAW ke database, namun belum diimplementasikan.
 def save_saw_evaluation_result(db: Session, evaluation_data: Dict[str, Any]) -> bool:
     """
     Menyimpan hasil evaluasi SAW ke database
