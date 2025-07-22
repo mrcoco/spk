@@ -1,5 +1,7 @@
 # Dokumentasi Lengkap Perbandingan Evaluasi SAW: Synthetic vs Data Aktual
 
+_Dokumen ini merupakan bagian dari SPK Monitoring Mahasiswa Akhir Masa Studi._
+
 ## 1. Dasar Teori & Rumus SAW
 
 ### a. Pengertian SAW

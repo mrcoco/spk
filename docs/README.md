@@ -1,4 +1,6 @@
-# 📚 Dokumentasi Sistem SPK
+# SPK Monitoring Mahasiswa Akhir Masa Studi
+
+Dokumentasi lengkap untuk Sistem Pendukung Keputusan (SPK) Monitoring Mahasiswa Akhir Masa Studi, meliputi arsitektur, fitur, dan panduan penggunaan.
 
 ## 📁 Struktur Dokumentasi
 

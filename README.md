@@ -1,9 +1,9 @@
-# SPK Monitoring Masa Studi
+# SPK Monitoring Mahasiswa Akhir Masa Studi
 
-Sistem Pendukung Keputusan (SPK) untuk monitoring masa studi mahasiswa menggunakan metode Fuzzy Logic dan SAW (Simple Additive Weighting).
+Sistem Pendukung Keputusan (SPK) untuk monitoring mahasiswa akhir masa studi menggunakan metode Fuzzy Logic dan SAW (Simple Additive Weighting).
 
 ## 📋 Deskripsi
-Aplikasi ini membantu pengambilan keputusan monitoring masa studi mahasiswa dengan dua metode utama:
+Aplikasi ini membantu pengambilan keputusan monitoring mahasiswa akhir masa studi dengan dua metode utama:
 - **Fuzzy Logic**: Klasifikasi kelulusan mahasiswa
 - **SAW (Simple Additive Weighting)**: Perankingan dan evaluasi mahasiswa
 

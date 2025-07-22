@@ -1,7 +1,10 @@
 /**
- * Konfigurasi aplikasi SPK Monitoring Masa Studi
+ * Konfigurasi aplikasi SPK Monitoring Mahasiswa Akhir Masa Studi
  * Menggunakan environment variables untuk fleksibilitas deployment
  */
+
+// Konfigurasi aplikasi SPK Monitoring Mahasiswa Akhir Masa Studi
+const APP_NAME = 'SPK Monitoring Mahasiswa Akhir Masa Studi';
 
 // Pastikan env-loader.js sudah dimuat sebelum config.js
 if (typeof window.envLoader === 'undefined') {
@@ -49,7 +52,7 @@ const CONFIG = {
     API_VERSION: window.envLoader.get('API_VERSION', 'v1'),
 
     // Application Configuration
-    APP_NAME: window.envLoader.get('APP_NAME', 'SPK Monitoring Masa Studi'),
+    APP_NAME: APP_NAME,
     APP_VERSION: window.envLoader.get('APP_VERSION', '1.0.0'),
     APP_DESCRIPTION: window.envLoader.get('APP_DESCRIPTION', 'Sistem Pendukung Keputusan Monitoring Masa Studi Mahasiswa'),
 

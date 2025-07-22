@@ -1,4 +1,6 @@
-# Dokumentasi Lengkap Evaluasi FIS: Sebelumnya vs Dengan Data Aktual
+# Dokumentasi Lengkap Evaluasi FIS
+
+_Dokumen ini merupakan bagian dari SPK Monitoring Mahasiswa Akhir Masa Studi._
 
 ## 1. Teori Dasar Fuzzy Inference System (FIS) untuk Klasifikasi Kelulusan
 
