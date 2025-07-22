@@ -3,62 +3,73 @@
 Sistem Pendukung Keputusan (SPK) untuk monitoring masa studi mahasiswa menggunakan metode Fuzzy Logic dan SAW (Simple Additive Weighting).
 
 ## 📋 Deskripsi
-
-Aplikasi ini membantu dalam pengambilan keputusan untuk monitoring masa studi mahasiswa dengan mengkombinasikan dua metode:
-- **Fuzzy Logic**: Untuk klasifikasi kelulusan mahasiswa
-- **SAW (Simple Additive Weighting)**: Untuk perankingan mahasiswa
+Aplikasi ini membantu pengambilan keputusan monitoring masa studi mahasiswa dengan dua metode utama:
+- **Fuzzy Logic**: Klasifikasi kelulusan mahasiswa
+- **SAW (Simple Additive Weighting)**: Perankingan dan evaluasi mahasiswa
 
 ## 🏗️ Struktur Project
-
 ```
 spk/
-├── CHANGELOG.md              # Riwayat perubahan aplikasi
-├── docker-compose.yml        # Konfigurasi Docker
-├── docs/                     # Dokumentasi lengkap
-│   ├── api/                  # Dokumentasi API
-│   ├── backend/              # Dokumentasi backend
-│   ├── database/             # Dokumentasi database
-│   ├── deployment/           # Dokumentasi deployment
-│   ├── frontend/             # Dokumentasi frontend
-│   ├── features/             # Dokumentasi fitur
-│   └── troubleshooting/      # Dokumentasi troubleshooting
-├── postgres_data/            # Data PostgreSQL
-└── src/
-    ├── backend/              # Backend FastAPI
-    │   └── tools/            # Development tools dan testing scripts
-    └── frontend/             # Frontend HTML/CSS/JS
-        └── test/             # HTML test files
+├── backup/                     # Backup dan dump database
+├── docker_results/             # Hasil evaluasi dari container
+├── CHANGELOG.md                # Riwayat perubahan aplikasi
+├── docker-compose.yml          # Konfigurasi Docker
+├── env.example                 # Contoh environment variable
+├── docs/                       # Dokumentasi lengkap
+│   ├── api/                    # Dokumentasi API
+│   ├── backend/                # Dokumentasi backend
+│   ├── database/               # Dokumentasi database
+│   ├── deployment/             # Dokumentasi deployment
+│   ├── features/               # Dokumentasi fitur utama (SAW, FIS, Comparison, dsb)
+│   ├── frontend/               # Dokumentasi frontend
+│   └── troubleshooting/        # Solusi masalah
+├── src/
+│   ├── backend/                # Backend FastAPI
+│   │   ├── routers/            # API routers (saw, fuzzy, users, dsb)
+│   │   └── tools/              # Development tools & scripts
+│   └── frontend/               # Frontend HTML/CSS/JS
+│       ├── js/                 # JavaScript utama (SAW, FIS, Comparison, dsb)
+│       └── test/               # File HTML test
+└── postgres_data/              # Data PostgreSQL
 ```
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Docker
-- Docker Compose
+### Prasyarat
+- Docker & Docker Compose
 
-### Installation
+### Instalasi & Menjalankan
 ```bash
 # Clone repository
-git clone <repository-url>
-cd spk
+$ git clone <repository-url>
+$ cd spk
 
-# Start aplikasi
-docker-compose up -d
+# Jalankan aplikasi
+$ docker-compose up -d
 
 # Akses aplikasi
 # Frontend: http://localhost:8080
 # Backend API: http://localhost:8000
 ```
 
-## 📚 Dokumentasi
+### (Opsional) Restore Database
+Lihat `docs/database/README_DATABASE_RESTORE.md` untuk instruksi restore data real.
 
-- **[CHANGELOG.md](CHANGELOG.md)** - Riwayat perubahan dan update aplikasi
-- **[docs/README.md](docs/README.md)** - Dokumentasi lengkap aplikasi
-- **[docs/features/README_ENHANCED_EVALUATION.md](docs/features/README_ENHANCED_EVALUATION.md)** - Dokumentasi Enhanced Evaluation System
+## 📚 Dokumentasi Penting
+- **[CHANGELOG.md](CHANGELOG.md)** - Riwayat perubahan aplikasi
+- **[docs/README.md](docs/README.md)** - Dokumentasi lengkap
+- **[docs/features/README_EVALUASI_SAW.md](docs/features/README_EVALUASI_SAW.md)** - Dokumentasi evaluasi SAW
+- **[docs/features/README_ENHANCED_EVALUATION.md](docs/features/README_ENHANCED_EVALUATION.md)** - Enhanced Evaluation System
+- **[docs/frontend/SAW_COMPARISON_IMPLEMENTATION.md](docs/frontend/SAW_COMPARISON_IMPLEMENTATION.md)** - Implementasi perbandingan SAW
+- **[docs/frontend/SAW_EVALUATION_ACTUAL_IMPLEMENTATION.md](docs/frontend/SAW_EVALUATION_ACTUAL_IMPLEMENTATION.md)** - Evaluasi SAW dengan data aktual
+- **[docs/features/README_EVALUASI_FIS.md](docs/features/README_EVALUASI_FIS.md)** - Dokumentasi perbandingan evaluasi FIS dengan data aktual kelulusan
+- **[docs/evaluation/DOKUMENTASI_LENGKAP_EVALUASI_FIS.md](docs/evaluation/DOKUMENTASI_LENGKAP_EVALUASI_FIS.md)** - Dokumentasi lengkap evaluasi FIS: penjelasan metode, alur evaluasi, contoh hasil, dan analisis performa model FIS secara detail.
+- **[docs/evaluation/DOKUMENTASI_PERBANDINGAN_EVALUASI_SAW.md](docs/evaluation/DOKUMENTASI_PERBANDINGAN_EVALUASI_SAW.md)** - Dokumentasi lengkap perbandingan evaluasi SAW synthetic vs data aktual: teori, rumus, contoh, script Python, visualisasi, dan analisis gap.
 
 ## 🔧 Teknologi yang Digunakan
 
 ### Backend
+- **Python 3.9+**
 - **FastAPI** - Web framework
 - **SQLAlchemy** - ORM
 - **PostgreSQL** - Database
@@ -67,62 +78,41 @@ docker-compose up -d
 - **SAW** - Algoritma perankingan
 
 ### Frontend
-- **HTML5/CSS3/JavaScript** - Frontend framework
+- **HTML5/CSS3/JavaScript**
 - **Bootstrap** - UI framework
-- **jQuery** - JavaScript library
-- **Chart.js** - Data visualization
+- **jQuery**
+- **Chart.js 4.x** - Visualisasi data
 - **Kendo UI** - Advanced UI components
-- **Font Awesome** - Icon library
-- **Custom CSS** - Gradient buttons dan animations
+- **Font Awesome**
+- **Custom CSS** - Gradient, animasi, responsive
+
+### Deployment
+- **Docker** & **Docker Compose**
+- **Nginx** (reverse proxy)
 
 ## 📊 Fitur Utama
-
-- **Manajemen Data Mahasiswa** - CRUD data mahasiswa
-- **Klasifikasi Fuzzy Logic** - Klasifikasi kelulusan berdasarkan IPK, SKS, dan persentase DEK
-- **Perankingan SAW** - Perankingan mahasiswa berdasarkan kriteria
-- **Visualisasi Data** - Grafik dan chart untuk analisis
-- **Export Data** - Export hasil ke Excel/PDF
-- **Monitoring Real-time** - Dashboard monitoring masa studi
-- **Custom UI Elements** - Button dengan gradient dan animasi yang menarik
+- **Manajemen Data Mahasiswa** (CRUD)
+- **Klasifikasi Fuzzy Logic** (berdasarkan IPK, SKS, DEK)
+- **Perankingan & Evaluasi SAW** (synthetic & actual)
+- **Perbandingan Evaluasi SAW**: Synthetic vs Actual, summary-card, metrics, confusion matrix, chart, narrative analysis
+- **Dokumentasi Lengkap Perbandingan Evaluasi SAW**: Penjelasan teori, rumus, contoh manual, script Python, visualisasi, dan analisis gap antara hasil prediksi dan data aktual. Lihat [DOKUMENTASI_PERBANDINGAN_EVALUASI_SAW.md](docs/evaluation/DOKUMENTASI_PERBANDINGAN_EVALUASI_SAW.md)
+- **Perbandingan Evaluasi FIS dengan Data Aktual**: Bandingkan hasil evaluasi FIS (Fuzzy Inference System) dengan data kelulusan aktual mahasiswa. Fitur ini menampilkan summary-card, confusion matrix, metrik evaluasi (akurasi, presisi, recall, F1-score), serta analisis narasi otomatis untuk membandingkan performa model dengan realita.
+- **Enhanced Confusion Matrix**: Bubble chart, heatmap, color coding, tooltip
+- **Dynamic Narrative Analysis**: Analisis narasi otomatis berdasarkan hasil evaluasi
+- **Export & Print**: Export hasil evaluasi/perbandingan ke CSV/Excel/Print
+- **Responsive Summary Card**: Summary-card proporsional di semua device
+- **Modular JavaScript**: SAWComparison, FISEvaluation, dsb
+- **User Management**: Manajemen user (lihat docs/features/README_MANAGEMENT_USERS.md)
 
 ## 🎨 UI/UX Features
-
-### Modern Design Elements
-- **Gradient Buttons**: Button dengan gradient yang menarik untuk FIS, SAW, dan Sync Nilai
-- **Consistent Button Styling**: Semua button menggunakan custom styling yang konsisten
-- **Hover Effects**: Efek hover dengan transform dan shadow yang smooth
-- **Shimmer Animation**: Efek shimmer saat hover pada button
-- **Icon Animations**: Animasi pulse pada icon button
-- **Responsive Design**: Design yang responsif untuk semua ukuran layar
-- **Color Differentiation**: Warna yang berbeda untuk setiap fungsi button
+- **Modern Card Layout**: Semua hasil evaluasi & perbandingan menggunakan card design
+- **Gradient Buttons & Animations**: Button dengan gradient, shimmer, pulse, hover
+- **Consistent & Responsive Design**: Layout konsisten, proporsional, dan responsif di desktop/tablet/mobile
+- **Color Coding & Icon**: Warna dan icon berbeda untuk setiap status/kategori
 - **Interactive Feedback**: Feedback visual yang jelas saat interaksi
-- **Unified Design**: Harmoni visual di seluruh interface aplikasi
-- **Complete Button Consistency**: Semua button di aplikasi menggunakan custom styling yang konsisten
-
-### Batch Results Design
-- **Card Layout**: Hasil analisis batch menggunakan card design yang menarik
-- **Consistent Design**: Layout yang konsisten antara FIS dan SAW
-- **Percentage Display**: Informasi persentase untuk setiap kategori klasifikasi
-- **Icon Integration**: Icon yang sesuai untuk setiap kategori (arrow-up, minus, arrow-down, users)
-- **Professional Look**: Tampilan yang lebih profesional dan modern
-- **Real-time Updates**: Data diperbarui secara real-time setelah klasifikasi batch
-- **Before/After Comparison**: Tampilan perbandingan data sebelum dan sesudah klasifikasi
-- **Processing Time**: Informasi waktu pemrosesan batch
-- **Change Summary**: Ringkasan perubahan terbesar yang terjadi
-- **Visual Comparison**: Layout side-by-side dengan arrow indicator dan animasi
-- **Server-Side Search**: Pencarian data keseluruhan dengan server-side filtering
-- **Real-Time Search**: Pencarian real-time dengan debounce untuk performa optimal
-- **Enhanced Search UX**: Feedback yang lebih baik untuk user experience pencarian
-
-### Button Color Scheme
-- **Sync Button**: Soft Purple gradient (#5a67d8 → #667eea)
-- **FIS Button**: Soft Red gradient (#e53e3e → #f56565)
-- **SAW Button**: Soft Blue gradient (#3182ce → #4299e1)
 
 ## 🤝 Kontribusi
-
-Untuk berkontribusi pada project ini, silakan baca dokumentasi di folder `docs/` dan ikuti panduan yang ada.
+Silakan baca dokumentasi di folder `docs/` dan ikuti panduan kontribusi. Semua perubahan harap didokumentasikan di CHANGELOG.md.
 
 ## 📄 License
-
 Project ini dikembangkan untuk keperluan akademis dan monitoring masa studi mahasiswa.
