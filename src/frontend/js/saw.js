@@ -810,6 +810,8 @@ function loadSAWResultsTable() {
     // Show loading state
     showSAWGridLoading();
     
+
+    
     // Cek cache terlebih dahulu
     if (sawDataCache.results && isCacheValid()) {
         console.log('Loading SAW results table from cache');
@@ -1188,6 +1190,8 @@ function displaySAWResultsTable(data) {
     }
     
     console.log('Displaying SAW results table with data:', data);
+    console.log('First item sample:', data[0]);
+    console.log('Data length:', data.length);
     
     $("#sawGrid").kendoGrid({
         dataSource: {
@@ -1299,7 +1303,7 @@ function showSAWDetail(e, element) {
     
     // Ambil data detail dari API menggunakan endpoint yang benar
     $.ajax({
-        url: `${CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW)}/calculate/${dataItem.nim}`,
+        url: `${CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW)}/${dataItem.nim}`,
         type: "GET",
         success: function(response) {
             kendo.ui.progress($("#sawSection"), false);
@@ -1307,9 +1311,7 @@ function showSAWDetail(e, element) {
             // Gabungkan data dari grid dengan data detail
             const combinedData = {
                 ...dataItem,
-                ...response,
-                skor_saw: dataItem.skor_saw,
-                klasifikasi_saw: dataItem.klasifikasi_saw
+                ...response
             };
             
             displaySAWDetailDialog(combinedData);
@@ -1759,7 +1761,7 @@ function loadSAWGridLazy(page = 0, pageSize = 50) {
     console.log('Fetching SAW grid from server (lazy)');
     
     $.ajax({
-        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/results'),
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch'),
         type: 'GET',
         data: {
             skip: page * pageSize,
