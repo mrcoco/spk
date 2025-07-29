@@ -1,138 +1,38 @@
 # SPK Monitoring Mahasiswa Akhir Masa Studi
 
-Dokumentasi lengkap untuk Sistem Pendukung Keputusan (SPK) Monitoring Mahasiswa Akhir Masa Studi, meliputi arsitektur, fitur, dan panduan penggunaan.
+Dokumentasi utama untuk Sistem Pendukung Keputusan (SPK) Monitoring Mahasiswa Akhir Masa Studi.
+
+## 📋 Deskripsi
+Aplikasi ini membantu pengambilan keputusan monitoring mahasiswa akhir masa studi menggunakan metode Fuzzy Logic (FIS) dan SAW (Simple Additive Weighting). Sistem ini menyediakan fitur evaluasi, perbandingan hasil prediksi dengan data aktual, visualisasi interaktif, dan narasi analisis otomatis.
+
+## 🚀 Fitur Utama
+- **Evaluasi FIS & SAW**: Klasifikasi kelulusan dan perankingan mahasiswa berbasis kriteria akademik.
+- **Perbandingan Synthetic vs Data Aktual**: Analisis gap antara hasil prediksi model dan data kelulusan sebenarnya.
+- **Visualisasi Interaktif**: Confusion matrix, summary-card, bar chart, heatmap, dsb.
+- **Narasi Otomatis**: Analisis narasi performa model dan rekomendasi perbaikan.
+- **Export & Print**: Ekspor hasil evaluasi/perbandingan ke CSV/Excel/Print.
+- **User Management**: Manajemen pengguna dan hak akses.
+
+## 📚 Referensi Dokumentasi Penting
+- [README.md (root)](../README.md) — Ringkasan project & quick start
+- [DOKUMENTASI_LENGKAP_EVALUASI_FIS.md](evaluation/DOKUMENTASI_LENGKAP_EVALUASI_FIS.md) — Evaluasi FIS lengkap
+- [DOKUMENTASI_PERBANDINGAN_EVALUASI_SAW.md](evaluation/DOKUMENTASI_PERBANDINGAN_EVALUASI_SAW.md) — Perbandingan evaluasi SAW synthetic vs data aktual
+- [features/README_EVALUASI_SAW.md](features/README_EVALUASI_SAW.md) — Evaluasi SAW
+- [features/README_ENHANCED_EVALUATION.md](features/README_ENHANCED_EVALUATION.md) — Enhanced Evaluation System
+- [frontend/SAW_COMPARISON_IMPLEMENTATION.md](frontend/SAW_COMPARISON_IMPLEMENTATION.md) — Implementasi perbandingan SAW
+- [frontend/SAW_EVALUATION_ACTUAL_IMPLEMENTATION.md](frontend/SAW_EVALUATION_ACTUAL_IMPLEMENTATION.md) — Evaluasi SAW dengan data aktual
+- [features/README_MANAGEMENT_USERS.md](features/README_MANAGEMENT_USERS.md) — Manajemen user
 
 ## 📁 Struktur Dokumentasi
-
-Dokumentasi sistem SPK telah diorganisir sesuai kategori untuk memudahkan navigasi dan pencarian informasi.
-
-### 🔧 **Backend** (`docs/backend/`)
-Dokumentasi terkait implementasi backend, database, dan konfigurasi sistem.
-
-#### **Implementasi Fuzzy Logic:**
-- `IMPLEMENTASI_PERBAIKAN_FUZZY.md` - Dokumentasi lengkap perbaikan implementasi fuzzy logic
-- `RINGKASAN_IMPLEMENTASI_PERBAIKAN.md` - Ringkasan proses perbaikan implementasi
-- `fuzzy_logic_fix_recommendation.md` - Rekomendasi perbaikan fuzzy logic
-
-#### **Database & Environment:**
-- `README_PSQL_FINAL.md` - Dokumentasi PostgreSQL final
-- `README_PSQL_SUMMARY.md` - Ringkasan PostgreSQL
-- `README_PSQL_CONTAINER.md` - PostgreSQL dengan Docker
-- `README_ENV_TROUBLESHOOTING.md` - Troubleshooting environment
-- `README_CONFIG.md` - Konfigurasi sistem
-- `README_DOCKER_RESTORE.md` - Restore database dengan Docker
-- `README_RESTORE.md` - Prosedur restore database
-- `README_SEEDER.md` - Dokumentasi seeder database
-
-#### **FIS Implementation:**
-- `FIS_IMPLEMENTATION_FIX.md` - Perbaikan implementasi FIS
-
-### 🔬 **Technical** (`docs/technical/`)
-Dokumentasi teknis, analisis, dan evaluasi sistem.
-
-#### **Analisis Test:**
-- `ANALISIS_TEST_NIM_19812141079_REAL_DATA.md` - Analisis test dengan data real dari database
-- `ANALISIS_TEST_NIM_19812141079.md` - Analisis test NIM 19812141079
-
-#### **Dokumentasi Sistem:**
-- `SPK_SYSTEM_DOCUMENTATION.md` - Dokumentasi lengkap sistem SPK
-- `DOCUMENTATION_FIS_EVALUATION.md` - Dokumentasi evaluasi FIS
-- `DOCUMENTATION_EVALUASI_FIS.md` - Dokumentasi evaluasi FIS (versi lengkap)
-
-### 📊 **Evaluation** (`docs/evaluation/`)
-Dokumentasi evaluasi dan pengujian sistem.
-
-#### **Fuzzy Inference System (FIS):**
-- `fis/DOKUMENTASI_EVALUASI_FIS.md` - Dokumentasi lengkap evaluasi FIS
-- `fis/README.md` - Ringkasan evaluasi FIS
-- `README.md` - Overview dokumentasi evaluasi
-
-### 🛠️ **Troubleshooting** (`docs/troubleshooting/`)
-Dokumentasi troubleshooting dan solusi masalah.
-
-#### **Error Handling:**
-- `PERBAIKAN_ERROR_ROUTER.md` - Perbaikan error router fuzzy.py
-
-### 📊 **API** (`docs/api/`)
-Dokumentasi API endpoints dan integrasi.
-
-### 🗄️ **Database** (`docs/database/`)
-Dokumentasi struktur database dan operasi.
-
-### 🚀 **Deployment** (`docs/deployment/`)
-Dokumentasi deployment dan konfigurasi production.
-
-### 🎨 **Frontend** (`docs/frontend/`)
-Dokumentasi implementasi frontend.
-
-### 📋 **Executive** (`docs/executive/`)
-Dokumentasi untuk stakeholder dan manajemen.
-
-### 📝 **Resume** (`docs/resume/`)
-Ringkasan dan resume dokumentasi.
-
-### 📖 **Guides** (`docs/guides/`)
-Panduan penggunaan dan tutorial.
-
-## 🔍 **Navigasi Cepat**
-
-### **Untuk Developer:**
-- **Implementasi**: `docs/backend/` - Implementasi fuzzy logic dan backend
-- **Analisis**: `docs/technical/` - Analisis test dan evaluasi sistem
-- **Troubleshooting**: `docs/troubleshooting/` - Solusi masalah teknis
-
-### **Untuk DevOps:**
-- **Deployment**: `docs/deployment/` - Konfigurasi deployment
-- **Database**: `docs/database/` - Manajemen database
-- **Environment**: `docs/backend/README_*.md` - Konfigurasi environment
-
-### **Untuk Stakeholder:**
-- **Executive**: `docs/executive/` - Dokumentasi untuk manajemen
-- **Resume**: `docs/resume/` - Ringkasan sistem
-
-## 📋 **File Terbaru**
-
-### **Dokumentasi Evaluasi FIS (2024-12-19):**
-- ✅ `evaluation/fis/DOKUMENTASI_EVALUASI_FIS.md` - Dokumentasi lengkap evaluasi FIS
-- ✅ `evaluation/fis/README.md` - Ringkasan evaluasi FIS
-- ✅ `evaluation/README.md` - Overview dokumentasi evaluasi
-
-### **Implementasi Fuzzy Logic (2025-01-27):**
-- ✅ `IMPLEMENTASI_PERBAIKAN_FUZZY.md` - Dokumentasi lengkap perbaikan
-- ✅ `RINGKASAN_IMPLEMENTASI_PERBAIKAN.md` - Ringkasan proses
-- ✅ `fuzzy_logic_fix_recommendation.md` - Rekomendasi perbaikan
-
-### **Analisis Test (2025-01-27):**
-- ✅ `ANALISIS_TEST_NIM_19812141079_REAL_DATA.md` - Test dengan data real
-- ✅ `ANALISIS_TEST_NIM_19812141079.md` - Analisis test spesifik
-
-### **Troubleshooting (2025-01-27):**
-- ✅ `PERBAIKAN_ERROR_ROUTER.md` - Perbaikan error router
-
-## 🎯 **Status Implementasi**
-
-### **✅ BERHASIL DIIMPLEMENTASI:**
-- **Fuzzy Logic**: Implementasi baru yang dikoreksi
-- **Database Integration**: Berhasil dengan data real
-- **API Endpoints**: Berfungsi normal
-- **Error Handling**: Router error teratasi
-- **Testing**: Test dengan data real berhasil
-
-### **📊 METRIK SISTEM:**
-- **Mahasiswa**: 1604 data
-- **Klasifikasi**: 1604 hasil
-- **Akurasi**: 9.2/10 (sangat baik)
-- **Status**: ✅ **PRODUCTION READY**
-
-## 🔗 **Link Terkait**
-
-- **Repository**: [SPK System](https://github.com/your-repo/spk)
-- **API Documentation**: `http://localhost:8000/docs`
-- **Frontend**: `http://localhost:80`
-- **Database**: PostgreSQL via Docker
+- **api/** — Dokumentasi endpoint API
+- **backend/** — Arsitektur & logika backend
+- **database/** — Struktur & restore database
+- **deployment/** — Panduan deployment
+- **evaluation/** — Dokumentasi evaluasi & perbandingan
+- **features/** — Dokumentasi fitur utama
+- **frontend/** — Dokumentasi frontend & implementasi visualisasi
+- **troubleshooting/** — Solusi masalah umum
 
 ---
 
-**Last Updated**: 2025-01-27  
-**Version**: 2.0.0  
-**Status**: ✅ **DOCUMENTATION COMPLETE** 
+Untuk detail penggunaan, pengembangan, dan kontribusi, silakan baca dokumentasi di setiap subfolder atau lihat [README utama](../README.md). 
