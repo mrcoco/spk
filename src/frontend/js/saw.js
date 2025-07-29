@@ -1619,12 +1619,23 @@ async function performSAWSearch() {
             return;
         }
         
-        const allData = grid.dataSource.data();
-        console.log('🔧 Total data di grid:', allData.length);
+        // Coba ambil data dari cache terlebih dahulu
+        let allData = [];
+        if (sawDataCache.results && sawDataCache.results.data) {
+            console.log('🔧 Menggunakan data dari cache');
+            allData = sawDataCache.results.data;
+        } else {
+            console.log('🔧 Menggunakan data dari grid');
+            allData = grid.dataSource.data();
+        }
+        
+        console.log('🔧 Total data yang tersedia:', allData.length);
+        console.log('🔧 Sample data:', allData.slice(0, 3));
         
         // Filter data berdasarkan NIM
         const filteredData = allData.filter(item => nims.includes(item.nim));
         console.log('🔧 Data yang difilter:', filteredData.length);
+        console.log('🔧 Filtered data sample:', filteredData.slice(0, 3));
         
         if (filteredData.length === 0) {
             updateSAWSearchInfo("Tidak ada hasil klasifikasi SAW ditemukan untuk mahasiswa tersebut", "warning");
@@ -1648,7 +1659,18 @@ async function performSAWSearch() {
 // Fungsi untuk clear pencarian SAW
 function clearSAWSearch() {
     $("#searchInputSAW").val("");
-    $("#sawGrid").data("kendoGrid").dataSource.read();
+    
+    // Restore data lengkap dari cache jika tersedia
+    const grid = $("#sawGrid").data("kendoGrid");
+    if (grid && sawDataCache.results && sawDataCache.results.data) {
+        console.log('🔧 Restoring full data from cache');
+        grid.dataSource.data(sawDataCache.results.data);
+        updateTotalRecordInfo(sawDataCache.results.data.length, "totalRecordTextSAW");
+    } else {
+        console.log('🔧 Reloading data from server');
+        grid.dataSource.read();
+    }
+    
     updateSAWSearchInfo("Pencarian telah dibersihkan", "info");
 }
 
