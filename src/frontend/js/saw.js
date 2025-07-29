@@ -1232,7 +1232,7 @@ function displaySAWResultsTable(data) {
                 width: 100, 
                 format: "{0:n1}",
                 template: function(dataItem) {
-                    return dataItem.persen_dek ? dataItem.persen_dek.toFixed(1) : 'N/A';
+                    return dataItem.persen_dek ? dataItem.persen_dek.toFixed(1) : '0.0';
                 }
             },
             { 
