@@ -576,7 +576,7 @@ function loadSAWDistribution() {
     // Cek cache terlebih dahulu
     if (sawDataCache.distribution && isCacheValid()) {
         console.log('Loading SAW distribution from cache');
-        displaySAWDistribution(sawDataCache.distribution);
+        displaySAWDistributionFromAPI(sawDataCache.distribution);
         return;
     }
     
@@ -592,7 +592,7 @@ function loadSAWDistribution() {
             sawDataCache.distribution = data;
             updateCacheTimestamp();
             
-            displaySAWDistribution(data);
+            displaySAWDistributionFromAPI(data);
         },
         error: function(xhr, status, error) {
             console.error('Error loading SAW distribution:', error);
