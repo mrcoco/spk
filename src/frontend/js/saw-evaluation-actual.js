@@ -492,6 +492,21 @@ class SAWEvaluationActual {
             totalElement.textContent = total;
         }
         
+        // Hancurkan chart instance yang ada di canvas (menggunakan Chart.js API)
+        const existingChart = Chart.getChart(ctx);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+        
+        // Hancurkan chart instance global jika ada
+        if (window.sawEvaluationActualClassificationChart && typeof window.sawEvaluationActualClassificationChart.destroy === 'function') {
+            try {
+                window.sawEvaluationActualClassificationChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying global classification chart:', error);
+            }
+        }
+        
         window.sawEvaluationActualClassificationChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -543,8 +558,19 @@ class SAWEvaluationActual {
         const ctx = document.getElementById('sawEvaluationActualMetricsChart');
         if (!ctx) return;
         
-        if (window.sawEvaluationActualMetricsChart) {
-            window.sawEvaluationActualMetricsChart.destroy();
+        // Hancurkan chart instance yang ada di canvas (menggunakan Chart.js API)
+        const existingChart = Chart.getChart(ctx);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+        
+        // Hancurkan chart instance global jika ada
+        if (window.sawEvaluationActualMetricsChart && typeof window.sawEvaluationActualMetricsChart.destroy === 'function') {
+            try {
+                window.sawEvaluationActualMetricsChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying global metrics chart:', error);
+            }
         }
         
         const metrics = [
@@ -599,6 +625,24 @@ class SAWEvaluationActual {
 
     initializeCharts() {
         console.log('Initializing charts for SAW Evaluation with Actual Data');
+        
+        // Hancurkan chart yang sudah ada terlebih dahulu
+        if (window.sawEvaluationActualClassificationChart && typeof window.sawEvaluationActualClassificationChart.destroy === 'function') {
+            try {
+                window.sawEvaluationActualClassificationChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying classification chart:', error);
+            }
+            window.sawEvaluationActualClassificationChart = null;
+        }
+        if (window.sawEvaluationActualMetricsChart && typeof window.sawEvaluationActualMetricsChart.destroy === 'function') {
+            try {
+                window.sawEvaluationActualMetricsChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying metrics chart:', error);
+            }
+            window.sawEvaluationActualMetricsChart = null;
+        }
         
         // Initialize empty charts
         const classificationCtx = document.getElementById('sawEvaluationActualClassificationChart');

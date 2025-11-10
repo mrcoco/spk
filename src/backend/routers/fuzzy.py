@@ -1718,7 +1718,8 @@ def evaluate_fis_with_actual_status(
                 'percentage_actual_lulus': round((total_actual_lulus / total_data) * 100, 2),
                 'percentage_actual_belum_lulus': round((total_actual_belum_lulus / total_data) * 100, 2)
             },
-            'sample_data': df.head(10).to_dict('records')
+            'sample_data': df.head(10).to_dict('records'),
+            'full_data': df.to_dict('records')  # Tambahkan full data untuk comparison
         }
         
         return {

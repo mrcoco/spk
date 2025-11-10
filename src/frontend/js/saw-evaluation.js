@@ -670,8 +670,19 @@ class SAWEvaluation {
         const ctx = document.getElementById('sawEvaluationClassificationChart');
         if (!ctx) return;
 
+        // Hancurkan chart instance yang ada di canvas (menggunakan Chart.js API)
+        const existingChart = Chart.getChart(ctx);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+        
+        // Hancurkan chart instance yang tersimpan di property
         if (this.classificationChart) {
-            this.classificationChart.destroy();
+            try {
+                this.classificationChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying classification chart property:', error);
+            }
         }
 
         this.classificationChart = new Chart(ctx, {
@@ -713,8 +724,19 @@ class SAWEvaluation {
         const ctx = document.getElementById('sawEvaluationMetricsChart');
         if (!ctx) return;
 
+        // Hancurkan chart instance yang ada di canvas (menggunakan Chart.js API)
+        const existingChart = Chart.getChart(ctx);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+        
+        // Hancurkan chart instance yang tersimpan di property
         if (this.metricsChart) {
-            this.metricsChart.destroy();
+            try {
+                this.metricsChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying metrics chart property:', error);
+            }
         }
 
         this.metricsChart = new Chart(ctx, {
@@ -764,6 +786,24 @@ class SAWEvaluation {
     }
 
     initializeCharts() {
+        // Hancurkan chart yang sudah ada terlebih dahulu
+        if (this.classificationChart && typeof this.classificationChart.destroy === 'function') {
+            try {
+                this.classificationChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying classification chart:', error);
+            }
+            this.classificationChart = null;
+        }
+        if (this.metricsChart && typeof this.metricsChart.destroy === 'function') {
+            try {
+                this.metricsChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying metrics chart:', error);
+            }
+            this.metricsChart = null;
+        }
+        
         // Initialize empty charts
         this.updateClassificationChart({ tinggi: 0, sedang: 0, kecil: 0 });
         this.updateMetricsChart({ 

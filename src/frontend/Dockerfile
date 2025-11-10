@@ -9,6 +9,13 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy all frontend files
 COPY . /usr/share/nginx/html/
 
+# Use Docker-specific environment configuration
+RUN cd /usr/share/nginx/html && \
+    if [ -f env.docker ]; then \
+        cp env.docker env; \
+        echo "Using Docker environment configuration"; \
+    fi
+
 # Set correct permissions
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
     chmod -R 755 /usr/share/nginx/html
