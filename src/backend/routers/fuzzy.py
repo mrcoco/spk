@@ -96,6 +96,7 @@ def get_klasifikasi_results(
             formatted_results.append({
                 "nim": klasifikasi.nim,
                 "nama": mahasiswa.nama,
+                "program_studi": mahasiswa.program_studi,
                 "kategori": klasifikasi.kategori,
                 "nilai_fuzzy": klasifikasi.nilai_fuzzy,
                 "ipk_membership": klasifikasi.ipk_membership,

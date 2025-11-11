@@ -243,6 +243,10 @@ function initializeFISGrid() {
         },
         height: 550,
         sortable: true,
+        filterable: {
+            mode: "row",
+            extra: false
+        },
         pageable: {
             refresh: true,
             pageSizes: true,
@@ -258,6 +262,13 @@ function initializeFISGrid() {
                 },
                 attributes: {
                     style: "text-align: center;"
+                },
+                filterable: {
+                    cell: {
+                        operator: "contains",
+                        showOperators: false,
+                        suggestionOperator: "contains"
+                    }
                 }
             },
             {
@@ -266,12 +277,45 @@ function initializeFISGrid() {
                 width: 200,
                 headerAttributes: {
                     style: "text-align: center; font-weight: bold;"
+                },
+                filterable: {
+                    cell: {
+                        operator: "contains",
+                        showOperators: false,
+                        suggestionOperator: "contains"
+                    }
+                }
+            },
+            {
+                field: "program_studi",
+                title: "Program Studi",
+                width: 180,
+                headerAttributes: {
+                    style: "text-align: center; font-weight: bold;"
+                },
+                attributes: {
+                    style: "text-align: center;"
+                },
+                template: function(dataItem) {
+                    if (!dataItem.program_studi) return '<span style="color: #999;">N/A</span>';
+                    const colors = getProdiColor(dataItem.program_studi);
+                    return `<span class="badge" style="background: ${colors.bg}; color: ${colors.text}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">${dataItem.program_studi}</span>`;
+                },
+                filterable: {
+                    multi: true,
+                    search: true,
+                    checkAll: true,
+                    itemTemplate: function(e) {
+                        if (!e.program_studi) return '';
+                        const colors = getProdiColor(e.program_studi);
+                        return `<span class="badge" style="background: ${colors.bg}; color: ${colors.text}; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 5px;">${e.program_studi}</span>`;
+                    }
                 }
             },
             {
                 field: "kategori",
-                title: "Kategori",
-                width: 150,
+                title: "Klasifikasi",
+                width: 180,
                 headerAttributes: {
                     style: "text-align: center; font-weight: bold;"
                 },
@@ -281,6 +325,20 @@ function initializeFISGrid() {
                 template: function(dataItem) {
                     const color = getFISClassificationColor(dataItem.kategori);
                     return `<span style="color: ${color}; font-weight: bold;">${dataItem.kategori || 'N/A'}</span>`;
+                },
+                filterable: {
+                    multi: true,
+                    search: true,
+                    checkAll: true,
+                    dataSource: [
+                        { kategori: "Peluang Lulus Tinggi" },
+                        { kategori: "Peluang Lulus Sedang" },
+                        { kategori: "Peluang Lulus Kecil" }
+                    ],
+                    itemTemplate: function(e) {
+                        const color = getFISClassificationColor(e.kategori);
+                        return `<span style="color: ${color}; font-weight: bold; font-size: 11px;">${e.kategori}</span>`;
+                    }
                 }
             },
             {
@@ -296,7 +354,8 @@ function initializeFISGrid() {
                 },
                 template: function(dataItem) {
                     return dataItem.nilai_fuzzy ? dataItem.nilai_fuzzy.toFixed(2) : 'N/A';
-                }
+                },
+                filterable: false
             },
             {
                 field: "ipk_membership",
@@ -310,7 +369,8 @@ function initializeFISGrid() {
                 },
                 template: function(dataItem) {
                     return dataItem.ipk_membership ? dataItem.ipk_membership.toFixed(4) : 'N/A';
-                }
+                },
+                filterable: false
             },
             {
                 field: "sks_membership",
@@ -324,7 +384,8 @@ function initializeFISGrid() {
                 },
                 template: function(dataItem) {
                     return dataItem.sks_membership ? dataItem.sks_membership.toFixed(4) : 'N/A';
-                }
+                },
+                filterable: false
             },
             {
                 field: "nilai_dk_membership",
@@ -338,7 +399,8 @@ function initializeFISGrid() {
                 },
                 template: function(dataItem) {
                     return dataItem.nilai_dk_membership ? dataItem.nilai_dk_membership.toFixed(4) : 'N/A';
-                }
+                },
+                filterable: false
             },
             {
                 command: [
@@ -402,10 +464,17 @@ function loadFISGridData() {
             updateFISCacheTimestamp();
             showFISCacheStatus();
             
-            // Update grid
+            // Update grid dan filter datasource
             const grid = $("#fisGrid").data("kendoGrid");
             if (grid) {
                 grid.dataSource.data(fisDataCache.results);
+                
+                // Update filter dataSource untuk program_studi dengan unique values
+                const uniqueProdi = getUniqueValues(fisDataCache.results, 'program_studi');
+                const prodiColumn = grid.columns.find(col => col.field === 'program_studi');
+                if (prodiColumn && prodiColumn.filterable) {
+                    prodiColumn.filterable.dataSource = uniqueProdi.map(p => ({ program_studi: p }));
+                }
             }
             
             // Sembunyikan loading
@@ -1085,6 +1154,14 @@ function getFISClassificationThreshold(classification) {
     if (classification.includes('Sedang')) return '40 ≤ Nilai Fuzzy < 70';
     if (classification.includes('Kecil')) return 'Nilai Fuzzy < 40';
     return '';
+}
+
+// Fungsi helper untuk mendapatkan unique values dari array
+function getUniqueValues(data, field) {
+    if (!data || !Array.isArray(data) || !field) return [];
+    
+    const unique = [...new Set(data.map(item => item[field]).filter(val => val))];
+    return unique.sort();
 }
 
 // Fungsi untuk menampilkan notifikasi
