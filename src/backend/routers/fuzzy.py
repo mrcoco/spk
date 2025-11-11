@@ -1591,8 +1591,10 @@ def evaluate_fis_with_actual_status(
     # Extract parameters from request body
     test_size = request.get("test_size", 0.3)
     random_state = request.get("random_state", 42)
+    save_to_db = request.get("save_to_db", False)
     """
-    Evaluasi FIS dengan membandingkan hasil klasifikasi dengan status lulus aktual
+    Evaluasi FIS dengan membandingkan hasil klasifikasi dengan status lulus aktual (3 kategori)
+    Status aktual: LULUS_TINGGI, LULUS_SEDANG, LULUS_KECIL
     """
     try:
         # Ambil data mahasiswa yang memiliki status lulus aktual
@@ -1606,129 +1608,208 @@ def evaluate_fis_with_actual_status(
                 detail="Minimal diperlukan 10 data mahasiswa dengan status lulus aktual untuk evaluasi"
             )
         
+        # Mapping kategori ke angka untuk confusion matrix
+        kategori_mapping = {
+            "Peluang Lulus Tinggi": 0,
+            "Peluang Lulus Sedang": 1,
+            "Peluang Lulus Kecil": 2
+        }
+        
+        # Mapping status aktual ke kategori FIS
+        status_mapping = {
+            "LULUS_TINGGI": "Peluang Lulus Tinggi",
+            "LULUS_SEDANG": "Peluang Lulus Sedang",
+            "LULUS_KECIL": "Peluang Lulus Kecil"
+        }
+        
         # Persiapkan data untuk evaluasi
         data = []
+        y_true = []  # Kategori actual
+        y_pred = []  # Kategori prediksi FIS
+        
         for mhs in mahasiswa_with_status:
-            # Ambil klasifikasi FIS yang sudah ada
+            # Hitung klasifikasi FIS jika belum ada atau ambil yang sudah ada
             klasifikasi = db.query(KlasifikasiKelulusan).filter(
                 KlasifikasiKelulusan.nim == mhs.nim
             ).first()
             
-            if klasifikasi:
-                data.append({
-                    'nim': mhs.nim,
-                    'nama': mhs.nama,
-                    'ipk': mhs.ipk,
-                    'sks': mhs.sks,
-                    'persen_dek': mhs.persen_dek,
-                    'predicted_category': klasifikasi.kategori,
-                    'actual_status': mhs.status_lulus_aktual,
-                    'fuzzy_score': klasifikasi.nilai_fuzzy
-                })
+            if not klasifikasi:
+                # Hitung FIS jika belum ada
+                kategori, nilai_fuzzy, ipk_membership, sks_membership, nilai_dk_membership = fuzzy_system.calculate_graduation_chance(
+                    mhs.ipk,
+                    mhs.sks,
+                    mhs.persen_dek
+                )
+            else:
+                kategori = klasifikasi.kategori
+                nilai_fuzzy = klasifikasi.nilai_fuzzy
+            
+            # Mapping status aktual ke kategori FIS
+            actual_status = mhs.status_lulus_aktual
+            if actual_status not in status_mapping:
+                # Skip data dengan status yang tidak valid
+                continue
+            
+            actual_category = status_mapping[actual_status]
+            predicted_category = kategori
+            
+            # Tambahkan ke list untuk metrics
+            y_true.append(kategori_mapping[actual_category])
+            y_pred.append(kategori_mapping[predicted_category])
+            
+            # Simpan data detail
+            data.append({
+                'nim': mhs.nim,
+                'nama': mhs.nama,
+                'ipk': float(mhs.ipk),
+                'sks': int(mhs.sks),
+                'persen_dek': float(mhs.persen_dek),
+                'predicted_class': predicted_category,
+                'predicted_category': predicted_category,
+                'actual_status': actual_status,
+                'actual_class': actual_category,
+                'final_value': float(nilai_fuzzy),
+                'fuzzy_score': float(nilai_fuzzy),
+                'is_correct': actual_category == predicted_category
+            })
         
         if len(data) < 10:
             raise HTTPException(
                 status_code=400,
-                detail="Minimal diperlukan 10 data dengan klasifikasi FIS untuk evaluasi"
+                detail="Minimal diperlukan 10 data dengan status lulus aktual yang valid untuk evaluasi"
             )
         
         # Konversi ke DataFrame
         df = pd.DataFrame(data)
         
-        # Mapping kategori ke binary (LULUS vs BELUM_LULUS)
-        def map_to_binary(status):
-            if status == "LULUS":
-                return 1
-            else:
-                return 0
+        # Split data untuk train/test
+        from sklearn.model_selection import train_test_split
         
-        # Mapping kategori FIS ke binary
-        def map_fis_to_binary(category):
-            if category == "Peluang Lulus Tinggi":
-                return 1
-            else:
-                return 0
-        
-        # Tambahkan kolom binary
-        df['actual_binary'] = df['actual_status'].apply(map_to_binary)
-        df['predicted_binary'] = df['predicted_category'].apply(map_fis_to_binary)
-        
-        # Split data untuk evaluasi
         X = df[['ipk', 'sks', 'persen_dek']].values
-        y_actual = df['actual_binary'].values
-        y_predicted = df['predicted_binary'].values
+        indices = list(range(len(data)))
         
-        # Hitung metrics
-        accuracy = accuracy_score(y_actual, y_predicted)
-        precision = precision_score(y_actual, y_predicted, zero_division=0)
-        recall = recall_score(y_actual, y_predicted, zero_division=0)
-        f1 = f1_score(y_actual, y_predicted, zero_division=0)
+        train_indices, test_indices = train_test_split(
+            indices,
+            test_size=test_size,
+            random_state=random_state,
+            stratify=y_true
+        )
         
-        # Confusion Matrix
-        cm = confusion_matrix(y_actual, y_predicted)
+        # Data untuk test
+        y_true_test = [y_true[i] for i in test_indices]
+        y_pred_test = [y_pred[i] for i in test_indices]
+        test_data = [data[i] for i in test_indices]
+        
+        # Hitung metrics untuk test data
+        accuracy = accuracy_score(y_true_test, y_pred_test)
+        precision = precision_score(y_true_test, y_pred_test, average='macro', zero_division=0)
+        recall = recall_score(y_true_test, y_pred_test, average='macro', zero_division=0)
+        f1 = f1_score(y_true_test, y_pred_test, average='macro', zero_division=0)
+        
+        # Confusion Matrix (3x3)
+        cm = confusion_matrix(y_true_test, y_pred_test, labels=[0, 1, 2])
         
         # Classification Report
-        report = classification_report(y_actual, y_predicted, output_dict=True)
+        report = classification_report(
+            y_true_test, 
+            y_pred_test, 
+            labels=[0, 1, 2],
+            target_names=["Peluang Lulus Tinggi", "Peluang Lulus Sedang", "Peluang Lulus Kecil"],
+            output_dict=True,
+            zero_division=0
+        )
         
         # Analisis per kategori
         category_analysis = {}
         for category in df['predicted_category'].unique():
             category_data = df[df['predicted_category'] == category]
             if len(category_data) > 0:
-                correct_predictions = len(category_data[category_data['actual_status'] == 'LULUS'])
+                # Hitung akurasi per kategori
+                correct_predictions = len(category_data[category_data['is_correct'] == True])
                 total_predictions = len(category_data)
                 accuracy_category = correct_predictions / total_predictions if total_predictions > 0 else 0
                 
+                # Breakdown per status aktual
+                status_breakdown = {}
+                for status in ['LULUS_TINGGI', 'LULUS_SEDANG', 'LULUS_KECIL']:
+                    status_breakdown[status] = len(category_data[category_data['actual_status'] == status])
+                
                 category_analysis[category] = {
-                    'total_predictions': total_predictions,
-                    'correct_predictions': correct_predictions,
-                    'accuracy': accuracy_category,
-                    'actual_lulus': len(category_data[category_data['actual_status'] == 'LULUS']),
-                    'actual_belum_lulus': len(category_data[category_data['actual_status'] != 'LULUS'])
+                    'total_predictions': int(total_predictions),
+                    'correct_predictions': int(correct_predictions),
+                    'accuracy': round(float(accuracy_category), 4),
+                    'status_breakdown': status_breakdown
                 }
+        
+        # Distribusi klasifikasi
+        classification_distribution = {
+            'tinggi': int(len(df[df['predicted_category'] == 'Peluang Lulus Tinggi'])),
+            'sedang': int(len(df[df['predicted_category'] == 'Peluang Lulus Sedang'])),
+            'kecil': int(len(df[df['predicted_category'] == 'Peluang Lulus Kecil']))
+        }
         
         # Statistik umum
         total_data = len(df)
-        total_actual_lulus = len(df[df['actual_status'] == 'LULUS'])
-        total_actual_belum_lulus = len(df[df['actual_status'] != 'LULUS'])
+        total_actual_tinggi = len(df[df['actual_status'] == 'LULUS_TINGGI'])
+        total_actual_sedang = len(df[df['actual_status'] == 'LULUS_SEDANG'])
+        total_actual_kecil = len(df[df['actual_status'] == 'LULUS_KECIL'])
+        
+        # Confusion matrix detail (untuk UI)
+        confusion_matrix_dict = {
+            'tp': int(cm[0, 0]),  # True Positive (Tinggi predicted as Tinggi)
+            'fp': int(cm[0, 1] + cm[0, 2]),  # False Positive
+            'fn': int(cm[1, 0] + cm[2, 0]),  # False Negative
+            'tn': int(cm[1, 1] + cm[1, 2] + cm[2, 1] + cm[2, 2])  # True Negative
+        }
         
         # Hasil evaluasi
         evaluation_result = {
             'evaluation_info': {
-                'total_data': total_data,
+                'total_data': int(total_data),
+                'training_data': int(len(train_indices)),
+                'test_data': int(len(test_indices)),
                 'test_size': test_size,
                 'random_state': random_state,
-                'evaluation_date': datetime.utcnow().isoformat()
+                'evaluation_date': datetime.utcnow().isoformat(),
+                'status_mapping': status_mapping
             },
             'metrics': {
-                'accuracy': round(accuracy, 4),
-                'precision': round(precision, 4),
-                'recall': round(recall, 4),
-                'f1_score': round(f1, 4)
+                'accuracy': round(float(accuracy), 4),
+                'precision': round(float(precision), 4),
+                'recall': round(float(recall), 4),
+                'f1_score': round(float(f1), 4)
             },
-            'confusion_matrix': {
-                'matrix': cm.tolist(),
-                'labels': ['Belum Lulus', 'Lulus']
-            },
+            'confusion_matrix': cm.tolist(),
+            'confusion_matrix_dict': confusion_matrix_dict,
+            'confusion_matrix_labels': ["Peluang Lulus Tinggi", "Peluang Lulus Sedang", "Peluang Lulus Kecil"],
             'classification_report': report,
+            'classification_distribution': classification_distribution,
             'category_analysis': category_analysis,
             'statistics': {
-                'total_actual_lulus': total_actual_lulus,
-                'total_actual_belum_lulus': total_actual_belum_lulus,
-                'percentage_actual_lulus': round((total_actual_lulus / total_data) * 100, 2),
-                'percentage_actual_belum_lulus': round((total_actual_belum_lulus / total_data) * 100, 2)
+                'actual_status_distribution': {
+                    'LULUS_TINGGI': int(total_actual_tinggi),
+                    'LULUS_SEDANG': int(total_actual_sedang),
+                    'LULUS_KECIL': int(total_actual_kecil)
+                },
+                'percentage_tinggi': round((total_actual_tinggi / total_data) * 100, 2),
+                'percentage_sedang': round((total_actual_sedang / total_data) * 100, 2),
+                'percentage_kecil': round((total_actual_kecil / total_data) * 100, 2)
             },
             'sample_data': df.head(10).to_dict('records'),
-            'full_data': df.to_dict('records')  # Tambahkan full data untuk comparison
+            'full_data': df.to_dict('records'),  # Tambahkan full data untuk comparison
+            'results': test_data  # Data test untuk compatibility dengan frontend
         }
         
         return {
             'success': True,
-            'message': f'Evaluasi FIS berhasil dengan {total_data} data',
+            'message': f'Evaluasi FIS berhasil dengan {total_data} data (3 kategori)',
             'result': evaluation_result
         }
         
     except Exception as e:
+        import traceback
+        print(f"Error in evaluate_fis_with_actual_status: {str(e)}")
+        print(traceback.format_exc())
         raise HTTPException(
             status_code=500,
             detail=f"Terjadi kesalahan saat evaluasi FIS: {str(e)}"
