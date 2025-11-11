@@ -328,6 +328,7 @@ def batch_calculate_saw(db: Session, save_to_db: bool = True) -> List[Dict[str, 
         results.append({
             "nim": mahasiswa.nim,
             "nama": mahasiswa.nama,
+            "program_studi": mahasiswa.program_studi,
             "ipk": criteria_values["IPK"],
             "sks": criteria_values["SKS"],
             "persen_dek": criteria_values["Nilai D/E/K"],

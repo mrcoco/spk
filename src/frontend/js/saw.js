@@ -361,6 +361,30 @@ function getClassificationColor(classification) {
     return '#6c757d';
 }
 
+// Helper function untuk warna badge program studi SAW
+function getProdiColorSAW(prodi) {
+    if (!prodi) return { bg: '#e0e0e0', text: '#666' };
+
+    const prodiColors = {
+        'Teknik Informatika': { bg: '#e3f2fd', text: '#1565C0' },
+        'Sistem Informasi': { bg: '#e8f5e9', text: '#2e7d32' },
+        'Teknik Komputer': { bg: '#fff3e0', text: '#e65100' },
+        'Manajemen Informatika': { bg: '#f3e5f5', text: '#6a1b9a' },
+        'Komputerisasi Akuntansi': { bg: '#fff9c4', text: '#f57f17' },
+        'Teknik Elektro': { bg: '#ffebee', text: '#c62828' },
+        'default': { bg: '#e0e0e0', text: '#424242' }
+    };
+
+    // Check if prodi contains any of the keywords
+    for (const [key, color] of Object.entries(prodiColors)) {
+        if (key !== 'default' && prodi.toUpperCase().includes(key.toUpperCase())) {
+            return color;
+        }
+    }
+
+    return prodiColors['default'];
+}
+
 function getClassificationThreshold(classification) {
     // Add null/undefined check
     if (!classification || typeof classification !== 'string') {
@@ -1206,9 +1230,22 @@ function displaySAWResultsTable(data) {
             pageSizes: true,
             buttonCount: 5
         },
+        filterable: false, // Disable default Kendo filters
         columns: [
             { field: "nim", title: "NIM", width: 120 },
             { field: "nama", title: "Nama", width: 200 },
+            { 
+                field: "program_studi", 
+                title: "Program Studi", 
+                width: 250,
+                template: function(dataItem) {
+                    if (!dataItem.program_studi) {
+                        return '<span style="color: #999;">N/A</span>';
+                    }
+                    const colors = getProdiColorSAW(dataItem.program_studi);
+                    return `<span style="display: inline-block; padding: 4px 10px; background: ${colors.bg}; color: ${colors.text}; border-radius: 12px; font-size: 11px; font-weight: 500;">${dataItem.program_studi}</span>`;
+                }
+            },
             { 
                 field: "ipk", 
                 title: "IPK", 
@@ -1583,14 +1620,21 @@ function searchMahasiswaByName(nama) {
 }
 
 // Fungsi untuk melakukan pencarian hasil klasifikasi SAW
-async function performSAWSearch() {
+// Mendukung pencarian berdasarkan: NIM, Nama, Program Studi, Klasifikasi
+// Mendukung multiple keywords dengan koma atau spasi sebagai separator
+// Contoh: "informatika, tinggi" atau "sistem sedang"
+function performSAWSearch() {
     console.log('🔧 performSAWSearch dipanggil');
     
     const searchInput = $("#searchInputSAW").val().trim();
     
     if (!searchInput) {
         console.log('🔧 Input pencarian kosong, tampilkan semua data');
-        $("#sawGrid").data("kendoGrid").dataSource.read();
+        const grid = $("#sawGrid").data("kendoGrid");
+        if (grid && sawDataCache.results && sawDataCache.results.data) {
+            grid.dataSource.data(sawDataCache.results.data);
+            updateTotalRecordInfo(sawDataCache.results.data.length, "totalRecordTextSAW");
+        }
         updateSAWSearchInfo("Menampilkan semua data klasifikasi SAW", "info");
         return;
     }
@@ -1598,47 +1642,68 @@ async function performSAWSearch() {
     console.log('🔧 Memulai pencarian klasifikasi SAW untuk:', searchInput);
     
     try {
-        // Tampilkan loading
+        // Tampilkan loading pada grid
+        kendo.ui.progress($("#sawGrid"), true);
         updateSAWSearchInfo("Sedang mencari data klasifikasi SAW...", "info");
-        
-        // Cari mahasiswa berdasarkan nama atau NIM
-        const nims = await searchMahasiswaByName(searchInput);
-        
-        if (nims.length === 0) {
-            updateSAWSearchInfo("Tidak ada mahasiswa ditemukan dengan kriteria tersebut", "warning");
-            return;
-        }
-        
-        console.log('🔧 NIMs yang akan dicari di grid:', nims);
         
         // Filter grid berdasarkan NIM yang ditemukan
         const grid = $("#sawGrid").data("kendoGrid");
         if (!grid) {
             console.error('🔧 Grid SAW tidak ditemukan');
+            kendo.ui.progress($("#sawGrid"), false);
             updateSAWSearchInfo("Grid SAW tidak tersedia", "error");
             return;
         }
         
-        // Coba ambil data dari cache terlebih dahulu
-        let allData = [];
-        if (sawDataCache.results && sawDataCache.results.data) {
-            console.log('🔧 Menggunakan data dari cache');
-            allData = sawDataCache.results.data;
-        } else {
-            console.log('🔧 Menggunakan data dari grid');
-            allData = grid.dataSource.data();
-        }
+        // Gunakan data dari cache jika tersedia
+        const allData = (sawDataCache.results && sawDataCache.results.data) || grid.dataSource.data();
+        console.log('🔧 Total data di grid:', allData.length);
         
-        console.log('🔧 Total data yang tersedia:', allData.length);
-        console.log('🔧 Sample data:', allData.slice(0, 3));
+        // Parse multiple keywords
+        // Support comma separator (e.g., "informatika, tinggi") atau spasi untuk keywords terpisah
+        const keywords = searchInput.toLowerCase()
+            .split(/[,]+/) // Split by comma
+            .map(k => k.trim()) // Trim whitespace
+            .filter(k => k.length > 0); // Remove empty strings
         
-        // Filter data berdasarkan NIM
-        const filteredData = allData.filter(item => nims.includes(item.nim));
+        console.log('🔧 Keywords untuk filter:', keywords);
+        
+        // Filter data berdasarkan multiple keywords (AND logic)
+        // Semua keywords harus match di salah satu field
+        const filteredData = allData.filter(item => {
+            // Check if ALL keywords match at least one field
+            return keywords.every(keyword => {
+                // Cek NIM
+                if (item.nim && item.nim.toLowerCase().includes(keyword)) {
+                    return true;
+                }
+                
+                // Cek Nama
+                if (item.nama && item.nama.toLowerCase().includes(keyword)) {
+                    return true;
+                }
+                
+                // Cek Program Studi
+                if (item.program_studi && item.program_studi.toLowerCase().includes(keyword)) {
+                    return true;
+                }
+                
+                // Cek Klasifikasi
+                if (item.klasifikasi_saw && item.klasifikasi_saw.toLowerCase().includes(keyword)) {
+                    return true;
+                }
+                
+                return false;
+            });
+        });
+        
         console.log('🔧 Data yang difilter:', filteredData.length);
-        console.log('🔧 Filtered data sample:', filteredData.slice(0, 3));
         
         if (filteredData.length === 0) {
-            updateSAWSearchInfo("Tidak ada hasil klasifikasi SAW ditemukan untuk mahasiswa tersebut", "warning");
+            kendo.ui.progress($("#sawGrid"), false);
+            grid.dataSource.data([]);
+            updateTotalRecordInfo(0, "totalRecordTextSAW");
+            updateSAWSearchInfo(`Tidak ada data ditemukan untuk "${searchInput}"`, "warning");
             return;
         }
         
@@ -1648,10 +1713,18 @@ async function performSAWSearch() {
         // Update total record info
         updateTotalRecordInfo(filteredData.length, "totalRecordTextSAW");
         
-        updateSAWSearchInfo(`Ditemukan ${filteredData.length} data klasifikasi SAW untuk "${searchInput}"`, "success");
+        // Sembunyikan loading
+        kendo.ui.progress($("#sawGrid"), false);
+        
+        // Build info message
+        const keywordText = keywords.length > 1 ? 
+            `keywords: "${keywords.join('", "')}"` : 
+            `"${searchInput}"`;
+        updateSAWSearchInfo(`Ditemukan ${filteredData.length} data dengan ${keywordText}`, "success");
         
     } catch (error) {
         console.error('🔧 Error dalam pencarian SAW:', error);
+        kendo.ui.progress($("#sawGrid"), false);
         updateSAWSearchInfo("Terjadi kesalahan saat mencari data: " + error.message, "error");
     }
 }
