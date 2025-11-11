@@ -244,6 +244,7 @@ class GridResponse(BaseModel):
 class KlasifikasiGridItem(BaseModel):
     nim: str
     nama: str
+    program_studi: Optional[str] = None
     kategori: str
     nilai_fuzzy: float
     ipk_membership: float

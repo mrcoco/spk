@@ -107,16 +107,18 @@ function searchMahasiswaByName(nama) {
 }
 
 // Fungsi untuk melakukan pencarian hasil klasifikasi FIS
-async function performFISSearch() {
+// Mendukung pencarian berdasarkan: NIM, Nama, Program Studi, Klasifikasi
+function performFISSearch() {
     console.log('🔧 performFISSearch dipanggil');
     
-    const searchInput = $("#searchInputFIS").val().trim();
+    const searchInput = $("#searchInputFIS").val().trim().toLowerCase();
     
     if (!searchInput) {
         console.log('🔧 Input pencarian kosong, tampilkan semua data');
         const grid = $("#fisGrid").data("kendoGrid");
         if (grid && fisDataCache.results) {
             grid.dataSource.data(fisDataCache.results);
+            updateTotalRecordInfo(fisDataCache.results.length, "totalRecordTextFIS");
         }
         updateFISSearchInfo("Menampilkan semua data klasifikasi FIS", "info");
         return;
@@ -129,21 +131,11 @@ async function performFISSearch() {
         kendo.ui.progress($("#fisGrid"), true);
         updateFISSearchInfo("Sedang mencari data klasifikasi FIS...", "info");
         
-        // Cari mahasiswa berdasarkan nama atau NIM
-        const nims = await searchMahasiswaByName(searchInput);
-        
-        if (nims.length === 0) {
-            kendo.ui.progress($("#fisGrid"), false);
-            updateFISSearchInfo("Tidak ada mahasiswa ditemukan dengan kriteria tersebut", "warning");
-            return;
-        }
-        
-        console.log('🔧 NIMs yang akan dicari di grid:', nims);
-        
         // Filter grid berdasarkan NIM yang ditemukan
         const grid = $("#fisGrid").data("kendoGrid");
         if (!grid) {
             console.error('🔧 Grid FIS tidak ditemukan');
+            kendo.ui.progress($("#fisGrid"), false);
             updateFISSearchInfo("Grid FIS tidak tersedia", "error");
             return;
         }
@@ -152,13 +144,38 @@ async function performFISSearch() {
         const allData = fisDataCache.results || grid.dataSource.data();
         console.log('🔧 Total data di grid:', allData.length);
         
-        // Filter data berdasarkan NIM
-        const filteredData = allData.filter(item => nims.includes(item.nim));
+        // Filter data berdasarkan NIM, Nama, Program Studi, atau Klasifikasi
+        const filteredData = allData.filter(item => {
+            // Cek NIM
+            if (item.nim && item.nim.toLowerCase().includes(searchInput)) {
+                return true;
+            }
+            
+            // Cek Nama
+            if (item.nama && item.nama.toLowerCase().includes(searchInput)) {
+                return true;
+            }
+            
+            // Cek Program Studi
+            if (item.program_studi && item.program_studi.toLowerCase().includes(searchInput)) {
+                return true;
+            }
+            
+            // Cek Klasifikasi
+            if (item.kategori && item.kategori.toLowerCase().includes(searchInput)) {
+                return true;
+            }
+            
+            return false;
+        });
+        
         console.log('🔧 Data yang difilter:', filteredData.length);
         
         if (filteredData.length === 0) {
             kendo.ui.progress($("#fisGrid"), false);
-            updateFISSearchInfo("Tidak ada hasil klasifikasi FIS ditemukan untuk mahasiswa tersebut", "warning");
+            grid.dataSource.data([]);
+            updateTotalRecordInfo(0, "totalRecordTextFIS");
+            updateFISSearchInfo(`Tidak ada data ditemukan untuk "${searchInput}"`, "warning");
             return;
         }
         
@@ -170,7 +187,7 @@ async function performFISSearch() {
         
         // Sembunyikan loading
         kendo.ui.progress($("#fisGrid"), false);
-        updateFISSearchInfo(`Ditemukan ${filteredData.length} data klasifikasi FIS untuk "${searchInput}"`, "success");
+        updateFISSearchInfo(`Ditemukan ${filteredData.length} data untuk "${searchInput}"`, "success");
         
     } catch (error) {
         console.error('🔧 Error dalam pencarian FIS:', error);
@@ -243,10 +260,7 @@ function initializeFISGrid() {
         },
         height: 550,
         sortable: true,
-        filterable: {
-            mode: "row",
-            extra: false
-        },
+        filterable: false, // Disable filter bawaan Kendo, gunakan custom search
         pageable: {
             refresh: true,
             pageSizes: true,
@@ -262,13 +276,6 @@ function initializeFISGrid() {
                 },
                 attributes: {
                     style: "text-align: center;"
-                },
-                filterable: {
-                    cell: {
-                        operator: "contains",
-                        showOperators: false,
-                        suggestionOperator: "contains"
-                    }
                 }
             },
             {
@@ -277,13 +284,6 @@ function initializeFISGrid() {
                 width: 200,
                 headerAttributes: {
                     style: "text-align: center; font-weight: bold;"
-                },
-                filterable: {
-                    cell: {
-                        operator: "contains",
-                        showOperators: false,
-                        suggestionOperator: "contains"
-                    }
                 }
             },
             {
@@ -300,16 +300,6 @@ function initializeFISGrid() {
                     if (!dataItem.program_studi) return '<span style="color: #999;">N/A</span>';
                     const colors = getProdiColor(dataItem.program_studi);
                     return `<span class="badge" style="background: ${colors.bg}; color: ${colors.text}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">${dataItem.program_studi}</span>`;
-                },
-                filterable: {
-                    multi: true,
-                    search: true,
-                    checkAll: true,
-                    itemTemplate: function(e) {
-                        if (!e.program_studi) return '';
-                        const colors = getProdiColor(e.program_studi);
-                        return `<span class="badge" style="background: ${colors.bg}; color: ${colors.text}; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 5px;">${e.program_studi}</span>`;
-                    }
                 }
             },
             {
@@ -325,20 +315,6 @@ function initializeFISGrid() {
                 template: function(dataItem) {
                     const color = getFISClassificationColor(dataItem.kategori);
                     return `<span style="color: ${color}; font-weight: bold;">${dataItem.kategori || 'N/A'}</span>`;
-                },
-                filterable: {
-                    multi: true,
-                    search: true,
-                    checkAll: true,
-                    dataSource: [
-                        { kategori: "Peluang Lulus Tinggi" },
-                        { kategori: "Peluang Lulus Sedang" },
-                        { kategori: "Peluang Lulus Kecil" }
-                    ],
-                    itemTemplate: function(e) {
-                        const color = getFISClassificationColor(e.kategori);
-                        return `<span style="color: ${color}; font-weight: bold; font-size: 11px;">${e.kategori}</span>`;
-                    }
                 }
             },
             {
@@ -354,8 +330,7 @@ function initializeFISGrid() {
                 },
                 template: function(dataItem) {
                     return dataItem.nilai_fuzzy ? dataItem.nilai_fuzzy.toFixed(2) : 'N/A';
-                },
-                filterable: false
+                }
             },
             {
                 field: "ipk_membership",
@@ -369,8 +344,7 @@ function initializeFISGrid() {
                 },
                 template: function(dataItem) {
                     return dataItem.ipk_membership ? dataItem.ipk_membership.toFixed(4) : 'N/A';
-                },
-                filterable: false
+                }
             },
             {
                 field: "sks_membership",
@@ -384,8 +358,7 @@ function initializeFISGrid() {
                 },
                 template: function(dataItem) {
                     return dataItem.sks_membership ? dataItem.sks_membership.toFixed(4) : 'N/A';
-                },
-                filterable: false
+                }
             },
             {
                 field: "nilai_dk_membership",
@@ -399,8 +372,7 @@ function initializeFISGrid() {
                 },
                 template: function(dataItem) {
                     return dataItem.nilai_dk_membership ? dataItem.nilai_dk_membership.toFixed(4) : 'N/A';
-                },
-                filterable: false
+                }
             },
             {
                 command: [
@@ -464,17 +436,10 @@ function loadFISGridData() {
             updateFISCacheTimestamp();
             showFISCacheStatus();
             
-            // Update grid dan filter datasource
+            // Update grid datasource
             const grid = $("#fisGrid").data("kendoGrid");
             if (grid) {
                 grid.dataSource.data(fisDataCache.results);
-                
-                // Update filter dataSource untuk program_studi dengan unique values
-                const uniqueProdi = getUniqueValues(fisDataCache.results, 'program_studi');
-                const prodiColumn = grid.columns.find(col => col.field === 'program_studi');
-                if (prodiColumn && prodiColumn.filterable) {
-                    prodiColumn.filterable.dataSource = uniqueProdi.map(p => ({ program_studi: p }));
-                }
             }
             
             // Sembunyikan loading
