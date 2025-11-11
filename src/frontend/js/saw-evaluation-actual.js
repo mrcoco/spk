@@ -42,15 +42,16 @@ class SAWEvaluationActual {
     }
 
     validateWeights() {
-        const ipkWeight = parseInt($('#sawEvaluationActualIpkWeight').val()) || 0;
-        const sksWeight = parseInt($('#sawEvaluationActualSksWeight').val()) || 0;
-        const dekWeight = parseInt($('#sawEvaluationActualDekWeight').val()) || 0;
+        const ipkWeight = parseFloat($('#sawEvaluationActualIpkWeight').val()) || 0;
+        const sksWeight = parseFloat($('#sawEvaluationActualSksWeight').val()) || 0;
+        const dekWeight = parseFloat($('#sawEvaluationActualDekWeight').val()) || 0;
         
         const total = ipkWeight + sksWeight + dekWeight;
         
-        if (total !== 100) {
+        // Allow small tolerance (±0.1) for floating point precision
+        if (Math.abs(total - 100) > 0.1) {
             $('#sawEvaluationActualCalculateBtn').prop('disabled', true);
-            this.showNotification('warning', 'Total bobot harus 100%', `Total bobot saat ini: ${total}%`);
+            this.showNotification('warning', 'Total bobot harus 100%', `Total bobot saat ini: ${total.toFixed(1)}%`);
         } else {
             $('#sawEvaluationActualCalculateBtn').prop('disabled', false);
         }
@@ -60,36 +61,70 @@ class SAWEvaluationActual {
         try {
             this.showLoading(true);
             
+            // Update button text to show loading state
+            const $btn = $('#sawEvaluationActualCalculateBtn');
+            const originalText = $btn.html();
+            $btn.html('<i class="fas fa-spinner fa-spin"></i> Mengevaluasi...');
+            $btn.prop('disabled', true);
+            
             const weights = {
-                ipk: (parseInt($('#sawEvaluationActualIpkWeight').val()) || 40) / 100, // Konversi dari persentase ke desimal
-                sks: (parseInt($('#sawEvaluationActualSksWeight').val()) || 35) / 100, // Konversi dari persentase ke desimal
-                dek: (parseInt($('#sawEvaluationActualDekWeight').val()) || 25) / 100  // Konversi dari persentase ke desimal
+                ipk: (parseFloat($('#sawEvaluationActualIpkWeight').val()) || 35) / 100, // Konversi dari persentase ke desimal
+                sks: (parseFloat($('#sawEvaluationActualSksWeight').val()) || 32.5) / 100, // Konversi dari persentase ke desimal
+                dek: (parseFloat($('#sawEvaluationActualDekWeight').val()) || 32.5) / 100  // Konversi dari persentase ke desimal
             };
 
-            const testSize = parseInt($('#sawEvaluationActualTestSize').val()) || 30;
-            const randomState = parseInt($('#sawEvaluationActualRandomState').val()) || 42;
             const saveToDb = $('#sawEvaluationActualSaveToDb').is(':checked');
 
+            // Request data tanpa test_size dan random_state
+            // Backend akan otomatis menggunakan semua data yang punya status_lulus_aktual
             const requestData = {
                 weights: weights,
-                test_size: testSize / 100, // Konversi dari persentase ke desimal
-                random_state: randomState,
+                test_size: 1.0,  // 100% data - semua data berlabel digunakan
+                random_state: 42, // Tetap ada untuk kompatibilitas, tapi tidak digunakan untuk split
                 save_to_db: saveToDb
             };
+
+            console.log('🔧 Sending SAW evaluation request with full data:', requestData);
 
             const response = await $.ajax({
                 url: `${this.config.API_BASE_URL}${this.config.API_PREFIX}/saw/evaluate-actual`,
                 method: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify(requestData)
+                data: JSON.stringify(requestData),
+                timeout: 60000 // 60 second timeout for large datasets
             });
 
+            console.log('✅ SAW evaluation response:', response);
+            console.log('📊 Evaluation type:', response.evaluation?.evaluation_info?.evaluation_type || 'N/A');
+            console.log('📈 Total data evaluated:', response.evaluation?.total_data || 0);
+
             this.displayResults(response.evaluation);
-            this.showNotification('success', 'Evaluasi SAW dengan Data Aktual Berhasil', 'Hasil evaluasi telah dihitung dan ditampilkan');
+            this.showNotification('success', 'Evaluasi SAW dengan Data Aktual Berhasil', 
+                `Berhasil mengevaluasi ${response.evaluation?.total_data || 0} data mahasiswa dengan seluruh data berlabel`);
+
+            // Restore button
+            $btn.html(originalText);
+            $btn.prop('disabled', false);
 
         } catch (error) {
-            console.error('Error calculating SAW evaluation with actual data:', error);
-            this.showNotification('error', 'Error Evaluasi SAW dengan Data Aktual', error.responseJSON?.detail || 'Terjadi kesalahan saat menghitung evaluasi');
+            console.error('❌ Error calculating SAW evaluation with actual data:', error);
+            
+            // More specific error messages
+            let errorMessage = 'Terjadi kesalahan saat menghitung evaluasi';
+            if (error.statusText === 'timeout') {
+                errorMessage = 'Request timeout. Data terlalu besar, silakan coba lagi.';
+            } else if (error.status === 0) {
+                errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
+            } else if (error.responseJSON?.detail) {
+                errorMessage = error.responseJSON.detail;
+            }
+            
+            this.showNotification('error', 'Error Evaluasi SAW dengan Data Aktual', errorMessage);
+            
+            // Restore button
+            const $btn = $('#sawEvaluationActualCalculateBtn');
+            $btn.html('<i class="fas fa-calculator"></i> Mulai Evaluasi SAW dengan Data Aktual');
+            $btn.prop('disabled', false);
         } finally {
             this.showLoading(false);
         }
@@ -391,51 +426,363 @@ class SAWEvaluationActual {
             return;
         }
         
-        const grid = $('#sawEvaluationActualResultsGrid');
-        grid.empty();
+        console.log('📊 Updating SAW Actual Results Grid with', results.length, 'records');
         
-        const columns = [
-            { field: 'nim', title: 'NIM', width: 120 },
-            { field: 'nama', title: 'Nama', width: 200 },
-            { field: 'ipk', title: 'IPK', width: 80, format: '{0:N2}' },
-            { field: 'sks', title: 'SKS', width: 80 },
-            { field: 'persen_dek', title: 'DEK (%)', width: 100, format: '{0:N1}%' },
-            { field: 'actual_status', title: 'Status Aktual', width: 120 },
-            { field: 'predicted_class', title: 'Prediksi SAW', width: 150 },
-            { field: 'final_value', title: 'Nilai Akhir', width: 120, format: '{0:N3}' },
-            { field: 'is_correct', title: 'Benar', width: 80, template: '#= is_correct ? "✓" : "✗" #' }
-        ];
+        // Destroy existing grid jika ada
+        const existingGrid = $('#sawEvaluationActualResultsGrid').data('kendoGrid');
+        if (existingGrid) {
+            existingGrid.destroy();
+        }
         
-        grid.kendoGrid({
+        // Clear and recreate
+        $('#sawEvaluationActualResultsGrid').empty();
+
+        // Tambahkan info box di atas grid (hapus jika sudah ada untuk mencegah duplikasi)
+        $('#sawActualResultsInfo').remove();
+        $('#sawEvaluationActualResultsGrid').before(`
+            <div id="sawActualResultsInfo" style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                <i class="fas fa-info-circle"></i>
+                <span id="sawActualResultsInfoText">Menampilkan ${results.length} data mahasiswa dengan status lulus aktual</span>
+            </div>
+        `);
+        
+        // Helper function untuk warna badge program studi
+        function getProdiColorSAW(prodi) {
+            if (!prodi) return { bg: '#e0e0e0', text: '#666' };
+
+            const prodiColors = {
+                'Teknik Informatika': { bg: '#e3f2fd', text: '#1565C0' },
+                'Sistem Informasi': { bg: '#e8f5e9', text: '#2e7d32' },
+                'Teknik Komputer': { bg: '#fff3e0', text: '#e65100' },
+                'Manajemen Informatika': { bg: '#f3e5f5', text: '#6a1b9a' },
+                'Komputerisasi Akuntansi': { bg: '#fff9c4', text: '#f57f17' },
+                'Teknik Elektro': { bg: '#ffebee', text: '#c62828' },
+                'default': { bg: '#e0e0e0', text: '#424242' }
+            };
+
+            for (const [key, color] of Object.entries(prodiColors)) {
+                if (key !== 'default' && prodi.toUpperCase().includes(key.toUpperCase())) {
+                    return color;
+                }
+            }
+
+            return prodiColors['default'];
+        }
+        
+        // Helper function untuk warna status badge
+        function getStatusBadgeColor(status) {
+            if (!status) return 'bg-secondary';
+            const statusUpper = status.toUpperCase();
+            if (statusUpper.includes('TINGGI')) return 'bg-success';
+            if (statusUpper.includes('SEDANG')) return 'bg-warning';
+            if (statusUpper.includes('KECIL')) return 'bg-danger';
+            return 'bg-secondary';
+        }
+
+        function formatActualStatus(status) {
+            return status ? status.replace(/_/g, ' ') : 'N/A';
+        }
+        
+        // Helper function untuk unique values (untuk filter)
+        function getUniqueProdiList(data) {
+            if (!data || !Array.isArray(data)) return [];
+            const uniqueProdi = [...new Set(data.map(item => item.program_studi).filter(p => p))];
+            return uniqueProdi.map(prodi => ({ program_studi: prodi }));
+        }
+        
+        $('#sawEvaluationActualResultsGrid').kendoGrid({
             dataSource: {
                 data: results,
+                pageSize: 20,
                 schema: {
                     model: {
                         fields: {
-                            nim: { type: 'string' },
-                            nama: { type: 'string' },
-                            ipk: { type: 'number' },
-                            sks: { type: 'number' },
-                            persen_dek: { type: 'number' },
-                            actual_status: { type: 'string' },
-                            predicted_class: { type: 'string' },
-                            final_value: { type: 'number' },
-                            is_correct: { type: 'boolean' }
+                            nim: { type: "string" },
+                            nama: { type: "string" },
+                            program_studi: { type: "string" },
+                            ipk: { type: "number" },
+                            sks: { type: "number" },
+                            persen_dek: { type: "number" },
+                            predicted_class: { type: "string" },
+                            actual_status: { type: "string" },
+                            final_value: { type: "number" },
+                            is_correct: { type: "boolean" }
                         }
                     }
                 }
             },
-            columns: columns,
-            sortable: true,
-            filterable: true,
-            pageable: {
-                pageSize: 20,
-                pageSizes: [10, 20, 50, 100]
-            },
-            height: 400,
+            height: 600,
             scrollable: true,
-            resizable: true
+            sortable: {
+                mode: "multiple",
+                allowUnsort: true
+            },
+            filterable: {
+                mode: "row",
+                extra: false
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [10, 20, 50, 100, "all"],
+                buttonCount: 5,
+                messages: {
+                    display: "{0} - {1} dari {2} data",
+                    empty: "Tidak ada data untuk ditampilkan",
+                    page: "Halaman",
+                    of: "dari {0}",
+                    itemsPerPage: "data per halaman",
+                    first: "Halaman pertama",
+                    previous: "Halaman sebelumnya",
+                    next: "Halaman selanjutnya",
+                    last: "Halaman terakhir",
+                    refresh: "Refresh"
+                }
+            },
+            toolbar: [
+                {
+                    template: '<button class="k-button k-button-icontext" onclick="exportSAWActualEvaluationResults()"><span class="k-icon k-i-file-excel"></span>Export Excel</button>'
+                },
+                {
+                    template: '<div style="margin-left: 10px; padding: 8px 15px; background: linear-gradient(135deg, \\#e3f2fd 0%, \\#bbdefb 100%); border-radius: 6px; display: inline-flex; align-items: center; gap: 8px;"><i class="fas fa-info-circle" style="color: \\#1976D2;"></i> <span style="color: \\#1565C0; font-weight: 500;">Total: <strong id="sawActualGridTotal">' + results.length + '</strong> data</span></div>'
+                }
+            ],
+            columns: [
+                { 
+                    field: "nim", 
+                    title: "NIM", 
+                    width: 130,
+                    filterable: {
+                        cell: {
+                            operator: "contains",
+                            showOperators: false,
+                            suggestionOperator: "contains"
+                        }
+                    },
+                    template: function(dataItem) {
+                        const nim = dataItem.nim || 'N/A';
+                        return `<span style="font-family: monospace; font-weight: 500; color: #1976D2;">${nim}</span>`;
+                    }
+                },
+                { 
+                    field: "nama", 
+                    title: "Nama", 
+                    width: 200,
+                    filterable: {
+                        cell: {
+                            operator: "contains",
+                            showOperators: false,
+                            suggestionOperator: "contains"
+                        }
+                    },
+                    template: function(dataItem) {
+                        const nama = dataItem.nama || 'N/A';
+                        return `<span style="font-weight: 500; color: #333;">${nama}</span>`;
+                    }
+                },
+                { 
+                    field: "program_studi", 
+                    title: "Program Studi", 
+                    width: 250,
+                    template: function(dataItem) {
+                        if (!dataItem.program_studi) {
+                            return '<span style="color: #999;">N/A</span>';
+                        }
+                        const colors = getProdiColorSAW(dataItem.program_studi);
+                        return `<span style="display: inline-block; padding: 4px 10px; background: ${colors.bg}; color: ${colors.text}; border-radius: 4px; font-size: 12px; font-weight: 500;">${dataItem.program_studi}</span>`;
+                    },
+                    filterable: {
+                        multi: true,
+                        search: true,
+                        dataSource: getUniqueProdiList(results),
+                        checkAll: true,
+                        itemTemplate: function(e) {
+                            if (!e.program_studi) return '';
+                            const colors = getProdiColorSAW(e.program_studi);
+                            return `<span style="display: inline-block; padding: 2px 8px; margin: 2px 0; background: ${colors.bg}; color: ${colors.text}; border-radius: 4px; font-size: 11px; font-weight: 500;">${e.program_studi}</span>`;
+                        }
+                    }
+                },
+                { 
+                    field: "ipk", 
+                    title: "IPK", 
+                    width: 100,
+                    format: "{0:n2}",
+                    filterable: false,
+                    template: function(dataItem) {
+                        const ipk = dataItem.ipk || 0;
+                        let color = '#666';
+                        if (ipk >= 3.5) color = '#28a745';
+                        else if (ipk >= 3.0) color = '#ffc107';
+                        else if (ipk >= 2.5) color = '#ff9800';
+                        else color = '#dc3545';
+                        return `<span style="color: ${color}; font-weight: 600;">${ipk.toFixed(2)}</span>`;
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    },
+                    headerAttributes: {
+                        style: "text-align: center;"
+                    }
+                },
+                { 
+                    field: "sks", 
+                    title: "SKS", 
+                    width: 90,
+                    filterable: false,
+                    template: function(dataItem) {
+                        const sks = dataItem.sks || 0;
+                        let color = '#666';
+                        if (sks >= 130) color = '#28a745';
+                        else if (sks >= 110) color = '#ffc107';
+                        else if (sks >= 90) color = '#ff9800';
+                        else color = '#dc3545';
+                        return `<span style="color: ${color}; font-weight: 600;">${sks}</span>`;
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    },
+                    headerAttributes: {
+                        style: "text-align: center;"
+                    }
+                },
+                { 
+                    field: "persen_dek", 
+                    title: "% D/E/K", 
+                    width: 100,
+                    format: "{0:n1}%",
+                    filterable: false,
+                    template: function(dataItem) {
+                        const dek = dataItem.persen_dek || 0;
+                        let color = '#666';
+                        if (dek <= 10) color = '#28a745';
+                        else if (dek <= 20) color = '#ffc107';
+                        else if (dek <= 30) color = '#ff9800';
+                        else color = '#dc3545';
+                        return `<span style="color: ${color}; font-weight: 600;">${dek.toFixed(1)}%</span>`;
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    },
+                    headerAttributes: {
+                        style: "text-align: center;"
+                    }
+                },
+                { 
+                    field: "final_value", 
+                    title: "Skor SAW", 
+                    width: 120,
+                    format: "{0:n4}",
+                    filterable: false,
+                    template: function(dataItem) {
+                        const score = dataItem.final_value != null ? dataItem.final_value : 0;
+                        let color = '#dc3545';
+                        let bgColor = '#ffebee';
+                        if (score >= 0.75) {
+                            color = '#28a745';
+                            bgColor = '#e8f5e9';
+                        } else if (score >= 0.55) {
+                            color = '#ffc107';
+                            bgColor = '#fff3cd';
+                        }
+                        return `<span style="padding: 5px 10px; background: ${bgColor}; color: ${color}; border-radius: 4px; font-weight: bold; display: inline-block; font-family: 'Fira Code', monospace;">${score.toFixed(4)}</span>`;
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    },
+                    headerAttributes: {
+                        style: "text-align: center;"
+                    }
+                },
+                { 
+                    field: "predicted_class", 
+                    title: "Prediksi SAW", 
+                    width: 180,
+                    template: function(dataItem) {
+                        const badgeClass = getStatusBadgeColor(dataItem.predicted_class);
+                        return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">${dataItem.predicted_class || 'N/A'}</span>`;
+                    },
+                    filterable: {
+                        multi: true,
+                        search: true,
+                        dataSource: [
+                            { predicted_class: 'Peluang Lulus Tinggi' },
+                            { predicted_class: 'Peluang Lulus Sedang' },
+                            { predicted_class: 'Peluang Lulus Kecil' }
+                        ],
+                        checkAll: true,
+                        itemTemplate: function(e) {
+                            const badgeClass = getStatusBadgeColor(e.predicted_class);
+                            return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 4px 10px; font-weight: 600; white-space: nowrap;">${e.predicted_class}</span>`;
+                        }
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    },
+                    headerAttributes: {
+                        style: "text-align: center;"
+                    }
+                },
+                { 
+                    field: "actual_status", 
+                    title: "Status Aktual", 
+                    width: 180,
+                    template: function(dataItem) {
+                        const badgeClass = getStatusBadgeColor(dataItem.actual_status);
+                        const statusText = formatActualStatus(dataItem.actual_status);
+                        return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">${statusText}</span>`;
+                    },
+                    filterable: {
+                        multi: true,
+                        search: true,
+                        dataSource: [
+                            { actual_status: 'LULUS_TINGGI', text: 'LULUS TINGGI' },
+                            { actual_status: 'LULUS_SEDANG', text: 'LULUS SEDANG' },
+                            { actual_status: 'LULUS_KECIL', text: 'LULUS KECIL' }
+                        ],
+                        checkAll: true,
+                        itemTemplate: function(e) {
+                            const badgeClass = getStatusBadgeColor(e.actual_status);
+                            const statusText = formatActualStatus(e.text || e.actual_status);
+                            return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 4px 10px; font-weight: 600; white-space: nowrap;">${statusText}</span>`;
+                        }
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    },
+                    headerAttributes: {
+                        style: "text-align: center;"
+                    }
+                },
+                { 
+                    field: "is_correct", 
+                    title: "Match", 
+                    width: 100,
+                    filterable: false,
+                    template: function(dataItem) {
+                        if (dataItem.is_correct) {
+                            return '<div style="text-align: center;"><span style="padding: 5px 12px; background: #e8f5e9; color: #28a745; border-radius: 4px; font-weight: 600; display: inline-block;"><i class="fas fa-check-circle"></i> Benar</span></div>';
+                        } else {
+                            return '<div style="text-align: center;"><span style="padding: 5px 12px; background: #ffebee; color: #dc3545; border-radius: 4px; font-weight: 600; display: inline-block;"><i class="fas fa-times-circle"></i> Salah</span></div>';
+                        }
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    },
+                    headerAttributes: {
+                        style: "text-align: center;"
+                    }
+                }
+            ],
+            dataBound: function(e) {
+                const grid = e.sender;
+                const totalRecords = grid.dataSource.total();
+                const totalFormatted = totalRecords.toLocaleString('id-ID');
+                $('#sawActualGridTotal').text(totalFormatted);
+                $('#sawActualResultsInfoText').text(`Menampilkan ${totalFormatted} data mahasiswa dengan status lulus aktual`);
+            }
         });
+        
+        console.log('✅ SAW Actual Results Grid initialized successfully');
     }
 
     updateCharts(data) {
@@ -847,3 +1194,200 @@ class SAWEvaluationActual {
 $(document).ready(function() {
     window.sawEvaluationActual = new SAWEvaluationActual();
 }); 
+
+function exportSAWActualEvaluationResults() {
+    try {
+        const grid = $('#sawEvaluationActualResultsGrid').data('kendoGrid');
+        if (!grid) {
+            window.showNotification && window.showNotification('error', 'Error', 'Grid tidak ditemukan. Pastikan data sudah dimuat.');
+            return;
+        }
+
+        const dataSource = grid.dataSource;
+        const data = dataSource ? dataSource.data() : [];
+
+        if (!data || data.length === 0) {
+            window.showNotification && window.showNotification('warning', 'Peringatan', 'Tidak ada data untuk diekspor');
+            return;
+        }
+
+        const plainData = data.map(item => ({
+            nim: item.nim,
+            nama: item.nama,
+            program_studi: item.program_studi,
+            ipk: item.ipk,
+            sks: item.sks,
+            persen_dek: item.persen_dek,
+            skor_saw: item.final_value,
+            predicted_class: item.predicted_class,
+            actual_status: item.actual_status,
+            is_correct: item.is_correct
+        }));
+
+        exportSAWActualEvaluationResultsCustom(plainData);
+    } catch (error) {
+        console.error('❌ Error exporting SAW evaluation results:', error);
+        window.showNotification && window.showNotification('error', 'Error', 'Gagal mengekspor data: ' + error.message);
+    }
+}
+
+function exportSAWActualEvaluationResultsCustom(fullData) {
+    if (!fullData || !Array.isArray(fullData) || fullData.length === 0) {
+        window.showNotification && window.showNotification('error', 'Error', 'Tidak ada data untuk diekspor');
+        return;
+    }
+
+    try {
+        if (typeof JSZip === 'undefined' || typeof kendo === 'undefined' || typeof kendo.ooxml === 'undefined') {
+            console.warn('JSZip atau Kendo OOXML tidak tersedia, fallback ke CSV');
+            exportSAWToCSV(fullData);
+            return;
+        }
+
+        const exportData = fullData.map(item => ({
+            'NIM': item.nim || '',
+            'Nama Mahasiswa': item.nama || '',
+            'Program Studi': item.program_studi || '',
+            'IPK': item.ipk != null ? Number(item.ipk).toFixed(2) : '',
+            'SKS': item.sks != null ? item.sks : '',
+            '% D/E/K': item.persen_dek != null ? Number(item.persen_dek).toFixed(2) + '%' : '',
+            'Skor SAW': item.skor_saw != null ? Number(item.skor_saw).toFixed(4) : '',
+            'Prediksi SAW': item.predicted_class || '',
+            'Status Aktual': item.actual_status ? item.actual_status.replace(/_/g, ' ') : '',
+            'Match': item.is_correct ? 'Benar' : 'Salah'
+        }));
+
+        const workbook = new kendo.ooxml.Workbook({
+            sheets: [
+                {
+                    name: "Data Evaluasi SAW",
+                    columns: [
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true }
+                    ],
+                    rows: [
+                        {
+                            cells: [
+                                {
+                                    value: "Evaluasi SAW dengan Data Aktual - Data Lengkap",
+                                    bold: true,
+                                    fontSize: 16,
+                                    color: "#1976D2",
+                                    colSpan: 10,
+                                    textAlign: "center"
+                                }
+                            ]
+                        },
+                        {
+                            cells: [
+                                {
+                                    value: "Exported: " + new Date().toLocaleString('id-ID') + " | Total Data: " + fullData.length,
+                                    colSpan: 10,
+                                    textAlign: "center",
+                                    color: "#666"
+                                }
+                            ]
+                        },
+                        { cells: [] },
+                        {
+                            cells: [
+                                { value: "NIM", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Nama Mahasiswa", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Program Studi", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "IPK", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "SKS", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "% D/E/K", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Skor SAW", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Prediksi SAW", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Status Aktual", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Match", bold: true, background: "#667eea", color: "#ffffff" }
+                            ]
+                        }
+                    ].concat(
+                        exportData.map((item, index) => ({
+                            cells: [
+                                { value: item['NIM'], background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Nama Mahasiswa'], background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Program Studi'], background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['IPK'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['SKS'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['% D/E/K'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Skor SAW'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Prediksi SAW'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Status Aktual'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Match'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" }
+                            ]
+                        }))
+                    )
+                }
+            ]
+        });
+
+        const fileName = "SAW_Evaluasi_Data_Lengkap_" + new Date().toISOString().split('T')[0] + ".xlsx";
+        const dataURL = workbook.toDataURL();
+
+        if (typeof kendo.saveAs === 'function') {
+            kendo.saveAs({ dataURI: dataURL, fileName: fileName });
+        } else {
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = fileName;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(function() {
+                document.body.removeChild(link);
+            }, 100);
+        }
+
+        window.showNotification && window.showNotification('success', 'Berhasil', 'File Excel berhasil diunduh: ' + fileName);
+    } catch (error) {
+        console.error('❌ Error in exportSAWActualEvaluationResultsCustom:', error);
+        exportSAWToCSV(fullData);
+    }
+}
+
+function exportSAWToCSV(fullData) {
+    try {
+        const headers = ['NIM', 'Nama Mahasiswa', 'Program Studi', 'IPK', 'SKS', '% D/E/K', 'Skor SAW', 'Prediksi SAW', 'Status Aktual', 'Match'];
+        const rows = fullData.map(item => [
+            item.nim || '',
+            item.nama || '',
+            item.program_studi || '',
+            item.ipk != null ? Number(item.ipk).toFixed(2) : '',
+            item.sks != null ? item.sks : '',
+            item.persen_dek != null ? Number(item.persen_dek).toFixed(2) : '',
+            item.skor_saw != null ? Number(item.skor_saw).toFixed(4) : '',
+            item.predicted_class || '',
+            item.actual_status ? item.actual_status.replace(/_/g, ' ') : '',
+            item.is_correct ? 'Benar' : 'Salah'
+        ]);
+
+        const csvContent = [headers.join(','), ...rows.map(row => row.map(value => `"${value}"`).join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'SAW_Evaluasi_Data_Lengkap_' + new Date().toISOString().split('T')[0] + '.csv';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(function() {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 100);
+
+        window.showNotification && window.showNotification('success', 'Berhasil', 'File CSV berhasil diunduh');
+    } catch (error) {
+        console.error('❌ Error exporting CSV:', error);
+        window.showNotification && window.showNotification('error', 'Error', 'Gagal mengekspor CSV: ' + error.message);
+    }
+} 

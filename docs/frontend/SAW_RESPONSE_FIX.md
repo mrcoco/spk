@@ -28,11 +28,11 @@ Fungsi `showKlasifikasiSAW` di `mahasiswa.js` menampilkan hasil "N/A" padahal re
   },
   "weighted_values": {
     "IPK": 0.322,
-    "SKS": 0.3,
-    "Nilai D/E/K": 0.375
+    "SKS": 0.26,
+    "Nilai D/E/K": 0.325
   },
-  "final_value": 0.622,
-  "klasifikasi": "Peluang Lulus Sedang"
+  "final_value": 0.907,
+  "klasifikasi": "Peluang Lulus Tinggi"
 }
 ```
 
@@ -130,8 +130,8 @@ Nilai Normalisasi:
 
 Nilai Tertimbang:
 - IPK: 0.322
-- SKS: 0.3
-- Persentase D/E/K: 0.375
+- SKS: 0.26
+- Persentase D/E/K: 0.325
 ```
 
 ## 🔧 Technical Details

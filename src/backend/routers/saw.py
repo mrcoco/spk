@@ -23,7 +23,7 @@ from saw_logic import (
 
 # Schema untuk request evaluasi SAW
 class SAWEvaluationRequest(BaseModel):
-    weights: Dict[str, float] = {"ipk": 0.4, "sks": 0.35, "dek": 0.25}
+    weights: Dict[str, float] = {"ipk": 0.35, "sks": 0.325, "dek": 0.325}
     test_size: float = 0.3
     random_state: int = 42
     save_to_db: bool = False
@@ -305,8 +305,8 @@ def get_saw_detail(nim: str, db: Session = Depends(get_db)):
         # Ambil bobot kriteria
         weights = {
             "IPK": 0.35,
-            "SKS": 0.375,
-            "Nilai D/E/K": 0.375
+            "SKS": 0.325,
+            "Nilai D/E/K": 0.325
         }
         
         return {
@@ -423,8 +423,8 @@ def get_saw_weights():
     try:
         weights = {
             "IPK": 0.35,
-            "SKS": 0.375,
-            "Nilai D/E/K": 0.375
+            "SKS": 0.325,
+            "Nilai D/E/K": 0.325
         }
         
         return {
@@ -564,7 +564,7 @@ def export_saw_evaluation_actual(db: Session = Depends(get_db)):
         evaluation_result = evaluate_saw_performance(
             db=db, 
             mahasiswa_list=mahasiswa_list, 
-            weights={'ipk': 0.4, 'sks': 0.35, 'dek': 0.25}, 
+            weights={'ipk': 0.35, 'sks': 0.325, 'dek': 0.325}, 
             test_size=0.3, 
             random_state=42,
             use_actual_data=True,

@@ -1587,7 +1587,7 @@ function showKlasifikasiSAW(e, element) {
                                         <div class="criteria-item">
                                             <div class="criteria-header">
                                                 <strong>SKS</strong>
-                                                <span class="weight">(Bobot: 37.5%)</span>
+                                                <span class="weight">(Bobot: 32.5%)</span>
                                             </div>
                                             <div class="criteria-values">
                                                 <div>Nilai: <strong>${response.sks || 'N/A'}</strong></div>
@@ -1599,7 +1599,7 @@ function showKlasifikasiSAW(e, element) {
                                         <div class="criteria-item">
                                             <div class="criteria-header">
                                                 <strong>Nilai D/E/K</strong>
-                                                <span class="weight">(Bobot: 37.5%)</span>
+                                                <span class="weight">(Bobot: 32.5%)</span>
                                             </div>
                                             <div class="criteria-values">
                                                 <div>Nilai: <strong>${response.persen_dek?.toFixed(2) || 'N/A'}%</strong></div>

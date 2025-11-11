@@ -68,18 +68,18 @@ Endpoint `/{nim}` mengembalikan data dengan struktur:
   "ipk": 3.93,
   "sks": 163,
   "persen_dek": 0.0,
-  "skor_saw": 1.0384615384615383,
+  "skor_saw": 0.9468974358974359,
   "klasifikasi_saw": "Peluang Lulus Tinggi",
   "ranking": 1,
   "bobot_ipk": 0.35,
-  "bobot_sks": 0.375,
-  "bobot_persen_dek": 0.375,
+  "bobot_sks": 0.325,
+  "bobot_persen_dek": 0.325,
   "normalisasi_ipk": 1.0,
   "normalisasi_sks": 0.8358974358974359,
   "normalisasi_persen_dek": 1.0,
   "skor_ipk": 0.35,
-  "skor_sks": 0.31346153846153846,
-  "skor_persen_dek": 0.375,
+  "skor_sks": 0.2711711038961039,
+  "skor_persen_dek": 0.325,
   "updated_at": "2025-07-15T14:02:47.267180"
 }
 ```

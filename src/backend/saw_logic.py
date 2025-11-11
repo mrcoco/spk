@@ -67,8 +67,8 @@ def initialize_saw_criteria(db: Session):
     if existing_criteria == 0:
         criteria_data = [
             {"name": "IPK", "weight": 0.35, "is_cost": False},
-            {"name": "SKS", "weight": 0.375, "is_cost": False},
-            {"name": "Nilai D/E/K", "weight": 0.375, "is_cost": True}
+            {"name": "SKS", "weight": 0.325, "is_cost": False},
+            {"name": "Nilai D/E/K", "weight": 0.325, "is_cost": True}
         ]
         
         for criteria in criteria_data:
@@ -158,8 +158,8 @@ def calculate_saw(db: Session, nim: str, save_to_db: bool = True) -> Optional[Di
     
     Bobot sesuai FIS_SAW_fix.ipynb:
     - IPK: 0.35 (35%)
-    - SKS: 0.375 (37.5%)
-    - Nilai D/E/K: 0.375 (37.5%)
+    - SKS: 0.325 (32.5%)
+    - Nilai D/E/K: 0.325 (32.5%)
     
     Klasifikasi:
     - Skor >= 0.7: "Peluang Lulus Tinggi"
@@ -208,8 +208,8 @@ def calculate_saw(db: Session, nim: str, save_to_db: bool = True) -> Optional[Di
     # Bobot sesuai FIS_SAW_fix.ipynb
     weights = {
         "IPK": 0.35,
-        "SKS": 0.375,
-        "Nilai D/E/K": 0.375
+        "SKS": 0.325,
+        "Nilai D/E/K": 0.325
     }
 
     # Hitung nilai terbobot
@@ -278,8 +278,8 @@ def batch_calculate_saw(db: Session, save_to_db: bool = True) -> List[Dict[str, 
     # Bobot sesuai FIS_SAW_fix.ipynb
     weights = {
         "IPK": 0.35,
-        "SKS": 0.375,
-        "Nilai D/E/K": 0.375
+        "SKS": 0.325,
+        "Nilai D/E/K": 0.325
     }
     
     results = []
@@ -563,7 +563,7 @@ def evaluate_saw_performance(
     
     Args:
         db: Database session
-        weights: Dictionary dengan bobot kriteria {'ipk': 0.4, 'sks': 0.35, 'dek': 0.25}
+        weights: Dictionary dengan bobot kriteria {'ipk': 0.35, 'sks': 0.325, 'dek': 0.325}
         test_size: Proporsi data untuk testing (0.1 - 0.5)
         random_state: Seed untuk reproduksi hasil
         save_to_db: Apakah menyimpan hasil evaluasi ke database
@@ -581,7 +581,7 @@ def evaluate_saw_performance(
     
     # Default weights jika tidak diberikan
     if weights is None:
-        weights = {'ipk': 0.4, 'sks': 0.35, 'dek': 0.25}
+        weights = {'ipk': 0.35, 'sks': 0.325, 'dek': 0.325}
     
     # Validasi weights
     total_weight = sum(weights.values())
@@ -591,12 +591,14 @@ def evaluate_saw_performance(
     # Ambil data mahasiswa jika tidak diberikan
     if mahasiswa_list is None:
         if use_actual_data:
+            # ✅ PENTING: Hanya ambil data dengan status_lulus_aktual yang VALID (3 kategori)
             mahasiswa_list = db.query(Mahasiswa).filter(
-                Mahasiswa.status_lulus_aktual.isnot(None),
+                Mahasiswa.status_lulus_aktual.in_(['LULUS_TINGGI', 'LULUS_SEDANG', 'LULUS_KECIL']),
                 Mahasiswa.ipk.isnot(None),
                 Mahasiswa.sks.isnot(None),
                 Mahasiswa.persen_dek.isnot(None)
             ).all()
+            print(f"🔍 Query mahasiswa dengan status_lulus_aktual (3 kategori): {len(mahasiswa_list)} records")
         else:
             mahasiswa_list = db.query(Mahasiswa).filter(
                 Mahasiswa.ipk.isnot(None),
@@ -604,22 +606,35 @@ def evaluate_saw_performance(
                 Mahasiswa.persen_dek.isnot(None)
             ).all()
     
-    # Filter out mahasiswa dengan nilai None
-    mahasiswa_list = [m for m in mahasiswa_list 
-                     if m.ipk is not None and m.sks is not None and m.persen_dek is not None]
+    # Filter out mahasiswa dengan nilai None DAN filter lagi untuk actual data
+    if use_actual_data:
+        # Double-check: pastikan hanya data dengan 3 kategori valid
+        mahasiswa_list = [m for m in mahasiswa_list 
+                         if m.ipk is not None 
+                         and m.sks is not None 
+                         and m.persen_dek is not None
+                         and m.status_lulus_aktual in ['LULUS_TINGGI', 'LULUS_SEDANG', 'LULUS_KECIL']]
+        print(f"✅ After filter: {len(mahasiswa_list)} records with valid status_lulus_aktual")
+    else:
+        mahasiswa_list = [m for m in mahasiswa_list 
+                         if m.ipk is not None and m.sks is not None and m.persen_dek is not None]
     
     if len(mahasiswa_list) < 10:
         raise ValueError("Minimal diperlukan 10 data mahasiswa untuk evaluasi")
     
-    # Shuffle data
-    random.shuffle(mahasiswa_list)
-    
-    # Split data
-    split_index = int(len(mahasiswa_list) * (1 - test_size))
-    training_data = mahasiswa_list[:split_index]
-    test_data = mahasiswa_list[split_index:]
-    
-    print(f"Training data: {len(training_data)}, Test data: {len(test_data)}")
+    # Untuk data aktual: gunakan SEMUA data tanpa split train/test
+    # SAW adalah metode berbasis aturan, tidak perlu training
+    if use_actual_data:
+        print(f"✅ Using full data for actual evaluation (no train/test split): {len(mahasiswa_list)} records")
+        training_data = mahasiswa_list  # Gunakan semua data untuk hitung min/max
+        test_data = mahasiswa_list      # Gunakan semua data untuk evaluasi
+    else:
+        # Untuk synthetic data: tetap gunakan split train/test
+        random.shuffle(mahasiswa_list)
+        split_index = int(len(mahasiswa_list) * (1 - test_size))
+        training_data = mahasiswa_list[:split_index]
+        test_data = mahasiswa_list[split_index:]
+        print(f"Training data: {len(training_data)}, Test data: {len(test_data)}")
     
     # Hitung nilai maksimum dan minimum dari training data untuk normalisasi
     max_values = {
@@ -708,6 +723,7 @@ def evaluate_saw_performance(
         result_item = {
             "nim": mahasiswa.nim,
             "nama": mahasiswa.nama,
+            "program_studi": mahasiswa.program_studi,  # ✅ Added for grid display
             "ipk": mahasiswa.ipk,
             "sks": mahasiswa.sks,
             "persen_dek": mahasiswa.persen_dek,
