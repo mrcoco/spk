@@ -2217,43 +2217,50 @@
                         <div class="evaluation-control-panel">
                             <div class="card">
                                 <div class="card-header">
-                                    <h3><i class="fas fa-cogs"></i> Pengaturan Evaluasi FIS dengan Data Aktual</h3>
+                                    <h3><i class="fas fa-database"></i> Evaluasi FIS dengan Seluruh Data Berlabel</h3>
                                 </div>
                                 <div class="card-body">
-                                    
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="fisActualTestSize">Ukuran Data Test (%):</label>
-                                            <input type="number" id="fisActualTestSize" value="30" min="10" max="50" class="form-control">
-                                            <small class="form-text">Persentase data yang digunakan untuk testing (10-50%)</small>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="fisActualRandomState">Random State:</label>
-                                            <input type="number" id="fisActualRandomState" value="42" class="form-control">
-                                            <small class="form-text">Seed untuk reproduksi hasil yang konsisten</small>
-                                        </div>
+                                    <!-- Info Box - Penjelasan Evaluasi -->
+                                    <div class="info-box" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #2196F3; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);">
+                                        <h4 style="color: #1976D2; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                            <i class="fas fa-info-circle" style="font-size: 20px;"></i> 
+                                            <span>Tentang Evaluasi Ini</span>
+                                        </h4>
+                                        <p style="margin-bottom: 10px; line-height: 1.6; color: #424242;">
+                                            <strong style="color: #1565C0;">Evaluasi ini menggunakan SELURUH DATA mahasiswa yang sudah memiliki label status lulus aktual di database.</strong>
+                                        </p>
+                                        <ul style="margin: 10px 0 10px 20px; line-height: 1.8; color: #424242;">
+                                            <li><strong style="color: #1976D2;">Sumber Data:</strong> Semua mahasiswa dengan <code style="background: #fff; padding: 2px 6px; border-radius: 4px; color: #d32f2f; border: 1px solid #e0e0e0;">status_lulus_aktual</code> (LULUS_TINGGI, LULUS_SEDANG, LULUS_KECIL)</li>
+                                            <li><strong style="color: #1976D2;">Metode:</strong> Perbandingan langsung antara prediksi FIS vs status aktual</li>
+                                            <li><strong style="color: #1976D2;">Tidak Ada Split Data:</strong> Semua data berlabel digunakan untuk confusion matrix dan metrik evaluasi</li>
+                                            <li><strong style="color: #1976D2;">Tujuan:</strong> Mengukur akurasi FIS terhadap ground truth yang tersedia</li>
+                                        </ul>
+                                        <p style="margin-top: 10px; font-size: 13px; color: #1976D2; background: #fff; padding: 10px; border-radius: 6px; border-left: 4px solid #2196F3;">
+                                            <i class="fas fa-check-circle"></i> Klik tombol di bawah untuk memulai evaluasi terhadap semua data berlabel.
+                                        </p>
                                     </div>
                                     
-                                    <!-- Action Buttons Row -->
-                                    <div class="action-buttons-row">
-                                        <div class="action-buttons-group">
-                                            <button id="fisActualEvaluationBtn" class="btn btn-primary">
-                                                <i class="fas fa-chart-line"></i>
-                                                Evaluasi FIS dengan Data Aktual
-                                            </button>
-                                            <button id="fisActualExportBtn" class="btn btn-secondary">
-                                                <i class="fas fa-download"></i>
-                                                Export Hasil
-                                            </button>
-                                            <button id="fisActualPrintBtn" class="btn btn-secondary">
-                                                <i class="fas fa-print"></i>
-                                                Cetak Laporan
-                                            </button>
-                                        </div>
+                                    <!-- Action Button -->
+                                    <div class="action-buttons-row" style="text-align: center;">
+                                        <button id="fisActualEvaluationBtn" class="btn btn-primary" style="padding: 15px 40px; font-size: 16px; font-weight: bold;">
+                                            <i class="fas fa-chart-line"></i>
+                                            Mulai Evaluasi FIS
+                                        </button>
                                     </div>
-                                    <div class="info-box">
-                                        <h4><i class="fas fa-info-circle"></i> Informasi Evaluasi dengan Data Aktual</h4>
-                                        <p>Evaluasi ini membandingkan hasil klasifikasi FIS dengan status lulus yang sebenarnya dari mahasiswa. Pastikan data status lulus aktual sudah diisi di database.</p>
+                                    
+                                    <!-- Additional Info -->
+                                    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #17a2b8;">
+                                        <div style="display: flex; align-items: start; gap: 10px;">
+                                            <i class="fas fa-lightbulb" style="color: #ffc107; font-size: 24px; margin-top: 2px;"></i>
+                                            <div>
+                                                <strong style="color: #333; display: block; margin-bottom: 5px;">Catatan Penting:</strong>
+                                                <p style="margin: 0; color: #666; line-height: 1.6; font-size: 14px;">
+                                                    Sistem FIS adalah <strong>rule-based expert system</strong> yang tidak memerlukan training. 
+                                                    Oleh karena itu, evaluasi dilakukan pada seluruh data berlabel yang tersedia untuk mendapatkan 
+                                                    gambaran akurasi yang lebih komprehensif dan representatif.
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2263,7 +2270,7 @@
                         <div class="evaluation-section" id="fisActualSummarySection" style="display: none;">
                             <div class="card">
                                 <div class="card-header">
-                                    <h3><i class="fas fa-info-circle"></i> Ringkasan Evaluasi dengan Data Aktual</h3>
+                                    <h3><i class="fas fa-info-circle"></i> Ringkasan Evaluasi dengan Data Aktual (3 Kategori)</h3>
                                 </div>
                                 <div class="card-body">
                                     <div class="summary-grid">
@@ -2276,31 +2283,34 @@
                                                 <span id="fisActualTotalData">-</span>
                                             </div>
                                         </div>
-                                        <div class="summary-item">
-                                            <div class="summary-icon">
-                                                <i class="fas fa-graduation-cap"></i>
+                                        <div class="summary-item" style="border-left: 4px solid #28a745;">
+                                            <div class="summary-icon" style="color: #28a745;">
+                                                <i class="fas fa-star"></i>
                                             </div>
                                             <div class="summary-content">
-                                                <h4>Data Lulus</h4>
-                                                <span id="fisActualLulusData">-</span>
+                                                <h4>Lulus Tinggi</h4>
+                                                <span id="fisActualTinggiData">-</span>
+                                                <small class="text-muted">(<span id="fisActualPersentaseTinggi">-</span>)</small>
                                             </div>
                                         </div>
-                                        <div class="summary-item">
-                                            <div class="summary-icon">
-                                                <i class="fas fa-clock"></i>
+                                        <div class="summary-item" style="border-left: 4px solid #ffc107;">
+                                            <div class="summary-icon" style="color: #ffc107;">
+                                                <i class="fas fa-star-half-alt"></i>
                                             </div>
                                             <div class="summary-content">
-                                                <h4>Data Belum Lulus</h4>
-                                                <span id="fisActualBelumLulusData">-</span>
+                                                <h4>Lulus Sedang</h4>
+                                                <span id="fisActualSedangData">-</span>
+                                                <small class="text-muted">(<span id="fisActualPersentaseSedang">-</span>)</small>
                                             </div>
                                         </div>
-                                        <div class="summary-item">
-                                            <div class="summary-icon">
-                                                <i class="fas fa-percentage"></i>
+                                        <div class="summary-item" style="border-left: 4px solid #dc3545;">
+                                            <div class="summary-icon" style="color: #dc3545;">
+                                                <i class="fas fa-exclamation-circle"></i>
                                             </div>
                                             <div class="summary-content">
-                                                <h4>Persentase Lulus</h4>
-                                                <span id="fisActualPersentaseLulus">-</span>
+                                                <h4>Lulus Kecil</h4>
+                                                <span id="fisActualKecilData">-</span>
+                                                <small class="text-muted">(<span id="fisActualPersentaseKecil">-</span>)</small>
                                             </div>
                                         </div>
                                     </div>
@@ -2337,29 +2347,46 @@
                                         </div>
 
                                         <div class="metrics-card confusion">
-                                            <h4><i class="fas fa-table"></i> Confusion Matrix</h4>
+                                            <h4 style="color: #1976D2; margin-bottom: 15px;"><i class="fas fa-table"></i> Confusion Matrix (3x3)</h4>
                                             <div class="confusion-matrix-simple">
-                                                <table class="confusion-table-simple">
+                                                <table class="confusion-table-simple" style="border-collapse: separate; border-spacing: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 8px; overflow: hidden;">
                                                     <thead>
                                                         <tr>
-                                                            <th></th>
-                                                            <th>Predicted Lulus</th>
-                                                            <th>Predicted Belum Lulus</th>
+                                                            <th style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 1px solid #90caf9; padding: 12px; font-weight: 600; color: #1565C0;"></th>
+                                                            <th style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 1px solid #81c784; padding: 12px; font-weight: 600; color: #2e7d32;">Pred. Tinggi</th>
+                                                            <th style="background: linear-gradient(135deg, #fff3cd 0%, #ffe082 100%); border: 1px solid #ffd54f; padding: 12px; font-weight: 600; color: #f57f17;">Pred. Sedang</th>
+                                                            <th style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border: 1px solid #ef9a9a; padding: 12px; font-weight: 600; color: #c62828;">Pred. Kecil</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         <tr>
-                                                            <td><strong>Actual Lulus</strong></td>
-                                                            <td id="fisActual-tp">-</td>
-                                                            <td id="fisActual-fn">-</td>
+                                                            <td style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 1px solid #81c784; padding: 12px;"><strong style="color: #2e7d32; font-weight: 600;">Actual Tinggi</strong></td>
+                                                            <td id="fisActual-tt" class="cm-cell clickable" data-actual="LULUS_TINGGI" data-predicted="Peluang Lulus Tinggi" style="background: #c8e6c9; font-weight: bold; cursor: pointer; border: 2px solid #66bb6a; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #1b5e20;">-</td>
+                                                            <td id="fisActual-ts" class="cm-cell clickable" data-actual="LULUS_TINGGI" data-predicted="Peluang Lulus Sedang" style="background: #f1f8e9; cursor: pointer; border: 1px solid #dcedc8; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #424242;">-</td>
+                                                            <td id="fisActual-tk" class="cm-cell clickable" data-actual="LULUS_TINGGI" data-predicted="Peluang Lulus Kecil" style="background: #f1f8e9; cursor: pointer; border: 1px solid #dcedc8; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #424242;">-</td>
                                                         </tr>
                                                         <tr>
-                                                            <td><strong>Actual Belum Lulus</strong></td>
-                                                            <td id="fisActual-fp">-</td>
-                                                            <td id="fisActual-tn">-</td>
+                                                            <td style="background: linear-gradient(135deg, #fff3cd 0%, #ffe082 100%); border: 1px solid #ffd54f; padding: 12px;"><strong style="color: #f57f17; font-weight: 600;">Actual Sedang</strong></td>
+                                                            <td id="fisActual-st" class="cm-cell clickable" data-actual="LULUS_SEDANG" data-predicted="Peluang Lulus Tinggi" style="background: #fffde7; cursor: pointer; border: 1px solid #fff9c4; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #424242;">-</td>
+                                                            <td id="fisActual-ss" class="cm-cell clickable" data-actual="LULUS_SEDANG" data-predicted="Peluang Lulus Sedang" style="background: #ffe082; font-weight: bold; cursor: pointer; border: 2px solid #ffca28; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #f57f17;">-</td>
+                                                            <td id="fisActual-sk" class="cm-cell clickable" data-actual="LULUS_SEDANG" data-predicted="Peluang Lulus Kecil" style="background: #fffde7; cursor: pointer; border: 1px solid #fff9c4; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #424242;">-</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border: 1px solid #ef9a9a; padding: 12px;"><strong style="color: #c62828; font-weight: 600;">Actual Kecil</strong></td>
+                                                            <td id="fisActual-kt" class="cm-cell clickable" data-actual="LULUS_KECIL" data-predicted="Peluang Lulus Tinggi" style="background: #ffebee; cursor: pointer; border: 1px solid #ffcdd2; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #424242;">-</td>
+                                                            <td id="fisActual-ks" class="cm-cell clickable" data-actual="LULUS_KECIL" data-predicted="Peluang Lulus Sedang" style="background: #ffebee; cursor: pointer; border: 1px solid #ffcdd2; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #424242;">-</td>
+                                                            <td id="fisActual-kk" class="cm-cell clickable" data-actual="LULUS_KECIL" data-predicted="Peluang Lulus Kecil" style="background: #ffcdd2; font-weight: bold; cursor: pointer; border: 2px solid #e57373; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #b71c1c;">-</td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
+                                                <div style="margin-top: 15px; padding: 12px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 8px; border-left: 4px solid #2196F3;">
+                                                    <div style="font-size: 13px; color: #1565C0; margin-bottom: 5px;">
+                                                        <i class="fas fa-info-circle"></i> <strong>Diagonal (tebal) = Prediksi Benar</strong>
+                                                    </div>
+                                                    <div style="font-size: 13px; color: #1976D2;">
+                                                        <i class="fas fa-mouse-pointer"></i> <em>Klik pada cell untuk melihat detail mahasiswa</em>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -2375,54 +2402,102 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="category-analysis-grid">
-                                        <div class="category-card" id="fisActualCategoryTinggi">
-                                            <h4><i class="fas fa-star" style="color: #28a745;"></i> Peluang Lulus Tinggi</h4>
+                                        <div class="category-card" id="fisActualCategoryTinggi" style="border-left: 4px solid #28a745;">
+                                            <h4><i class="fas fa-star" style="color: #28a745;"></i> Prediksi: Peluang Lulus Tinggi</h4>
                                             <div class="category-stats">
                                                 <div class="stat-item">
                                                     <span class="stat-label">Total Prediksi:</span>
                                                     <span class="stat-value" id="fisActualTinggiTotal">-</span>
                                                 </div>
                                                 <div class="stat-item">
-                                                    <span class="stat-label">Benar Lulus:</span>
-                                                    <span class="stat-value" id="fisActualTinggiLulus">-</span>
+                                                    <span class="stat-label">Prediksi Benar:</span>
+                                                    <span class="stat-value" id="fisActualTinggiCorrect" style="color: #28a745;">-</span>
                                                 </div>
                                                 <div class="stat-item">
                                                     <span class="stat-label">Akurasi:</span>
-                                                    <span class="stat-value" id="fisActualTinggiAkurasi">-</span>
+                                                    <span class="stat-value" id="fisActualTinggiAkurasi" style="font-weight: bold;">-</span>
+                                                </div>
+                                            </div>
+                                            <hr style="margin: 10px 0;">
+                                            <div class="status-breakdown">
+                                                <h5 style="font-size: 13px; color: #666; margin-bottom: 8px;">Breakdown Status Aktual:</h5>
+                                                <div class="stat-item-small">
+                                                    <span class="stat-label-small"><i class="fas fa-circle" style="color: #28a745;"></i> Tinggi:</span>
+                                                    <span class="stat-value-small" id="fisActualTinggiStatusTinggi">-</span>
+                                                </div>
+                                                <div class="stat-item-small">
+                                                    <span class="stat-label-small"><i class="fas fa-circle" style="color: #ffc107;"></i> Sedang:</span>
+                                                    <span class="stat-value-small" id="fisActualTinggiStatusSedang">-</span>
+                                                </div>
+                                                <div class="stat-item-small">
+                                                    <span class="stat-label-small"><i class="fas fa-circle" style="color: #dc3545;"></i> Kecil:</span>
+                                                    <span class="stat-value-small" id="fisActualTinggiStatusKecil">-</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="category-card" id="fisActualCategorySedang">
-                                            <h4><i class="fas fa-star" style="color: #ffc107;"></i> Peluang Lulus Sedang</h4>
+                                        <div class="category-card" id="fisActualCategorySedang" style="border-left: 4px solid #ffc107;">
+                                            <h4><i class="fas fa-star-half-alt" style="color: #ffc107;"></i> Prediksi: Peluang Lulus Sedang</h4>
                                             <div class="category-stats">
                                                 <div class="stat-item">
                                                     <span class="stat-label">Total Prediksi:</span>
                                                     <span class="stat-value" id="fisActualSedangTotal">-</span>
                                                 </div>
                                                 <div class="stat-item">
-                                                    <span class="stat-label">Benar Lulus:</span>
-                                                    <span class="stat-value" id="fisActualSedangLulus">-</span>
+                                                    <span class="stat-label">Prediksi Benar:</span>
+                                                    <span class="stat-value" id="fisActualSedangCorrect" style="color: #ffc107;">-</span>
                                                 </div>
                                                 <div class="stat-item">
                                                     <span class="stat-label">Akurasi:</span>
-                                                    <span class="stat-value" id="fisActualSedangAkurasi">-</span>
+                                                    <span class="stat-value" id="fisActualSedangAkurasi" style="font-weight: bold;">-</span>
+                                                </div>
+                                            </div>
+                                            <hr style="margin: 10px 0;">
+                                            <div class="status-breakdown">
+                                                <h5 style="font-size: 13px; color: #666; margin-bottom: 8px;">Breakdown Status Aktual:</h5>
+                                                <div class="stat-item-small">
+                                                    <span class="stat-label-small"><i class="fas fa-circle" style="color: #28a745;"></i> Tinggi:</span>
+                                                    <span class="stat-value-small" id="fisActualSedangStatusTinggi">-</span>
+                                                </div>
+                                                <div class="stat-item-small">
+                                                    <span class="stat-label-small"><i class="fas fa-circle" style="color: #ffc107;"></i> Sedang:</span>
+                                                    <span class="stat-value-small" id="fisActualSedangStatusSedang">-</span>
+                                                </div>
+                                                <div class="stat-item-small">
+                                                    <span class="stat-label-small"><i class="fas fa-circle" style="color: #dc3545;"></i> Kecil:</span>
+                                                    <span class="stat-value-small" id="fisActualSedangStatusKecil">-</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="category-card" id="fisActualCategoryKecil">
-                                            <h4><i class="fas fa-star" style="color: #dc3545;"></i> Peluang Lulus Kecil</h4>
+                                        <div class="category-card" id="fisActualCategoryKecil" style="border-left: 4px solid #dc3545;">
+                                            <h4><i class="fas fa-exclamation-circle" style="color: #dc3545;"></i> Prediksi: Peluang Lulus Kecil</h4>
                                             <div class="category-stats">
                                                 <div class="stat-item">
                                                     <span class="stat-label">Total Prediksi:</span>
                                                     <span class="stat-value" id="fisActualKecilTotal">-</span>
                                                 </div>
                                                 <div class="stat-item">
-                                                    <span class="stat-label">Benar Lulus:</span>
-                                                    <span class="stat-value" id="fisActualKecilLulus">-</span>
+                                                    <span class="stat-label">Prediksi Benar:</span>
+                                                    <span class="stat-value" id="fisActualKecilCorrect" style="color: #dc3545;">-</span>
                                                 </div>
                                                 <div class="stat-item">
                                                     <span class="stat-label">Akurasi:</span>
-                                                    <span class="stat-value" id="fisActualKecilAkurasi">-</span>
+                                                    <span class="stat-value" id="fisActualKecilAkurasi" style="font-weight: bold;">-</span>
+                                                </div>
+                                            </div>
+                                            <hr style="margin: 10px 0;">
+                                            <div class="status-breakdown">
+                                                <h5 style="font-size: 13px; color: #666; margin-bottom: 8px;">Breakdown Status Aktual:</h5>
+                                                <div class="stat-item-small">
+                                                    <span class="stat-label-small"><i class="fas fa-circle" style="color: #28a745;"></i> Tinggi:</span>
+                                                    <span class="stat-value-small" id="fisActualKecilStatusTinggi">-</span>
+                                                </div>
+                                                <div class="stat-item-small">
+                                                    <span class="stat-label-small"><i class="fas fa-circle" style="color: #ffc107;"></i> Sedang:</span>
+                                                    <span class="stat-value-small" id="fisActualKecilStatusSedang">-</span>
+                                                </div>
+                                                <div class="stat-item-small">
+                                                    <span class="stat-label-small"><i class="fas fa-circle" style="color: #dc3545;"></i> Kecil:</span>
+                                                    <span class="stat-value-small" id="fisActualKecilStatusKecil">-</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -2431,15 +2506,39 @@
                             </div>
                         </div>
 
-                        <!-- Sample Data Section -->
+                        <!-- Full Data Section -->
                         <div class="evaluation-section" id="fisActualSampleSection" style="display: none;">
                             <div class="card">
-                                <div class="card-header">
-                                    <h3><i class="fas fa-table"></i> Sample Data Evaluasi</h3>
+                                <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px 8px 0 0;">
+                                    <h3 style="color: white; margin-bottom: 8px;"><i class="fas fa-table"></i> Data Lengkap Evaluasi</h3>
+                                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">
+                                        <i class="fas fa-info-circle"></i> Menampilkan seluruh data mahasiswa yang memiliki status lulus aktual dengan fitur filter, sorting, dan export Excel
+                                    </p>
                                 </div>
-                                <div class="card-body">
+                                <div class="card-body" style="padding: 25px;">
+                                    <!-- Filter Tips -->
+                                    <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196F3;">
+                                        <h5 style="color: #1565C0; margin-bottom: 10px; font-size: 14px;">
+                                            <i class="fas fa-lightbulb"></i> Tips Menggunakan Filter & Sorting:
+                                        </h5>
+                                        <ul style="margin: 0; padding-left: 20px; color: #424242; font-size: 13px; line-height: 1.8;">
+                                            <li><strong>Filter Cepat:</strong> Gunakan kolom filter di bawah header untuk:
+                                                <ul style="margin: 5px 0; padding-left: 20px;">
+                                                    <li>NIM & Nama: Ketik langsung untuk mencari</li>
+                                                    <li>Program Studi: Pilih multiple prodi dengan checkbox</li>
+                                                    <li>Prediksi FIS: Pilih kategori (Tinggi/Sedang/Kecil)</li>
+                                                    <li>Status Aktual: Filter berdasarkan status lulus aktual</li>
+                                                </ul>
+                                            </li>
+                                            <li><strong>Sorting:</strong> Klik nama kolom untuk mengurutkan data (klik lagi untuk reverse)</li>
+                                            <li><strong>Multi-Sort:</strong> Tahan Shift + klik kolom lain untuk sorting multi kolom</li>
+                                            <li><strong>Export Excel:</strong> Klik tombol di toolbar untuk download semua data</li>
+                                            <li><strong>Pagination:</strong> Pilih 10, 20, 50, 100, atau "all" untuk tampilkan semua</li>
+                                        </ul>
+                                    </div>
+                                    
                                     <div id="fisActualSampleDataContainer">
-                                        <!-- Sample data will be displayed here -->
+                                        <!-- Full data grid will be displayed here -->
                                     </div>
                                 </div>
                             </div>

@@ -1700,48 +1700,45 @@ function initializeFISActualEvaluationHandlers() {
 
 // Fungsi untuk evaluasi FIS dengan status aktual dari section baru
 function evaluateFISWithActualStatusFromSection() {
-    console.log('🔍 Memulai evaluasi FIS dengan status lulus aktual dari section...');
+    console.log('🔍 Memulai evaluasi FIS dengan FULL DATA berlabel...');
     
-    // Ambil parameter dari form
-    const testSize = parseFloat($('#fisActualTestSize').val()) / 100; // Convert percentage to decimal
-    const randomState = parseInt($('#fisActualRandomState').val());
-    
-    // Validasi parameter
-    if (isNaN(testSize) || testSize < 0.1 || testSize > 0.5) {
-        showNotification("Error", "Ukuran data test harus antara 10% - 50%", "error");
-        return;
-    }
-    
-    if (isNaN(randomState) || randomState < 0) {
-        showNotification("Error", "Random state harus berupa angka positif", "error");
-        return;
-    }
+    // TIDAK ADA parameter test_size dan random_state lagi
+    // Evaluasi menggunakan SELURUH data yang berlabel
+    console.log('📊 Mode: Full Data Evaluation (No Split)');
     
     // Tampilkan loading
     $('#fisActualEvaluationLoadingIndicator').show();
     $('#fisActualSummarySection, #fisActualMetricsSection, #fisActualCategorySection, #fisActualSampleSection, #fisActualInterpretationSection').hide();
     
     // Disable button
-    $('#fisActualEvaluationBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Evaluasi...');
+    $('#fisActualEvaluationBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Mengevaluasi...');
     
     $.ajax({
         url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY) + '/evaluate-with-actual-status',
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
-            test_size: testSize,
-            random_state: randomState
+            // Backend tidak memerlukan test_size dan random_state lagi
+            // Backend akan otomatis menggunakan semua data berlabel
         }),
+        timeout: 60000, // 60 second timeout
         success: function(response) {
             console.log('✅ Evaluasi FIS berhasil:', response);
             
             if (response.success) {
                 displayFISActualEvaluationResults(response.result);
+                
+                const totalData = response.result.evaluation_info.total_data;
+                const evaluationType = response.result.evaluation_info.evaluation_type || 'full_data';
+                
                 showNotification(
                     "Sukses", 
-                    `Evaluasi FIS berhasil dengan ${response.result.evaluation_info.total_data} data`, 
+                    `Evaluasi FIS berhasil dengan ${totalData} data berlabel (${evaluationType})`, 
                     "success"
                 );
+                
+                console.log('📊 Evaluation Type:', evaluationType);
+                console.log('📊 Total Data Evaluated:', totalData);
             } else {
                 showNotification("Error", "Evaluasi FIS gagal", "error");
             }
@@ -1752,16 +1749,23 @@ function evaluateFISWithActualStatusFromSection() {
             let errorMessage = "Gagal melakukan evaluasi FIS";
             if (xhr.responseJSON && xhr.responseJSON.detail) {
                 errorMessage += ": " + xhr.responseJSON.detail;
+            } else if (status === 'timeout') {
+                errorMessage += ": Request timeout (server membutuhkan waktu terlalu lama)";
+            } else if (xhr.status === 0) {
+                errorMessage += ": Tidak dapat terhubung ke server";
             }
             
             showNotification("Error", errorMessage, "error");
+            
+            // Hide loading on error
+            $('#fisActualEvaluationLoadingIndicator').hide();
         },
         complete: function() {
             // Hide loading
             $('#fisActualEvaluationLoadingIndicator').hide();
             
-            // Enable button
-            $('#fisActualEvaluationBtn').prop('disabled', false).html('<i class="fas fa-chart-line"></i> Evaluasi FIS dengan Data Aktual');
+            // Enable button with updated text
+            $('#fisActualEvaluationBtn').prop('disabled', false).html('<i class="fas fa-chart-line"></i> Mulai Evaluasi FIS');
         }
     });
 }
@@ -1790,16 +1794,41 @@ function displayFISActualEvaluationResults(result) {
 function updateFISActualSummarySection(result) {
     const stats = result.statistics;
     
-    $('#fisActualTotalData').text(stats.total_actual_lulus + stats.total_actual_belum_lulus);
-    $('#fisActualLulusData').text(stats.total_actual_lulus);
-    $('#fisActualBelumLulusData').text(stats.total_actual_belum_lulus);
-    $('#fisActualPersentaseLulus').text(stats.percentage_actual_lulus.toFixed(2) + '%');
+    // Hitung total dari 3 kategori
+    const actualDist = stats.actual_status_distribution || {};
+    const totalTinggi = actualDist.LULUS_TINGGI || 0;
+    const totalSedang = actualDist.LULUS_SEDANG || 0;
+    const totalKecil = actualDist.LULUS_KECIL || 0;
+    const totalData = totalTinggi + totalSedang + totalKecil;
+    
+    // Update tampilan dengan 3 kategori
+    $('#fisActualTotalData').text(totalData);
+    $('#fisActualTinggiData').text(totalTinggi);
+    $('#fisActualSedangData').text(totalSedang);
+    $('#fisActualKecilData').text(totalKecil);
+    
+    // Update persentase
+    const percentTinggi = stats.percentage_tinggi || 0;
+    const percentSedang = stats.percentage_sedang || 0;
+    const percentKecil = stats.percentage_kecil || 0;
+    
+    $('#fisActualPersentaseTinggi').text(percentTinggi.toFixed(2) + '%');
+    $('#fisActualPersentaseSedang').text(percentSedang.toFixed(2) + '%');
+    $('#fisActualPersentaseKecil').text(percentKecil.toFixed(2) + '%');
 }
+
+// Global variable untuk menyimpan full data evaluasi (untuk confusion matrix modal)
+let fisActualEvaluationFullData = null;
 
 // Update metrics section
 function updateFISActualMetricsSection(result) {
     const metrics = result.metrics;
     const cm = result.confusion_matrix;
+    
+    // Simpan FULL DATA untuk modal
+    // Confusion matrix sekarang dibuat dari FULL DATA (semua data berlabel)
+    // Jadi modal juga filter dari full_data
+    fisActualEvaluationFullData = result.full_data || result.results || [];
     
     // Update overall metrics
     $('#fisActualAccuracy').text((metrics.accuracy * 100).toFixed(2) + '%');
@@ -1807,12 +1836,35 @@ function updateFISActualMetricsSection(result) {
     $('#fisActualRecall').text((metrics.recall * 100).toFixed(2) + '%');
     $('#fisActualF1Score').text((metrics.f1_score * 100).toFixed(2) + '%');
     
-    // Update confusion matrix
-    if (cm && cm.matrix) {
-        $('#fisActual-tp').text(cm.matrix[1][1] || 0); // True Positive
-        $('#fisActual-fn').text(cm.matrix[1][0] || 0); // False Negative
-        $('#fisActual-fp').text(cm.matrix[0][1] || 0); // False Positive
-        $('#fisActual-tn').text(cm.matrix[0][0] || 0); // True Negative
+    // Update confusion matrix 3x3
+    // Matrix format: [Tinggi, Sedang, Kecil] x [Tinggi, Sedang, Kecil]
+    // Backend mengirim confusion_matrix sebagai array langsung, bukan {matrix: [...]}
+    console.log('Confusion Matrix data:', cm);
+    
+    if (cm && Array.isArray(cm) && cm.length === 3) {
+        // Row 0: Actual Tinggi (predicted as Tinggi, Sedang, Kecil)
+        $('#fisActual-tt').text(cm[0][0] || 0); // Tinggi -> Tinggi
+        $('#fisActual-ts').text(cm[0][1] || 0); // Tinggi -> Sedang
+        $('#fisActual-tk').text(cm[0][2] || 0); // Tinggi -> Kecil
+        
+        // Row 1: Actual Sedang (predicted as Tinggi, Sedang, Kecil)
+        $('#fisActual-st').text(cm[1][0] || 0); // Sedang -> Tinggi
+        $('#fisActual-ss').text(cm[1][1] || 0); // Sedang -> Sedang
+        $('#fisActual-sk').text(cm[1][2] || 0); // Sedang -> Kecil
+        
+        // Row 2: Actual Kecil (predicted as Tinggi, Sedang, Kecil)
+        $('#fisActual-kt').text(cm[2][0] || 0); // Kecil -> Tinggi
+        $('#fisActual-ks').text(cm[2][1] || 0); // Kecil -> Sedang
+        $('#fisActual-kk').text(cm[2][2] || 0); // Kecil -> Kecil
+        
+        console.log('Confusion Matrix updated successfully');
+        
+        // Setup click handlers untuk confusion matrix cells
+        setupConfusionMatrixClickHandlers();
+    } else {
+        console.warn('Invalid confusion matrix format:', cm);
+        // Set default values jika format tidak sesuai
+        $('#fisActual-tt, #fisActual-ts, #fisActual-tk, #fisActual-st, #fisActual-ss, #fisActual-sk, #fisActual-kt, #fisActual-ks, #fisActual-kk').text('0');
     }
 }
 
@@ -1822,53 +1874,360 @@ function updateFISActualCategorySection(result) {
     
     if (categoryAnalysis['Peluang Lulus Tinggi']) {
         const tinggi = categoryAnalysis['Peluang Lulus Tinggi'];
+        const statusBreakdown = tinggi.status_breakdown || {};
+        
         $('#fisActualTinggiTotal').text(tinggi.total_predictions);
-        $('#fisActualTinggiLulus').text(tinggi.actual_lulus);
+        $('#fisActualTinggiCorrect').text(tinggi.correct_predictions);
         $('#fisActualTinggiAkurasi').text((tinggi.accuracy * 100).toFixed(2) + '%');
+        
+        // Tampilkan breakdown per status aktual
+        $('#fisActualTinggiStatusTinggi').text(statusBreakdown.LULUS_TINGGI || 0);
+        $('#fisActualTinggiStatusSedang').text(statusBreakdown.LULUS_SEDANG || 0);
+        $('#fisActualTinggiStatusKecil').text(statusBreakdown.LULUS_KECIL || 0);
     }
     
     if (categoryAnalysis['Peluang Lulus Sedang']) {
         const sedang = categoryAnalysis['Peluang Lulus Sedang'];
+        const statusBreakdown = sedang.status_breakdown || {};
+        
         $('#fisActualSedangTotal').text(sedang.total_predictions);
-        $('#fisActualSedangLulus').text(sedang.actual_lulus);
+        $('#fisActualSedangCorrect').text(sedang.correct_predictions);
         $('#fisActualSedangAkurasi').text((sedang.accuracy * 100).toFixed(2) + '%');
+        
+        // Tampilkan breakdown per status aktual
+        $('#fisActualSedangStatusTinggi').text(statusBreakdown.LULUS_TINGGI || 0);
+        $('#fisActualSedangStatusSedang').text(statusBreakdown.LULUS_SEDANG || 0);
+        $('#fisActualSedangStatusKecil').text(statusBreakdown.LULUS_KECIL || 0);
     }
     
     if (categoryAnalysis['Peluang Lulus Kecil']) {
         const kecil = categoryAnalysis['Peluang Lulus Kecil'];
+        const statusBreakdown = kecil.status_breakdown || {};
+        
         $('#fisActualKecilTotal').text(kecil.total_predictions);
-        $('#fisActualKecilLulus').text(kecil.actual_lulus);
+        $('#fisActualKecilCorrect').text(kecil.correct_predictions);
         $('#fisActualKecilAkurasi').text((kecil.accuracy * 100).toFixed(2) + '%');
+        
+        // Tampilkan breakdown per status aktual
+        $('#fisActualKecilStatusTinggi').text(statusBreakdown.LULUS_TINGGI || 0);
+        $('#fisActualKecilStatusSedang').text(statusBreakdown.LULUS_SEDANG || 0);
+        $('#fisActualKecilStatusKecil').text(statusBreakdown.LULUS_KECIL || 0);
     }
 }
 
-// Update sample data section
+// Update sample data section - Tampilkan SEMUA data (bukan hanya sample)
 function updateFISActualSampleSection(result) {
-    const sampleData = result.sample_data;
+    // Gunakan full_data jika tersedia, fallback ke sample_data
+    const fullData = result.full_data || result.sample_data || [];
     
-    if (sampleData && sampleData.length > 0) {
-        let html = '<div class="table-responsive"><table class="table table-striped table-hover">';
-        html += '<thead><tr><th>NIM</th><th>Nama</th><th>IPK</th><th>SKS</th><th>% D/E/K</th><th>Prediksi FIS</th><th>Status Aktual</th><th>Fuzzy Score</th></tr></thead>';
-        html += '<tbody>';
+    console.log('Full data length:', fullData.length);
+    
+    if (fullData && fullData.length > 0) {
+        // Destroy existing grid jika ada
+        const existingGrid = $('#fisActualSampleDataGrid').data('kendoGrid');
+        if (existingGrid) {
+            existingGrid.destroy();
+        }
         
-        sampleData.slice(0, 10).forEach(item => { // Show first 10 samples
-            html += `<tr>
-                <td>${item.nim}</td>
-                <td>${item.nama}</td>
-                <td>${item.ipk.toFixed(2)}</td>
-                <td>${item.sks}</td>
-                <td>${item.persen_dek.toFixed(2)}%</td>
-                <td><span class="badge ${getFISClassificationBadgeClass(item.predicted_category)}">${item.predicted_category}</span></td>
-                <td><span class="badge ${item.actual_status === 'LULUS' ? 'bg-success' : 'bg-warning'}">${item.actual_status}</span></td>
-                <td>${item.fuzzy_score.toFixed(2)}</td>
-            </tr>`;
+        // Clear container dan buat grid baru
+        $('#fisActualSampleDataContainer').html('<div id="fisActualSampleDataGrid"></div>');
+        
+        // Initialize Kendo Grid untuk menampilkan semua data dengan pagination
+        $('#fisActualSampleDataGrid').kendoGrid({
+            dataSource: {
+                data: fullData,
+                pageSize: 20,
+                schema: {
+                    model: {
+                        fields: {
+                            nim: { type: "string" },
+                            nama: { type: "string" },
+                            program_studi: { type: "string" },
+                            ipk: { type: "number" },
+                            sks: { type: "number" },
+                            persen_dek: { type: "number" },
+                            predicted_category: { type: "string" },
+                            actual_status: { type: "string" },
+                            fuzzy_score: { type: "number" },
+                            is_correct: { type: "boolean" }
+                        }
+                    }
+                }
+            },
+            height: 600,
+            scrollable: true,
+            sortable: {
+                mode: "multiple",
+                allowUnsort: true
+            },
+            filterable: {
+                mode: "row",
+                extra: false
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [10, 20, 50, 100, "all"],
+                buttonCount: 5,
+                messages: {
+                    display: "{0} - {1} dari {2} data",
+                    empty: "Tidak ada data untuk ditampilkan",
+                    page: "Halaman",
+                    of: "dari {0}",
+                    itemsPerPage: "data per halaman",
+                    first: "Halaman pertama",
+                    previous: "Halaman sebelumnya",
+                    next: "Halaman selanjutnya",
+                    last: "Halaman terakhir",
+                    refresh: "Refresh"
+                }
+            },
+            toolbar: [
+                {
+                    template: '<button class="k-button k-button-icontext" onclick="exportFISActualEvaluationResults()"><span class="k-icon k-i-file-excel"></span>Export Excel</button>'
+                },
+                {
+                    template: '<div style="margin-left: 10px; padding: 8px 15px; background: linear-gradient(135deg, \\#e3f2fd 0%, \\#bbdefb 100%); border-radius: 6px; display: inline-block;"><i class="fas fa-info-circle" style="color: \\#1976D2;"></i> <span style="color: \\#1565C0; font-weight: 500;">Total: <strong id="fisActualGridTotal">' + fullData.length + '</strong> data</span></div>'
+                }
+            ],
+            columns: [
+                { 
+                    field: "nim", 
+                    title: "NIM", 
+                    width: 130,
+                    filterable: {
+                        cell: {
+                            operator: "contains",
+                            showOperators: false,
+                            suggestionOperator: "contains"
+                        }
+                    },
+                    template: function(dataItem) {
+                        return `<span style="font-family: monospace; font-weight: 500; color: #1976D2;">${dataItem.nim || 'N/A'}</span>`;
+                    }
+                },
+                { 
+                    field: "nama", 
+                    title: "Nama Mahasiswa", 
+                    width: 220,
+                    filterable: {
+                        cell: {
+                            operator: "contains",
+                            showOperators: false,
+                            suggestionOperator: "contains"
+                        }
+                    },
+                    template: function(dataItem) {
+                        return `<span style="font-weight: 500; color: #333;">${dataItem.nama || 'N/A'}</span>`;
+                    }
+                },
+                { 
+                    field: "program_studi", 
+                    title: "Program Studi", 
+                    width: 180,
+                    filterable: {
+                        multi: true,
+                        search: true,
+                        dataSource: getUniqueProdiList(fullData),
+                        checkAll: true,
+                        itemTemplate: function(e) {
+                            const prodiColor = getProdiColor(e.program_studi);
+                            return `<span style="padding: 2px 8px; background: ${prodiColor.bg}; color: ${prodiColor.text}; border-radius: 3px; font-size: 11px; font-weight: 500; display: inline-block; margin: 2px 0;">${e.program_studi}</span>`;
+                        }
+                    },
+                    template: function(dataItem) {
+                        const prodiColor = getProdiColor(dataItem.program_studi);
+                        return `<span style="padding: 4px 10px; background: ${prodiColor.bg}; color: ${prodiColor.text}; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">${dataItem.program_studi || 'N/A'}</span>`;
+                    }
+                },
+                { 
+                    field: "ipk", 
+                    title: "IPK", 
+                    width: 90,
+                    format: "{0:n2}",
+                    filterable: false,
+                    template: function(dataItem) {
+                        if (!dataItem.ipk) return 'N/A';
+                        const ipk = dataItem.ipk;
+                        let color = '#dc3545'; // merah
+                        if (ipk >= 3.5) color = '#28a745'; // hijau
+                        else if (ipk >= 3.0) color = '#ffc107'; // kuning
+                        return `<span style="font-weight: bold; color: ${color};">${ipk.toFixed(2)}</span>`;
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    }
+                },
+                { 
+                    field: "sks", 
+                    title: "SKS", 
+                    width: 90,
+                    filterable: false,
+                    template: function(dataItem) {
+                        if (!dataItem.sks) return 'N/A';
+                        const sks = dataItem.sks;
+                        let color = '#dc3545'; // merah
+                        if (sks >= 130) color = '#28a745'; // hijau
+                        else if (sks >= 100) color = '#ffc107'; // kuning
+                        return `<span style="font-weight: bold; color: ${color};">${sks}</span>`;
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    }
+                },
+                { 
+                    field: "persen_dek", 
+                    title: "% D/E/K", 
+                    width: 100,
+                    filterable: false,
+                    template: function(dataItem) {
+                        if (dataItem.persen_dek === null || dataItem.persen_dek === undefined) return 'N/A';
+                        const dek = dataItem.persen_dek;
+                        let color = '#28a745'; // hijau (good - rendah)
+                        if (dek > 20) color = '#dc3545'; // merah (bad - tinggi)
+                        else if (dek > 10) color = '#ffc107'; // kuning (warning)
+                        return `<span style="font-weight: bold; color: ${color};">${dek.toFixed(2)}%</span>`;
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    }
+                },
+                { 
+                    field: "fuzzy_score", 
+                    title: "Fuzzy Score", 
+                    width: 120,
+                    filterable: false,
+                    template: function(dataItem) {
+                        if (!dataItem.fuzzy_score) return 'N/A';
+                        const score = dataItem.fuzzy_score;
+                        let color = '#dc3545';
+                        let bgColor = '#ffebee';
+                        if (score >= 70) {
+                            color = '#28a745';
+                            bgColor = '#e8f5e9';
+                        } else if (score >= 45) {
+                            color = '#ffc107';
+                            bgColor = '#fff3cd';
+                        }
+                        return `<span style="padding: 5px 10px; background: ${bgColor}; color: ${color}; border-radius: 4px; font-weight: bold; display: inline-block;">${score.toFixed(2)}</span>`;
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    }
+                },
+                { 
+                    field: "predicted_category", 
+                    title: "Prediksi FIS", 
+                    width: 180,
+                    filterable: {
+                        multi: true,
+                        search: true,
+                        dataSource: [
+                            { predicted_category: "Peluang Lulus Tinggi" },
+                            { predicted_category: "Peluang Lulus Sedang" },
+                            { predicted_category: "Peluang Lulus Kecil" }
+                        ],
+                        checkAll: true,
+                        itemTemplate: function(e) {
+                            const badgeClass = getFISClassificationBadgeClass(e.predicted_category);
+                            return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 4px 10px; font-weight: 600; white-space: nowrap;">${e.predicted_category}</span>`;
+                        }
+                    },
+                    template: function(dataItem) {
+                        const badgeClass = getFISClassificationBadgeClass(dataItem.predicted_category);
+                        return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">${dataItem.predicted_category || 'N/A'}</span>`;
+                    }
+                },
+                { 
+                    field: "actual_status", 
+                    title: "Status Aktual", 
+                    width: 150,
+                    filterable: {
+                        multi: true,
+                        search: true,
+                        dataSource: [
+                            { actual_status: "LULUS_TINGGI", text: "LULUS TINGGI" },
+                            { actual_status: "LULUS_SEDANG", text: "LULUS SEDANG" },
+                            { actual_status: "LULUS_KECIL", text: "LULUS KECIL" }
+                        ],
+                        checkAll: true,
+                        itemTemplate: function(e) {
+                            const getActualStatusBadgeClass = (status) => {
+                                switch(status) {
+                                    case 'LULUS_TINGGI':
+                                        return 'bg-success';
+                                    case 'LULUS_SEDANG':
+                                        return 'bg-warning';
+                                    case 'LULUS_KECIL':
+                                        return 'bg-danger';
+                                    default:
+                                        return 'bg-secondary';
+                                }
+                            };
+                            const badgeClass = getActualStatusBadgeClass(e.actual_status);
+                            return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 4px 10px; font-weight: 600; white-space: nowrap;">${e.text}</span>`;
+                        }
+                    },
+                    template: function(dataItem) {
+                        const getActualStatusBadgeClass = (status) => {
+                            switch(status) {
+                                case 'LULUS_TINGGI':
+                                    return 'bg-success';
+                                case 'LULUS_SEDANG':
+                                    return 'bg-warning';
+                                case 'LULUS_KECIL':
+                                    return 'bg-danger';
+                                default:
+                                    return 'bg-secondary';
+                            }
+                        };
+                        
+                        const formatActualStatus = (status) => {
+                            return status ? status.replace(/_/g, ' ') : 'N/A';
+                        };
+                        
+                        const badgeClass = getActualStatusBadgeClass(dataItem.actual_status);
+                        const statusText = formatActualStatus(dataItem.actual_status);
+                        return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">${statusText}</span>`;
+                    }
+                },
+                { 
+                    field: "is_correct", 
+                    title: "Match", 
+                    width: 120,
+                    filterable: false,
+                    template: function(dataItem) {
+                        if (dataItem.is_correct) {
+                            return '<div style="text-align: center;"><span style="padding: 5px 12px; background: #e8f5e9; color: #28a745; border-radius: 4px; font-weight: 600; display: inline-block;"><i class="fas fa-check-circle"></i> Benar</span></div>';
+                        } else {
+                            return '<div style="text-align: center;"><span style="padding: 5px 12px; background: #ffebee; color: #dc3545; border-radius: 4px; font-weight: 600; display: inline-block;"><i class="fas fa-times-circle"></i> Salah</span></div>';
+                        }
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    }
+                }
+            ],
+            dataBound: function(e) {
+                console.log('FIS Actual Sample Grid Data Bound');
+                const grid = e.sender;
+                const totalRecords = grid.dataSource.total();
+                
+                // Update info text
+                const infoText = `Menampilkan ${totalRecords} data mahasiswa dengan status lulus aktual`;
+                $('#fisActualSampleDataInfo').text(infoText);
+            }
         });
         
-        html += '</tbody></table></div>';
+        // Add info text di atas grid
+        $('#fisActualSampleDataContainer').prepend(`
+            <div style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                <i class="fas fa-info-circle"></i> 
+                <span id="fisActualSampleDataInfo">Menampilkan ${fullData.length} data mahasiswa dengan status lulus aktual</span>
+            </div>
+        `);
         
-        $('#fisActualSampleDataContainer').html(html);
     } else {
-        $('#fisActualSampleDataContainer').html('<p class="text-muted">Tidak ada sample data tersedia</p>');
+        $('#fisActualSampleDataContainer').html('<p class="text-muted">Tidak ada data tersedia</p>');
     }
 }
 
@@ -1886,10 +2245,651 @@ function getFISClassificationBadgeClass(category) {
     }
 }
 
-// Export hasil evaluasi FIS
+// Helper function untuk mendapatkan warna Program Studi
+function getProdiColor(prodi) {
+    if (!prodi) return { bg: '#e0e0e0', text: '#666' };
+    
+    const prodiColors = {
+        'Teknik Informatika': { bg: '#e3f2fd', text: '#1565C0' },
+        'Sistem Informasi': { bg: '#e8f5e9', text: '#2e7d32' },
+        'Teknik Komputer': { bg: '#fff3e0', text: '#e65100' },
+        'Manajemen Informatika': { bg: '#f3e5f5', text: '#6a1b9a' },
+        'Komputerisasi Akuntansi': { bg: '#fff9c4', text: '#f57f17' },
+        'Teknik Elektro': { bg: '#ffebee', text: '#c62828' },
+        'default': { bg: '#e0e0e0', text: '#424242' }
+    };
+    
+    return prodiColors[prodi] || prodiColors['default'];
+}
+
+// Helper function untuk mendapatkan daftar unique Program Studi
+function getUniqueProdiList(data) {
+    if (!data || !Array.isArray(data)) return [];
+    
+    const uniqueProdi = [...new Set(data.map(item => item.program_studi).filter(p => p))];
+    return uniqueProdi.map(prodi => ({ program_studi: prodi }));
+}
+
+// Function untuk export FIS Actual Evaluation Results ke Excel
 function exportFISActualEvaluationResults() {
-    console.log('📤 Export hasil evaluasi FIS...');
-    showNotification("Info", "Fitur export akan segera tersedia", "info");
+    console.log('🔧 exportFISActualEvaluationResults called');
+    
+    try {
+        const grid = $('#fisActualSampleDataGrid').data('kendoGrid');
+        console.log('🔧 Grid instance:', grid ? 'Found' : 'Not found');
+        
+        if (!grid) {
+            console.error('❌ Grid not found');
+            showNotification('error', 'Error', 'Grid tidak ditemukan. Pastikan data sudah dimuat.');
+            return;
+        }
+        
+        // Get data from grid
+        const dataSource = grid.dataSource;
+        console.log('🔧 DataSource:', dataSource);
+        
+        const data = dataSource.data();
+        console.log('🔧 Data length:', data ? data.length : 0);
+        console.log('🔧 Data sample:', data && data.length > 0 ? data[0] : 'No data');
+        
+        if (!data || data.length === 0) {
+            console.error('❌ No data to export');
+            showNotification('warning', 'Peringatan', 'Tidak ada data untuk diekspor');
+            return;
+        }
+        
+        console.log('✅ Exporting ' + data.length + ' records...');
+        
+        // Convert to plain array
+        const plainData = [];
+        for (let i = 0; i < data.length; i++) {
+            const item = data[i];
+            plainData.push({
+                nim: item.nim,
+                nama: item.nama,
+                program_studi: item.program_studi,
+                ipk: item.ipk,
+                sks: item.sks,
+                persen_dek: item.persen_dek,
+                fuzzy_score: item.fuzzy_score,
+                predicted_category: item.predicted_category,
+                actual_status: item.actual_status,
+                is_correct: item.is_correct
+            });
+        }
+        
+        console.log('✅ Plain data prepared:', plainData.length, 'records');
+        
+        // Use custom export function
+        exportFISActualEvaluationResultsCustom(plainData);
+        
+    } catch (error) {
+        console.error('❌ Error exporting to Excel:', error);
+        console.error('❌ Error stack:', error.stack);
+        showNotification('error', 'Error', 'Gagal mengekspor ke Excel: ' + error.message);
+    }
+}
+
+// Alternative: Export with custom data processing
+function exportFISActualEvaluationResultsCustom(fullData) {
+    console.log('🔧 exportFISActualEvaluationResultsCustom called');
+    console.log('🔧 Data received:', fullData ? fullData.length : 0, 'records');
+    
+    if (!fullData || !Array.isArray(fullData) || fullData.length === 0) {
+        console.error('❌ No data to export');
+        showNotification('error', 'Error', 'Tidak ada data untuk diekspor');
+        return;
+    }
+    
+    try {
+        // Check if JSZip is available (required for Excel export)
+        console.log('🔧 Checking JSZip availability...');
+        console.log('🔧 typeof JSZip:', typeof JSZip);
+        
+        if (typeof JSZip === 'undefined') {
+            console.warn('⚠️ JSZip not available, using CSV export instead');
+            console.warn('⚠️ Excel export requires JSZip library');
+            exportToCSV(fullData);
+            return;
+        }
+        
+        // Check if Kendo OOXML is available
+        console.log('🔧 Checking Kendo availability...');
+        console.log('🔧 typeof kendo:', typeof kendo);
+        console.log('🔧 typeof kendo.ooxml:', typeof kendo !== 'undefined' ? typeof kendo.ooxml : 'N/A');
+        
+        if (typeof kendo === 'undefined' || typeof kendo.ooxml === 'undefined') {
+            console.warn('⚠️ Kendo OOXML not available, using CSV export instead');
+            exportToCSV(fullData);
+            return;
+        }
+        
+        console.log('✅ JSZip and Kendo OOXML are available');
+        
+        // Prepare data for export
+        const exportData = fullData.map(item => ({
+            'NIM': item.nim || '',
+            'Nama Mahasiswa': item.nama || '',
+            'Program Studi': item.program_studi || '',
+            'IPK': item.ipk ? item.ipk.toFixed(2) : '',
+            'SKS': item.sks || '',
+            '% D/E/K': item.persen_dek ? item.persen_dek.toFixed(2) + '%' : '',
+            'Fuzzy Score': item.fuzzy_score ? item.fuzzy_score.toFixed(2) : '',
+            'Prediksi FIS': item.predicted_category || '',
+            'Status Aktual': item.actual_status ? item.actual_status.replace(/_/g, ' ') : '',
+            'Match': item.is_correct ? 'Benar' : 'Salah'
+        }));
+        
+        console.log('Creating workbook with ' + exportData.length + ' rows...');
+        
+        // Create workbook
+        const workbook = new kendo.ooxml.Workbook({
+            sheets: [
+                {
+                    name: "Data Evaluasi FIS",
+                    columns: [
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true }
+                    ],
+                    rows: [
+                        // Title row
+                        {
+                            cells: [
+                                {
+                                    value: "Evaluasi FIS dengan Data Aktual - Data Lengkap",
+                                    bold: true,
+                                    fontSize: 16,
+                                    color: "#1976D2",
+                                    colSpan: 10,
+                                    textAlign: "center"
+                                }
+                            ]
+                        },
+                        // Metadata row
+                        {
+                            cells: [
+                                {
+                                    value: "Exported: " + new Date().toLocaleString('id-ID') + " | Total Data: " + fullData.length,
+                                    colSpan: 10,
+                                    textAlign: "center",
+                                    color: "#666"
+                                }
+                            ]
+                        },
+                        // Empty row
+                        { cells: [] },
+                        // Header row
+                        {
+                            cells: [
+                                { value: "NIM", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Nama Mahasiswa", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Program Studi", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "IPK", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "SKS", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "% D/E/K", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Fuzzy Score", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Prediksi FIS", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Status Aktual", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Match", bold: true, background: "#667eea", color: "#ffffff" }
+                            ]
+                        }
+                    ].concat(
+                        // Data rows
+                        exportData.map((item, index) => ({
+                            cells: [
+                                { value: item['NIM'], background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Nama Mahasiswa'], background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Program Studi'], background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['IPK'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['SKS'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['% D/E/K'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Fuzzy Score'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Prediksi FIS'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Status Aktual'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Match'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" }
+                            ]
+                        }))
+                    )
+                }
+            ]
+        });
+        
+        // Save the workbook
+        const fileName = "FIS_Evaluasi_Data_Lengkap_" + new Date().toISOString().split('T')[0] + ".xlsx";
+        
+        console.log('🔧 Saving workbook to file:', fileName);
+        console.log('🔧 Converting workbook to data URL...');
+        
+        // Convert to data URL and download
+        const dataURL = workbook.toDataURL();
+        console.log('🔧 Data URL generated, length:', dataURL ? dataURL.length : 0);
+        console.log('🔧 Data URL prefix:', dataURL ? dataURL.substring(0, 50) : 'N/A');
+        
+        if (!dataURL || dataURL.length === 0) {
+            console.error('❌ Empty data URL generated');
+            throw new Error('Failed to generate Excel data URL');
+        }
+        
+        // Create download link - Use multiple methods for better compatibility
+        console.log('🔧 Creating download link...');
+        
+        // Method 1: Try using Kendo's saveAs if available
+        if (typeof kendo.saveAs === 'function') {
+            console.log('🔧 Using kendo.saveAs method...');
+            try {
+                kendo.saveAs({
+                    dataURI: dataURL,
+                    fileName: fileName
+                });
+                showNotification('success', 'Berhasil', 'File Excel berhasil diunduh: ' + fileName);
+                console.log('✅ Excel export completed successfully (kendo.saveAs)');
+                return;
+            } catch (saveAsError) {
+                console.warn('⚠️ kendo.saveAs failed, trying manual method:', saveAsError);
+            }
+        }
+        
+        // Method 2: Manual link creation and click
+        console.log('🔧 Using manual download method...');
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = fileName;
+        link.target = '_blank';
+        link.style.display = 'none';
+        
+        // Add to document
+        console.log('🔧 Appending link to body...');
+        document.body.appendChild(link);
+        
+        // Force a visible click event
+        console.log('🔧 Triggering download click...');
+        
+        // Try multiple click methods
+        if (typeof link.click === 'function') {
+            link.click();
+        } else if (document.createEvent) {
+            const event = document.createEvent('MouseEvents');
+            event.initEvent('click', true, true);
+            link.dispatchEvent(event);
+        }
+        
+        // Clean up after a delay
+        console.log('🔧 Scheduling link removal...');
+        setTimeout(function() {
+            document.body.removeChild(link);
+            console.log('🔧 Link removed from body');
+        }, 100);
+        
+        showNotification('success', 'Berhasil', 'File Excel berhasil diunduh: ' + fileName);
+        console.log('✅ Excel export completed successfully (manual download)');
+        
+    } catch (error) {
+        console.error('Error in custom Excel export:', error);
+        console.error('Error details:', error);
+        // Fallback to CSV
+        console.log('Falling back to CSV export...');
+        exportToCSV(fullData);
+    }
+}
+
+// Fallback CSV export function
+function exportToCSV(fullData) {
+    console.log('Exporting to CSV format...');
+    
+    try {
+        // Prepare CSV header
+        const headers = ['NIM', 'Nama Mahasiswa', 'Program Studi', 'IPK', 'SKS', '% D/E/K', 'Fuzzy Score', 'Prediksi FIS', 'Status Aktual', 'Match'];
+        
+        // Prepare CSV rows
+        const rows = fullData.map(item => [
+            item.nim || '',
+            item.nama || '',
+            item.program_studi || '',
+            item.ipk ? item.ipk.toFixed(2) : '',
+            item.sks || '',
+            item.persen_dek ? item.persen_dek.toFixed(2) : '',
+            item.fuzzy_score ? item.fuzzy_score.toFixed(2) : '',
+            item.predicted_category || '',
+            item.actual_status ? item.actual_status.replace(/_/g, ' ') : '',
+            item.is_correct ? 'Benar' : 'Salah'
+        ]);
+        
+        // Combine header and rows
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
+        
+        // Add BOM for Excel UTF-8 support
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+        
+        // Create download link
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = 'FIS_Evaluasi_Data_Lengkap_' + new Date().toISOString().split('T')[0] + '.csv';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        showNotification('success', 'Berhasil', 'File CSV berhasil diunduh (format Excel kompatibel)');
+        console.log('CSV export completed successfully');
+        
+    } catch (error) {
+        console.error('Error in CSV export:', error);
+        showNotification('error', 'Error', 'Gagal mengekspor data: ' + error.message);
+    }
+}
+
+// Setup click handlers untuk confusion matrix cells
+function setupConfusionMatrixClickHandlers() {
+    console.log('Setting up confusion matrix click handlers');
+    
+    // Remove existing handlers untuk prevent duplication
+    $('.cm-cell.clickable').off('click');
+    
+    // Add click handler
+    $('.cm-cell.clickable').on('click', function() {
+        const actualStatus = $(this).data('actual');
+        const predictedCategory = $(this).data('predicted');
+        const count = parseInt($(this).text()) || 0;
+        
+        console.log('CM Cell clicked:', { actualStatus, predictedCategory, count });
+        
+        if (count > 0) {
+            showConfusionMatrixDetailModal(actualStatus, predictedCategory, count);
+        } else {
+            showNotification('Info', 'Tidak ada data untuk kombinasi ini', 'info');
+        }
+    });
+    
+    // Add hover effect
+    $('.cm-cell.clickable').hover(
+        function() {
+            $(this).css('opacity', '0.7');
+        },
+        function() {
+            $(this).css('opacity', '1');
+        }
+    );
+}
+
+// Show detail modal untuk confusion matrix cell
+function showConfusionMatrixDetailModal(actualStatus, predictedCategory, count) {
+    if (!fisActualEvaluationFullData || fisActualEvaluationFullData.length === 0) {
+        showNotification('Error', 'Data evaluasi tidak tersedia', 'error');
+        return;
+    }
+    
+    console.log('=== Confusion Matrix Modal Debug ===');
+    console.log('Total full data available:', fisActualEvaluationFullData.length);
+    console.log('Looking for:', { actualStatus, predictedCategory, count });
+    
+    // Filter data berdasarkan actual status dan predicted category DARI FULL DATA
+    // Confusion matrix sekarang menggunakan ALL data yang berlabel
+    const filteredData = fisActualEvaluationFullData.filter(item => {
+        return item.actual_status === actualStatus && item.predicted_category === predictedCategory;
+    });
+    
+    console.log('Filtered data count:', filteredData.length);
+    console.log('Expected count from confusion matrix:', count);
+    
+    if (filteredData.length !== count) {
+        console.warn('⚠️ Mismatch: Filtered data (' + filteredData.length + ') != CM count (' + count + ')');
+        console.warn('This might indicate an issue with data filtering logic');
+    } else {
+        console.log('✅ Match: Filtered data matches confusion matrix count');
+    }
+    
+    if (filteredData.length === 0) {
+        showNotification('Info', 'Tidak ada data detail untuk kombinasi ini', 'info');
+        return;
+    }
+    
+    // Format label untuk display
+    const actualLabel = actualStatus.replace(/_/g, ' ');
+    const isCorrect = actualStatus.replace('LULUS_', '') === predictedCategory.replace('Peluang Lulus ', '').toUpperCase();
+    
+    // Generate unique ID untuk grid container
+    const uniqueGridId = 'cmDetailGrid_' + Date.now();
+    
+    // Create modal content with unique ID
+    const modalContent = $('<div>').html(`
+        <div style="padding: 20px;">
+            <div style="background: ${isCorrect ? '#e8f5e9' : '#ffebee'}; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 10px 0;">
+                    <i class="fas ${isCorrect ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                    ${isCorrect ? 'Prediksi Benar' : 'Prediksi Salah'}
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <strong>Status Aktual:</strong><br>
+                        <span class="badge bg-${getStatusBadgeColor(actualStatus)}" style="font-size: 14px; padding: 8px 12px;">
+                            ${actualLabel}
+                        </span>
+                    </div>
+                    <div>
+                        <strong>Prediksi FIS:</strong><br>
+                        <span class="badge ${getFISClassificationBadgeClass(predictedCategory)}" style="font-size: 14px; padding: 8px 12px;">
+                            ${predictedCategory}
+                        </span>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1);">
+                    <strong><i class="fas fa-users"></i> Jumlah Mahasiswa:</strong> ${filteredData.length} dari ${count} (${((filteredData.length/count)*100).toFixed(1)}%)
+                </div>
+            </div>
+            
+            <h5 style="margin-bottom: 15px; color: #333;">
+                <i class="fas fa-table"></i> Detail Data Mahasiswa dan Prediksi
+            </h5>
+            <div id="${uniqueGridId}"></div>
+        </div>
+    `);
+    
+    // Create Kendo Dialog
+    const dialog = modalContent.kendoDialog({
+        width: "1100px",
+        height: "750px",
+        title: `Detail Confusion Matrix - ${actualLabel} → ${predictedCategory}`,
+        closable: true,
+        modal: true,
+        actions: [
+            {
+                text: "Tutup",
+                action: function() {
+                    return true;
+                }
+            }
+        ],
+        open: function() {
+            console.log('Modal opened, initializing grid with ID:', uniqueGridId);
+            console.log('Filtered data count:', filteredData.length);
+            
+            // Small delay to ensure DOM is ready
+            setTimeout(function() {
+                // Check if element exists
+                if ($('#' + uniqueGridId).length === 0) {
+                    console.error('Grid container not found:', uniqueGridId);
+                    return;
+                }
+                
+                // Initialize Kendo Grid inside modal with unique ID
+                $('#' + uniqueGridId).kendoGrid({
+                    dataSource: {
+                        data: filteredData,
+                        pageSize: 10
+                    },
+                    height: 450,
+                    scrollable: true,
+                    sortable: true,
+                    pageable: {
+                        refresh: true,
+                        pageSizes: [10, 20, 50],
+                        buttonCount: 5
+                    },
+                    columns: [
+                        { 
+                            field: "nim", 
+                            title: "NIM", 
+                            width: 120,
+                            headerAttributes: {
+                                style: "font-weight: bold; background-color: #f8f9fa;"
+                            }
+                        },
+                        { 
+                            field: "nama", 
+                            title: "Nama", 
+                            width: 180,
+                            headerAttributes: {
+                                style: "font-weight: bold; background-color: #f8f9fa;"
+                            }
+                        },
+                        { 
+                            field: "ipk", 
+                            title: "IPK", 
+                            width: 80,
+                            headerAttributes: {
+                                style: "font-weight: bold; background-color: #f8f9fa;"
+                            },
+                            template: function(dataItem) {
+                                const ipk = dataItem.ipk || 0;
+                                const color = ipk >= 3.5 ? '#28a745' : ipk >= 3.0 ? '#ffc107' : '#dc3545';
+                                return `<span style="color: ${color}; font-weight: bold;">${ipk.toFixed(2)}</span>`;
+                            }
+                        },
+                        { 
+                            field: "sks", 
+                            title: "SKS", 
+                            width: 80,
+                            headerAttributes: {
+                                style: "font-weight: bold; background-color: #f8f9fa;"
+                            },
+                            template: function(dataItem) {
+                                const sks = dataItem.sks || 0;
+                                const color = sks >= 130 ? '#28a745' : sks >= 110 ? '#ffc107' : '#dc3545';
+                                return `<span style="color: ${color}; font-weight: bold;">${sks}</span>`;
+                            }
+                        },
+                        { 
+                            field: "persen_dek", 
+                            title: "% D/E/K", 
+                            width: 100,
+                            headerAttributes: {
+                                style: "font-weight: bold; background-color: #f8f9fa;"
+                            },
+                            template: function(dataItem) {
+                                const dek = dataItem.persen_dek || 0;
+                                const color = dek <= 10 ? '#28a745' : dek <= 20 ? '#ffc107' : '#dc3545';
+                                return `<span style="color: ${color}; font-weight: bold;">${dek.toFixed(2)}%</span>`;
+                            }
+                        },
+                        { 
+                            field: "fuzzy_score", 
+                            title: "Fuzzy Score", 
+                            width: 120,
+                            headerAttributes: {
+                                style: "font-weight: bold; background-color: #f8f9fa;"
+                            },
+                            template: function(dataItem) {
+                                const score = dataItem.fuzzy_score || 0;
+                                return `<strong>${score.toFixed(2)}</strong>`;
+                            }
+                        },
+                        { 
+                            field: "predicted_category", 
+                            title: "Prediksi FIS", 
+                            width: 180,
+                            headerAttributes: {
+                                style: "font-weight: bold; background-color: #f8f9fa;"
+                            },
+                            template: function(dataItem) {
+                                const category = dataItem.predicted_category || 'N/A';
+                                const badgeClass = getFISClassificationBadgeClass(category);
+                                return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 5px 10px; white-space: nowrap;">${category}</span>`;
+                            }
+                        },
+                        { 
+                            field: "actual_status", 
+                            title: "Status Aktual", 
+                            width: 140,
+                            headerAttributes: {
+                                style: "font-weight: bold; background-color: #f8f9fa;"
+                            },
+                            template: function(dataItem) {
+                                const status = dataItem.actual_status || 'N/A';
+                                const statusLabel = status.replace(/_/g, ' ');
+                                const badgeColor = getStatusBadgeColor(status);
+                                return `<span class="badge bg-${badgeColor}" style="font-size: 11px; padding: 5px 10px;">${statusLabel}</span>`;
+                            }
+                        },
+                        { 
+                            field: "is_correct", 
+                            title: "Match", 
+                            width: 80,
+                            headerAttributes: {
+                                style: "font-weight: bold; background-color: #f8f9fa; text-align: center;"
+                            },
+                            attributes: {
+                                style: "text-align: center;"
+                            },
+                            template: function(dataItem) {
+                                const isMatch = dataItem.is_correct || false;
+                                if (isMatch) {
+                                    return `<span style="color: #28a745; font-size: 18px;" title="Prediksi Benar"><i class="fas fa-check-circle"></i></span>`;
+                                } else {
+                                    return `<span style="color: #dc3545; font-size: 18px;" title="Prediksi Salah"><i class="fas fa-times-circle"></i></span>`;
+                                }
+                            }
+                        }
+                    ]
+                });
+                
+                console.log('Grid initialized successfully');
+            }, 100);
+        },
+        close: function() {
+            console.log('Modal closing, cleaning up grid:', uniqueGridId);
+            
+            // Cleanup grid with unique ID
+            const grid = $('#' + uniqueGridId).data('kendoGrid');
+            if (grid) {
+                console.log('Destroying grid');
+                grid.destroy();
+            }
+            
+            // Remove element from DOM
+            $('#' + uniqueGridId).remove();
+        }
+    });
+    
+    // Open dialog
+    dialog.data("kendoDialog").open();
+}
+
+// Helper function untuk mendapatkan badge color berdasarkan status
+function getStatusBadgeColor(status) {
+    switch(status) {
+        case 'LULUS_TINGGI':
+            return 'success';
+        case 'LULUS_SEDANG':
+            return 'warning';
+        case 'LULUS_KECIL':
+            return 'danger';
+        default:
+            return 'secondary';
+    }
 }
 
 // Print hasil evaluasi FIS

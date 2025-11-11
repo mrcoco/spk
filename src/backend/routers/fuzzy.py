@@ -1661,6 +1661,7 @@ def evaluate_fis_with_actual_status(
             data.append({
                 'nim': mhs.nim,
                 'nama': mhs.nama,
+                'program_studi': mhs.program_studi,
                 'ipk': float(mhs.ipk),
                 'sks': int(mhs.sks),
                 'persen_dek': float(mhs.persen_dek),
@@ -1682,37 +1683,22 @@ def evaluate_fis_with_actual_status(
         # Konversi ke DataFrame
         df = pd.DataFrame(data)
         
-        # Split data untuk train/test
-        from sklearn.model_selection import train_test_split
+        # GUNAKAN FULL DATA untuk confusion matrix (tidak di-split)
+        # Karena kita ingin evaluasi terhadap SEMUA data yang sudah berlabel
         
-        X = df[['ipk', 'sks', 'persen_dek']].values
-        indices = list(range(len(data)))
+        # Hitung metrics untuk FULL DATA
+        accuracy = accuracy_score(y_true, y_pred)
+        precision = precision_score(y_true, y_pred, average='macro', zero_division=0)
+        recall = recall_score(y_true, y_pred, average='macro', zero_division=0)
+        f1 = f1_score(y_true, y_pred, average='macro', zero_division=0)
         
-        train_indices, test_indices = train_test_split(
-            indices,
-            test_size=test_size,
-            random_state=random_state,
-            stratify=y_true
-        )
+        # Confusion Matrix (3x3) dari FULL DATA
+        cm = confusion_matrix(y_true, y_pred, labels=[0, 1, 2])
         
-        # Data untuk test
-        y_true_test = [y_true[i] for i in test_indices]
-        y_pred_test = [y_pred[i] for i in test_indices]
-        test_data = [data[i] for i in test_indices]
-        
-        # Hitung metrics untuk test data
-        accuracy = accuracy_score(y_true_test, y_pred_test)
-        precision = precision_score(y_true_test, y_pred_test, average='macro', zero_division=0)
-        recall = recall_score(y_true_test, y_pred_test, average='macro', zero_division=0)
-        f1 = f1_score(y_true_test, y_pred_test, average='macro', zero_division=0)
-        
-        # Confusion Matrix (3x3)
-        cm = confusion_matrix(y_true_test, y_pred_test, labels=[0, 1, 2])
-        
-        # Classification Report
+        # Classification Report dari FULL DATA
         report = classification_report(
-            y_true_test, 
-            y_pred_test, 
+            y_true, 
+            y_pred, 
             labels=[0, 1, 2],
             target_names=["Peluang Lulus Tinggi", "Peluang Lulus Sedang", "Peluang Lulus Kecil"],
             output_dict=True,
@@ -1766,10 +1752,7 @@ def evaluate_fis_with_actual_status(
         evaluation_result = {
             'evaluation_info': {
                 'total_data': int(total_data),
-                'training_data': int(len(train_indices)),
-                'test_data': int(len(test_indices)),
-                'test_size': test_size,
-                'random_state': random_state,
+                'evaluation_type': 'full_data',
                 'evaluation_date': datetime.utcnow().isoformat(),
                 'status_mapping': status_mapping
             },
@@ -1796,8 +1779,8 @@ def evaluate_fis_with_actual_status(
                 'percentage_kecil': round((total_actual_kecil / total_data) * 100, 2)
             },
             'sample_data': df.head(10).to_dict('records'),
-            'full_data': df.to_dict('records'),  # Tambahkan full data untuk comparison
-            'results': test_data  # Data test untuk compatibility dengan frontend
+            'full_data': df.to_dict('records'),  # Full data (semua data berlabel)
+            'results': data  # Sama dengan full_data untuk consistency
         }
         
         return {

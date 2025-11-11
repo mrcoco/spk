@@ -74,15 +74,15 @@ function loadFISActualEvaluation() {
     return new Promise((resolve, reject) => {
         const url = CONFIG.getApiUrl(CONFIG.ENDPOINTS.FUZZY + '/evaluate-with-actual-status');
         console.log('Loading FIS Actual Evaluation from:', url);
+        console.log('Using FULL DATA evaluation (no split)');
         
         $.ajax({
             url: url,
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
-                test_size: 0.3,
-                random_state: 42,
-                save_to_db: false
+                // Tidak ada test_size dan random_state
+                // Backend akan menggunakan semua data berlabel
             }),
             timeout: 60000,
             beforeSend: function() {

@@ -591,10 +591,21 @@ def evaluate_saw_performance(
     if mahasiswa_list is None:
         if use_actual_data:
             mahasiswa_list = db.query(Mahasiswa).filter(
-                Mahasiswa.status_lulus_aktual.isnot(None)
+                Mahasiswa.status_lulus_aktual.isnot(None),
+                Mahasiswa.ipk.isnot(None),
+                Mahasiswa.sks.isnot(None),
+                Mahasiswa.persen_dek.isnot(None)
             ).all()
         else:
-            mahasiswa_list = db.query(Mahasiswa).all()
+            mahasiswa_list = db.query(Mahasiswa).filter(
+                Mahasiswa.ipk.isnot(None),
+                Mahasiswa.sks.isnot(None),
+                Mahasiswa.persen_dek.isnot(None)
+            ).all()
+    
+    # Filter out mahasiswa dengan nilai None
+    mahasiswa_list = [m for m in mahasiswa_list 
+                     if m.ipk is not None and m.sks is not None and m.persen_dek is not None]
     
     if len(mahasiswa_list) < 10:
         raise ValueError("Minimal diperlukan 10 data mahasiswa untuk evaluasi")
@@ -624,10 +635,15 @@ def evaluate_saw_performance(
     
     # Fungsi untuk menghitung skor SAW
     def calculate_saw_score(mahasiswa):
-        # Normalisasi
-        normalized_ipk = (mahasiswa.ipk - min_values['ipk']) / (max_values['ipk'] - min_values['ipk'])
-        normalized_sks = (mahasiswa.sks - min_values['sks']) / (max_values['sks'] - min_values['sks'])
-        normalized_dek = (mahasiswa.persen_dek - min_values['dek']) / (max_values['dek'] - min_values['dek'])
+        # Normalisasi dengan pengecekan division by zero
+        ipk_range = max_values['ipk'] - min_values['ipk']
+        sks_range = max_values['sks'] - min_values['sks']
+        dek_range = max_values['dek'] - min_values['dek']
+        
+        # Jika range = 0, berarti semua nilai sama, berikan nilai 1.0
+        normalized_ipk = (mahasiswa.ipk - min_values['ipk']) / ipk_range if ipk_range > 0 else 1.0
+        normalized_sks = (mahasiswa.sks - min_values['sks']) / sks_range if sks_range > 0 else 1.0
+        normalized_dek = (mahasiswa.persen_dek - min_values['dek']) / dek_range if dek_range > 0 else 1.0
         
         # Hitung skor SAW
         saw_score = (
@@ -650,10 +666,18 @@ def evaluate_saw_performance(
     # Fungsi untuk klasifikasi berdasarkan data aktual (ground truth)
     def classify_actual(mahasiswa):
         if use_actual_data and mahasiswa.status_lulus_aktual:
-            # Gunakan status_lulus_aktual jika tersedia
-            if mahasiswa.status_lulus_aktual.upper() == 'LULUS':
+            # Gunakan status_lulus_aktual dengan 3 kategori
+            status = mahasiswa.status_lulus_aktual.upper()
+            if status == 'LULUS_TINGGI':
                 return "Peluang Lulus Tinggi"
-            else:
+            elif status == 'LULUS_SEDANG':
+                return "Peluang Lulus Sedang"
+            elif status == 'LULUS_KECIL':
+                return "Peluang Lulus Kecil"
+            # Fallback untuk data lama
+            elif status == 'LULUS':
+                return "Peluang Lulus Tinggi"
+            else:  # BELUM_LULUS, DROPOUT, dll
                 return "Peluang Lulus Kecil"
         else:
             # Klasifikasi berdasarkan IPK dan SKS (synthetic)

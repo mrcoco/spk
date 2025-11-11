@@ -10692,3 +10692,49 @@ body.drawer-expanded .content-wrapper {
         padding: 15px;
     }
 }
+
+/* Enhanced Confusion Matrix Cell Hover Effects */
+.cm-cell.clickable {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.cm-cell.clickable:hover {
+    transform: scale(1.08) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+    z-index: 100 !important;
+    border-color: #2196F3 !important;
+    border-width: 2px !important;
+}
+
+.cm-cell.clickable:active {
+    transform: scale(1.03) !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Enhanced Confusion Matrix Table Simple */
+.confusion-table-simple {
+    width: 100%;
+}
+
+.confusion-table-simple th {
+    text-align: center !important;
+}
+
+.confusion-table-simple td {
+    min-width: 60px;
+}
+
+/* Smooth animation for confusion matrix */
+@keyframes pulse-hover {
+    0%, 100% {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+    50% {
+        box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3);
+    }
+}
+
+.cm-cell.clickable:hover {
+    animation: pulse-hover 1.5s ease-in-out infinite;
+}
