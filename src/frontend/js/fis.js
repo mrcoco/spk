@@ -108,10 +108,12 @@ function searchMahasiswaByName(nama) {
 
 // Fungsi untuk melakukan pencarian hasil klasifikasi FIS
 // Mendukung pencarian berdasarkan: NIM, Nama, Program Studi, Klasifikasi
+// Mendukung multiple keywords dengan koma atau spasi sebagai separator
+// Contoh: "informatika, tinggi" atau "sistem sedang"
 function performFISSearch() {
     console.log('🔧 performFISSearch dipanggil');
     
-    const searchInput = $("#searchInputFIS").val().trim().toLowerCase();
+    const searchInput = $("#searchInputFIS").val().trim();
     
     if (!searchInput) {
         console.log('🔧 Input pencarian kosong, tampilkan semua data');
@@ -144,29 +146,42 @@ function performFISSearch() {
         const allData = fisDataCache.results || grid.dataSource.data();
         console.log('🔧 Total data di grid:', allData.length);
         
-        // Filter data berdasarkan NIM, Nama, Program Studi, atau Klasifikasi
+        // Parse multiple keywords
+        // Support comma separator (e.g., "informatika, tinggi") atau spasi untuk keywords terpisah
+        const keywords = searchInput.toLowerCase()
+            .split(/[,]+/) // Split by comma
+            .map(k => k.trim()) // Trim whitespace
+            .filter(k => k.length > 0); // Remove empty strings
+        
+        console.log('🔧 Keywords untuk filter:', keywords);
+        
+        // Filter data berdasarkan multiple keywords (AND logic)
+        // Semua keywords harus match di salah satu field
         const filteredData = allData.filter(item => {
-            // Cek NIM
-            if (item.nim && item.nim.toLowerCase().includes(searchInput)) {
-                return true;
-            }
-            
-            // Cek Nama
-            if (item.nama && item.nama.toLowerCase().includes(searchInput)) {
-                return true;
-            }
-            
-            // Cek Program Studi
-            if (item.program_studi && item.program_studi.toLowerCase().includes(searchInput)) {
-                return true;
-            }
-            
-            // Cek Klasifikasi
-            if (item.kategori && item.kategori.toLowerCase().includes(searchInput)) {
-                return true;
-            }
-            
-            return false;
+            // Check if ALL keywords match at least one field
+            return keywords.every(keyword => {
+                // Cek NIM
+                if (item.nim && item.nim.toLowerCase().includes(keyword)) {
+                    return true;
+                }
+                
+                // Cek Nama
+                if (item.nama && item.nama.toLowerCase().includes(keyword)) {
+                    return true;
+                }
+                
+                // Cek Program Studi
+                if (item.program_studi && item.program_studi.toLowerCase().includes(keyword)) {
+                    return true;
+                }
+                
+                // Cek Klasifikasi
+                if (item.kategori && item.kategori.toLowerCase().includes(keyword)) {
+                    return true;
+                }
+                
+                return false;
+            });
         });
         
         console.log('🔧 Data yang difilter:', filteredData.length);
@@ -187,7 +202,12 @@ function performFISSearch() {
         
         // Sembunyikan loading
         kendo.ui.progress($("#fisGrid"), false);
-        updateFISSearchInfo(`Ditemukan ${filteredData.length} data untuk "${searchInput}"`, "success");
+        
+        // Build info message
+        const keywordText = keywords.length > 1 ? 
+            `keywords: "${keywords.join('", "')}"` : 
+            `"${searchInput}"`;
+        updateFISSearchInfo(`Ditemukan ${filteredData.length} data dengan ${keywordText}`, "success");
         
     } catch (error) {
         console.error('🔧 Error dalam pencarian FIS:', error);
