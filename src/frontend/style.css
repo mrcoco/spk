@@ -6584,6 +6584,147 @@ body.drawer-expanded .content-wrapper {
     }
 }
 
+#sawEvaluationActualSection .saw-actual-metrics-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 28px;
+    align-items: stretch;
+}
+
+#sawEvaluationActualSection .saw-actual-metrics-panel {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 16px;
+    padding: 0;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#sawEvaluationActualSection .metrics-panel-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+}
+
+#sawEvaluationActualSection .metrics-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+#sawEvaluationActualSection .metrics-panel-title i {
+    color: #667eea;
+}
+
+#sawEvaluationActualSection .metrics-panel-body {
+    padding: 22px;
+}
+
+#sawEvaluationActualSection .saw-actual-confusion-panel {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+#sawEvaluationActualSection .saw-actual-confusion-panel .confusion-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+#sawEvaluationActualSection .saw-actual-confusion-panel .confusion-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+#sawEvaluationActualSection .saw-actual-confusion-panel .confusion-panel-title i {
+    color: #667eea;
+}
+
+#sawEvaluationActualSection .saw-actual-confusion-panel .confusion-panel-note {
+    font-size: 0.85rem;
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.12);
+    padding: 6px 12px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#sawEvaluationActualSection .saw-actual-confusion-panel .confusion-panel-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+#sawEvaluationActualSection .saw-actual-confusion-panel .confusion-matrix-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+#sawEvaluationActualSection .saw-actual-confusion-panel .confusion-panel-note-box {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(102, 126, 234, 0.18) 100%);
+    border: 1px solid rgba(102, 126, 234, 0.25);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    color: #3d4c9a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#sawEvaluationActualSection .saw-actual-confusion-panel .confusion-panel-note-box::before {
+    content: "\f245";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #667eea;
+}
+
+#sawEvaluationActualSection .saw-actual-confusion-panel .confusion-matrix-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: flex-start;
+    font-size: 0.85rem;
+    color: #555;
+}
+
+#sawEvaluationActualSection .saw-actual-confusion-panel .confusion-matrix-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#sawEvaluationActualSection .saw-actual-confusion-panel .confusion-matrix-legend .legend-color {
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 992px) {
+    #sawEvaluationActualSection .saw-actual-metrics-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 480px) {
     .confusion-matrix-table {
         font-size: 8px;
@@ -7131,6 +7272,91 @@ body.drawer-expanded .content-wrapper {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 25px;
     margin-bottom: 30px;
+}
+
+.saw-evaluation-section .saw-metrics-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 30px;
+    align-items: stretch;
+}
+
+.saw-evaluation-section .saw-metrics-layout .metrics-grid {
+    margin-bottom: 0;
+}
+
+.saw-evaluation-section .confusion-panel {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 16px;
+    padding: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.saw-evaluation-section .confusion-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.saw-evaluation-section .confusion-panel-header h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.saw-evaluation-section .confusion-panel-header h4 i {
+    color: #667eea;
+}
+
+.saw-evaluation-section .confusion-panel-note {
+    font-size: 0.85rem;
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.12);
+    padding: 6px 12px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.saw-evaluation-section .confusion-panel-body {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.saw-evaluation-section .confusion-panel .confusion-matrix {
+    width: 100%;
+}
+
+.saw-evaluation-section .confusion-panel .confusion-matrix-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: flex-start;
+    font-size: 0.85rem;
+    color: #555;
+}
+
+.saw-evaluation-section .confusion-panel .confusion-matrix-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.saw-evaluation-section .confusion-panel .confusion-matrix-legend .legend-color {
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .saw-evaluation-section .metric-card {

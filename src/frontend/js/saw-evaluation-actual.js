@@ -10,6 +10,7 @@ class SAWEvaluationActual {
             API_PREFIX: '/api',
             API_VERSION: 'v1'
         };
+        this.fullData = [];
         this.init();
     }
 
@@ -133,6 +134,7 @@ class SAWEvaluationActual {
     displayResults(data) {
         console.log('Displaying evaluation data with actual data:', data); // Debug log
         console.log('Classification distribution:', data.classification_distribution); // Debug log
+        this.fullData = data.full_data || data.results || [];
         
         // Update summary
         $('#sawEvaluationActualTotalData').text(data.total_data || 0);
@@ -338,25 +340,319 @@ class SAWEvaluationActual {
         
         console.log('Processed confusion matrix:', confusionMatrix);
         
-        let html = '<table class="confusion-table">';
-        html += '<thead><tr><th></th><th colspan="3">Predicted</th></tr>';
-        html += '<tr><th>Actual</th><th>Peluang Lulus Tinggi</th><th>Peluang Lulus Sedang</th><th>Peluang Lulus Kecil</th></tr></thead>';
-        html += '<tbody>';
-        
-        const labels = ['Peluang Lulus Tinggi', 'Peluang Lulus Sedang', 'Peluang Lulus Kecil'];
-        
+        const predictedConfigs = [
+            { value: 'Peluang Lulus Tinggi', label: 'Pred. Tinggi', headerStyle: 'background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 1px solid #81c784; padding: 12px; font-weight: 600; color: #2e7d32;' },
+            { value: 'Peluang Lulus Sedang', label: 'Pred. Sedang', headerStyle: 'background: linear-gradient(135deg, #fff3cd 0%, #ffe082 100%); border: 1px solid #ffd54f; padding: 12px; font-weight: 600; color: #f57f17;' },
+            { value: 'Peluang Lulus Kecil', label: 'Pred. Kecil', headerStyle: 'background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border: 1px solid #ef9a9a; padding: 12px; font-weight: 600; color: #c62828;' }
+        ];
+
+        const actualConfigs = [
+            {
+                value: 'LULUS_TINGGI',
+                label: 'Actual Tinggi',
+                headerStyle: 'background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 1px solid #81c784; padding: 12px; font-weight: 600; color: #2e7d32;',
+                diagonalStyle: 'background: #c8e6c9; font-weight: bold; cursor: pointer; border: 2px solid #66bb6a; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #1b5e20;',
+                offDiagonalStyle: 'background: #f1f8e9; cursor: pointer; border: 1px solid #dcedc8; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #424242;'
+            },
+            {
+                value: 'LULUS_SEDANG',
+                label: 'Actual Sedang',
+                headerStyle: 'background: linear-gradient(135deg, #fff3cd 0%, #ffe082 100%); border: 1px solid #ffd54f; padding: 12px; font-weight: 600; color: #f57f17;',
+                diagonalStyle: 'background: #ffe082; font-weight: bold; cursor: pointer; border: 2px solid #ffca28; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #f57f17;',
+                offDiagonalStyle: 'background: #fffde7; cursor: pointer; border: 1px solid #fff9c4; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #424242;'
+            },
+            {
+                value: 'LULUS_KECIL',
+                label: 'Actual Kecil',
+                headerStyle: 'background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border: 1px solid #ef9a9a; padding: 12px; font-weight: 600; color: #c62828;',
+                diagonalStyle: 'background: #ffcdd2; font-weight: bold; cursor: pointer; border: 2px solid #e57373; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #b71c1c;',
+                offDiagonalStyle: 'background: #ffebee; cursor: pointer; border: 1px solid #ffcdd2; padding: 12px; text-align: center; transition: all 0.2s; font-size: 14px; color: #424242;'
+            }
+        ];
+
+        let html = '<table class="confusion-table-simple" style="border-collapse: separate; border-spacing: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 8px; overflow: hidden; width: 100%;">';
+        html += '<thead><tr>';
+        html += '<th style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 1px solid #90caf9; padding: 12px; font-weight: 600; color: #1565C0;"></th>';
+        predictedConfigs.forEach(col => {
+            html += `<th style="${col.headerStyle}">${col.label}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
         confusionMatrix.forEach((row, i) => {
-            html += `<tr><td><strong>${labels[i]}</strong></td>`;
+            const actualConfig = actualConfigs[i];
+            html += '<tr>';
+            html += `<td style="${actualConfig.headerStyle}"><strong style="font-weight: 600;">${actualConfig.label}</strong></td>`;
+
             row.forEach((cell, j) => {
-                const percentage = this.calculatePercentage(cell, confusionMatrix);
-                const colorClass = this.getConfusionMatrixColor(i, j, confusionMatrix);
-                html += `<td class="${colorClass}">${cell}<br><small>(${percentage}%)</small></td>`;
+                const value = cell || 0;
+                const percentage = this.calculatePercentage(value, confusionMatrix);
+                const style = (i === j ? actualConfig.diagonalStyle : actualConfig.offDiagonalStyle);
+                const predictedConfig = predictedConfigs[j];
+                const intensityClass = this.getConfusionMatrixColor(i, j, confusionMatrix);
+
+                const displayPercentage = percentage !== '0.0' ? `${percentage}%` : '0.0%';
+                const cellContent = `
+                    <div style="font-weight: 700; font-size: 16px; color: inherit;">${value}</div>
+                    <div style="font-size: 11px; color: rgba(0,0,0,0.65); margin-top: 2px;">${displayPercentage}</div>
+                `;
+
+                html += `
+                    <td class="cm-cell clickable ${intensityClass}" 
+                        data-actual="${actualConfig.value}" 
+                        data-predicted="${predictedConfig.value}" 
+                        data-count="${value}"
+                        data-percentage="${percentage}"
+                        style="${style}">
+                        ${cellContent}
+                    </td>`;
             });
             html += '</tr>';
         });
-        
+
         html += '</tbody></table>';
         container.html(html);
+        this.setupConfusionMatrixClickHandlers();
+    }
+
+    setupConfusionMatrixClickHandlers() {
+        const self = this;
+        const cells = $('.cm-cell.clickable');
+        cells.off('click');
+        cells.off('mouseenter mouseleave');
+
+        cells.on('click', function() {
+            const $cell = $(this);
+            const actualStatus = $cell.data('actual');
+            const predictedCategory = $cell.data('predicted');
+            const count = parseInt($cell.data('count'), 10) || 0;
+
+            if (count > 0) {
+                self.showConfusionMatrixDetailModal(actualStatus, predictedCategory, count);
+            } else {
+                self.showNotification('info', 'Tidak ada data', 'Tidak ada mahasiswa untuk kombinasi ini.');
+            }
+        });
+
+        cells.hover(
+            function() { $(this).css('opacity', '0.85'); },
+            function() { $(this).css('opacity', '1'); }
+        );
+    }
+
+    showConfusionMatrixDetailModal(actualStatus, predictedCategory, count) {
+        if (!this.fullData || this.fullData.length === 0) {
+            this.showNotification('error', 'Data tidak tersedia', 'Data evaluasi belum dimuat.');
+            return;
+        }
+
+        const filteredData = this.fullData.filter(item => {
+            const actual = item.actual_status || item.actual_class || '';
+            const predicted = item.predicted_class || item.predicted_category || '';
+            return actual === actualStatus && predicted === predictedCategory;
+        });
+
+        if (filteredData.length === 0) {
+            this.showNotification('info', 'Tidak ada data', 'Tidak ditemukan mahasiswa untuk kombinasi ini.');
+            return;
+        }
+
+        const actualLabel = formatSAWActualStatus(actualStatus);
+        const expectedPredicted = mapSAWActualToPredicted(actualStatus);
+        const isCorrect = predictedCategory === expectedPredicted;
+        const matchPercentage = count > 0 ? ((filteredData.length / count) * 100).toFixed(1) : '0.0';
+
+        const uniqueGridId = 'sawCMDetailGrid_' + Date.now();
+        const summaryBackground = isCorrect ? '#e8f5e9' : '#ffebee';
+        const summaryBorder = isCorrect ? '#28a745' : '#dc3545';
+        const summaryIcon = isCorrect ? 'fa-check-circle' : 'fa-times-circle';
+
+        const modalContent = $('<div>').html(`
+            <div style="padding: 20px;">
+                <div style="background: ${summaryBackground}; padding: 18px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid ${summaryBorder};">
+                    <h4 style="margin: 0 0 12px 0; color: ${summaryBorder}; font-weight: 600;">
+                        <i class="fas ${summaryIcon}"></i>
+                        ${isCorrect ? 'Prediksi Benar' : 'Prediksi Salah'}
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                        <div>
+                            <strong>Status Aktual:</strong><br>
+                            <span class="badge ${getSAWBadgeClass(actualStatus)}" style="font-size: 13px; padding: 8px 12px; font-weight: 600;">${actualLabel}</span>
+                        </div>
+                        <div>
+                            <strong>Prediksi SAW:</strong><br>
+                            <span class="badge ${getSAWBadgeClass(predictedCategory)}" style="font-size: 13px; padding: 8px 12px; font-weight: 600;">${predictedCategory}</span>
+                        </div>
+                        <div>
+                            <strong>Jumlah Mahasiswa:</strong><br>
+                            <span style="font-size: 18px; font-weight: 700; color: #1565C0;">${filteredData.length}</span>
+                            <span style="font-size: 13px; color: #555;"> dari ${count} (${matchPercentage}%)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 style="margin-bottom: 15px; color: #333; font-weight: 600;">
+                    <i class="fas fa-table"></i> Detail Data Mahasiswa dan Prediksi
+                </h5>
+                <div id="${uniqueGridId}"></div>
+            </div>
+        `);
+
+        const dialog = modalContent.kendoDialog({
+            width: "1100px",
+            height: "750px",
+            title: `Detail Confusion Matrix - ${actualLabel} → ${predictedCategory}`,
+            closable: true,
+            modal: true,
+            actions: [{ text: "Tutup", primary: true }],
+            open: function() {
+                setTimeout(function() {
+                    const gridElement = $('#' + uniqueGridId);
+                    if (!gridElement.length) {
+                        console.error('Grid container not found:', uniqueGridId);
+                        return;
+                    }
+
+                    gridElement.kendoGrid({
+                        dataSource: {
+                            data: filteredData,
+                            pageSize: 10
+                        },
+                        height: 450,
+                        scrollable: true,
+                        sortable: true,
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [10, 20, 50],
+                            buttonCount: 5
+                        },
+                        columns: [
+                            {
+                                field: 'nim',
+                                title: 'NIM',
+                                width: 120,
+                                template: function(dataItem) {
+                                    return `<span style="font-family: monospace; font-weight: 600; color: #1976D2;">${dataItem.nim || '-'}</span>`;
+                                }
+                            },
+                            {
+                                field: 'nama',
+                                title: 'Nama Mahasiswa',
+                                width: 180,
+                                template: function(dataItem) {
+                                    return `<span style="font-weight: 600; color: #333;">${dataItem.nama || '-'}</span>`;
+                                }
+                            },
+                            {
+                                field: 'program_studi',
+                                title: 'Program Studi',
+                                width: 200,
+                                template: function(dataItem) {
+                                    const colors = getSAWProdiColor(dataItem.program_studi);
+                                    return `<span style="display: inline-block; padding: 4px 10px; background: ${colors.bg}; color: ${colors.text}; border-radius: 4px; font-size: 12px; font-weight: 500;">${dataItem.program_studi || '-'}</span>`;
+                                }
+                            },
+                            {
+                                field: 'ipk',
+                                title: 'IPK',
+                                width: 80,
+                                template: function(dataItem) {
+                                    const value = dataItem.ipk != null ? Number(dataItem.ipk) : 0;
+                                    let color = '#dc3545';
+                                    if (value >= 3.5) color = '#28a745';
+                                    else if (value >= 3.0) color = '#ffc107';
+                                    else if (value >= 2.5) color = '#ff9800';
+                                    return `<span style="font-weight: 600; color: ${color};">${value.toFixed(2)}</span>`;
+                                }
+                            },
+                            {
+                                field: 'sks',
+                                title: 'SKS',
+                                width: 70,
+                                template: function(dataItem) {
+                                    const value = dataItem.sks != null ? Number(dataItem.sks) : 0;
+                                    let color = '#dc3545';
+                                    if (value >= 130) color = '#28a745';
+                                    else if (value >= 110) color = '#ffc107';
+                                    else if (value >= 90) color = '#ff9800';
+                                    return `<span style="font-weight: 600; color: ${color};">${value}</span>`;
+                                }
+                            },
+                            {
+                                field: 'persen_dek',
+                                title: '% D/E/K',
+                                width: 100,
+                                template: function(dataItem) {
+                                    const value = dataItem.persen_dek != null ? Number(dataItem.persen_dek) : 0;
+                                    let color = '#28a745';
+                                    if (value > 30) color = '#dc3545';
+                                    else if (value > 20) color = '#ff9800';
+                                    else if (value > 10) color = '#ffc107';
+                                    return `<span style="font-weight: 600; color: ${color};">${value.toFixed(2)}%</span>`;
+                                }
+                            },
+                            {
+                                field: 'final_value',
+                                title: 'Skor SAW',
+                                width: 100,
+                                template: function(dataItem) {
+                                    const score = dataItem.final_value != null ? Number(dataItem.final_value) : 0;
+                                    let color = '#dc3545';
+                                    let bg = '#ffebee';
+                                    if (score >= 0.75) { color = '#28a745'; bg = '#e8f5e9'; }
+                                    else if (score >= 0.55) { color = '#ffc107'; bg = '#fff3cd'; }
+                                    return `<span style="padding: 4px 8px; background: ${bg}; color: ${color}; border-radius: 4px; font-weight: 600; font-family: 'Fira Code', monospace;">${score.toFixed(4)}</span>`;
+                                }
+                            },
+                            {
+                                field: 'predicted_class',
+                                title: 'Prediksi SAW',
+                                width: 150,
+                                template: function(dataItem) {
+                                    const badgeClass = getSAWBadgeClass(dataItem.predicted_class);
+                                    return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">${dataItem.predicted_class || '-'}</span>`;
+                                }
+                            },
+                            {
+                                field: 'actual_status',
+                                title: 'Status Aktual',
+                                width: 140,
+                                template: function(dataItem) {
+                                    const badgeClass = getSAWBadgeClass(dataItem.actual_status);
+                                    const statusText = formatSAWActualStatus(dataItem.actual_status);
+                                    return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">${statusText}</span>`;
+                                }
+                            },
+                            {
+                                field: 'is_correct',
+                                title: 'Match',
+                                width: 90,
+                                template: function(dataItem) {
+                                    if (dataItem.is_correct) {
+                                        return '<div style="text-align: center;"><span style="padding: 4px 10px; background: #e8f5e9; color: #28a745; border-radius: 4px; font-weight: 600; display: inline-block;"><i class="fas fa-check-circle"></i> Benar</span></div>';
+                                    }
+                                    return '<div style="text-align: center;"><span style="padding: 4px 10px; background: #ffebee; color: #dc3545; border-radius: 4px; font-weight: 600; display: inline-block;"><i class="fas fa-times-circle"></i> Salah</span></div>';
+                                }
+                            }
+                        ]
+                    });
+                }, 60);
+            },
+            close: function() {
+                const grid = $('#' + uniqueGridId).data('kendoGrid');
+                if (grid) {
+                    grid.destroy();
+                }
+                setTimeout(function() {
+                    modalContent.data('kendoDialog').destroy();
+                    modalContent.remove();
+                }, 60);
+            }
+        });
+
+        const kendoDialog = modalContent.data('kendoDialog');
+        if (kendoDialog) {
+            kendoDialog.open();
+        }
     }
 
     calculatePercentage(value, matrix) {
@@ -445,50 +741,6 @@ class SAWEvaluationActual {
                 <span id="sawActualResultsInfoText">Menampilkan ${results.length} data mahasiswa dengan status lulus aktual</span>
             </div>
         `);
-        
-        // Helper function untuk warna badge program studi
-        function getProdiColorSAW(prodi) {
-            if (!prodi) return { bg: '#e0e0e0', text: '#666' };
-
-            const prodiColors = {
-                'Teknik Informatika': { bg: '#e3f2fd', text: '#1565C0' },
-                'Sistem Informasi': { bg: '#e8f5e9', text: '#2e7d32' },
-                'Teknik Komputer': { bg: '#fff3e0', text: '#e65100' },
-                'Manajemen Informatika': { bg: '#f3e5f5', text: '#6a1b9a' },
-                'Komputerisasi Akuntansi': { bg: '#fff9c4', text: '#f57f17' },
-                'Teknik Elektro': { bg: '#ffebee', text: '#c62828' },
-                'default': { bg: '#e0e0e0', text: '#424242' }
-            };
-
-            for (const [key, color] of Object.entries(prodiColors)) {
-                if (key !== 'default' && prodi.toUpperCase().includes(key.toUpperCase())) {
-                    return color;
-                }
-            }
-
-            return prodiColors['default'];
-        }
-        
-        // Helper function untuk warna status badge
-        function getStatusBadgeColor(status) {
-            if (!status) return 'bg-secondary';
-            const statusUpper = status.toUpperCase();
-            if (statusUpper.includes('TINGGI')) return 'bg-success';
-            if (statusUpper.includes('SEDANG')) return 'bg-warning';
-            if (statusUpper.includes('KECIL')) return 'bg-danger';
-            return 'bg-secondary';
-        }
-
-        function formatActualStatus(status) {
-            return status ? status.replace(/_/g, ' ') : 'N/A';
-        }
-        
-        // Helper function untuk unique values (untuk filter)
-        function getUniqueProdiList(data) {
-            if (!data || !Array.isArray(data)) return [];
-            const uniqueProdi = [...new Set(data.map(item => item.program_studi).filter(p => p))];
-            return uniqueProdi.map(prodi => ({ program_studi: prodi }));
-        }
         
         $('#sawEvaluationActualResultsGrid').kendoGrid({
             dataSource: {
@@ -587,17 +839,17 @@ class SAWEvaluationActual {
                         if (!dataItem.program_studi) {
                             return '<span style="color: #999;">N/A</span>';
                         }
-                        const colors = getProdiColorSAW(dataItem.program_studi);
+                        const colors = getSAWProdiColor(dataItem.program_studi);
                         return `<span style="display: inline-block; padding: 4px 10px; background: ${colors.bg}; color: ${colors.text}; border-radius: 4px; font-size: 12px; font-weight: 500;">${dataItem.program_studi}</span>`;
                     },
                     filterable: {
                         multi: true,
                         search: true,
-                        dataSource: getUniqueProdiList(results),
+                        dataSource: getUniqueProdiListSAW(results),
                         checkAll: true,
                         itemTemplate: function(e) {
                             if (!e.program_studi) return '';
-                            const colors = getProdiColorSAW(e.program_studi);
+                            const colors = getSAWProdiColor(e.program_studi);
                             return `<span style="display: inline-block; padding: 2px 8px; margin: 2px 0; background: ${colors.bg}; color: ${colors.text}; border-radius: 4px; font-size: 11px; font-weight: 500;">${e.program_studi}</span>`;
                         }
                     }
@@ -698,7 +950,7 @@ class SAWEvaluationActual {
                     title: "Prediksi SAW", 
                     width: 180,
                     template: function(dataItem) {
-                        const badgeClass = getStatusBadgeColor(dataItem.predicted_class);
+                        const badgeClass = getSAWBadgeClass(dataItem.predicted_class);
                         return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">${dataItem.predicted_class || 'N/A'}</span>`;
                     },
                     filterable: {
@@ -711,7 +963,7 @@ class SAWEvaluationActual {
                         ],
                         checkAll: true,
                         itemTemplate: function(e) {
-                            const badgeClass = getStatusBadgeColor(e.predicted_class);
+                            const badgeClass = getSAWBadgeClass(e.predicted_class);
                             return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 4px 10px; font-weight: 600; white-space: nowrap;">${e.predicted_class}</span>`;
                         }
                     },
@@ -727,8 +979,8 @@ class SAWEvaluationActual {
                     title: "Status Aktual", 
                     width: 180,
                     template: function(dataItem) {
-                        const badgeClass = getStatusBadgeColor(dataItem.actual_status);
-                        const statusText = formatActualStatus(dataItem.actual_status);
+                        const badgeClass = getSAWBadgeClass(dataItem.actual_status);
+                        const statusText = formatSAWActualStatus(dataItem.actual_status);
                         return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">${statusText}</span>`;
                     },
                     filterable: {
@@ -741,8 +993,8 @@ class SAWEvaluationActual {
                         ],
                         checkAll: true,
                         itemTemplate: function(e) {
-                            const badgeClass = getStatusBadgeColor(e.actual_status);
-                            const statusText = formatActualStatus(e.text || e.actual_status);
+                            const badgeClass = getSAWBadgeClass(e.actual_status);
+                            const statusText = formatSAWActualStatus(e.text || e.actual_status);
                             return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 4px 10px; font-weight: 600; white-space: nowrap;">${statusText}</span>`;
                         }
                     },
@@ -801,6 +1053,11 @@ class SAWEvaluationActual {
     }
 
     updateClassificationChart(distribution) {
+        if (typeof Chart === 'undefined') {
+            console.warn('Chart.js belum tersedia, lewati updateClassificationChart sementara.');
+            setTimeout(() => this.updateClassificationChart(distribution), 500);
+            return;
+        }
         const ctx = document.getElementById('sawEvaluationActualClassificationChart');
         if (!ctx) {
             console.error('Canvas element sawEvaluationActualClassificationChart not found');
@@ -902,6 +1159,11 @@ class SAWEvaluationActual {
     }
 
     updateMetricsChart(data) {
+        if (typeof Chart === 'undefined') {
+            console.warn('Chart.js belum tersedia, lewati updateMetricsChart sementara.');
+            setTimeout(() => this.updateMetricsChart(data), 500);
+            return;
+        }
         const ctx = document.getElementById('sawEvaluationActualMetricsChart');
         if (!ctx) return;
         
@@ -971,6 +1233,11 @@ class SAWEvaluationActual {
     }
 
     initializeCharts() {
+        if (typeof Chart === 'undefined') {
+            console.warn('Chart.js belum dimuat. Inisialisasi chart SAW Actual akan ditunda hingga library tersedia.');
+            setTimeout(() => this.initializeCharts(), 500);
+            return;
+        }
         console.log('Initializing charts for SAW Evaluation with Actual Data');
         
         // Hancurkan chart yang sudah ada terlebih dahulu
@@ -1390,4 +1657,58 @@ function exportSAWToCSV(fullData) {
         console.error('❌ Error exporting CSV:', error);
         window.showNotification && window.showNotification('error', 'Error', 'Gagal mengekspor CSV: ' + error.message);
     }
+} 
+
+function getSAWProdiColor(prodi) {
+    if (!prodi) return { bg: '#e0e0e0', text: '#666' };
+
+    const prodiColors = {
+        'Teknik Informatika': { bg: '#e3f2fd', text: '#1565C0' },
+        'Sistem Informasi': { bg: '#e8f5e9', text: '#2e7d32' },
+        'Teknik Komputer': { bg: '#fff3e0', text: '#e65100' },
+        'Manajemen Informatika': { bg: '#f3e5f5', text: '#6a1b9a' },
+        'Komputerisasi Akuntansi': { bg: '#fff9c4', text: '#f57f17' },
+        'Teknik Elektro': { bg: '#ffebee', text: '#c62828' },
+        'Pendidikan Jasmani': { bg: '#e1f5fe', text: '#0277bd' },
+        'Pendidikan Ekonomi': { bg: '#f1f8e9', text: '#33691e' },
+        'Manajemen': { bg: '#ede7f6', text: '#4527a0' },
+        'Akuntansi': { bg: '#fff8e1', text: '#ef6c00' },
+        'default': { bg: '#e0e0e0', text: '#424242' }
+    };
+
+    for (const [key, color] of Object.entries(prodiColors)) {
+        if (key !== 'default' && prodi.toUpperCase().includes(key.toUpperCase())) {
+            return color;
+        }
+    }
+
+    return prodiColors['default'];
+}
+
+function getUniqueProdiListSAW(data) {
+    if (!data || !Array.isArray(data)) return [];
+    const uniqueProdi = [...new Set(data.map(item => item.program_studi).filter(p => p))];
+    return uniqueProdi.map(prodi => ({ program_studi: prodi }));
+}
+
+function getSAWBadgeClass(value) {
+    if (!value) return 'bg-secondary';
+    const normalized = value.toString().toUpperCase();
+    if (normalized.includes('TINGGI')) return 'bg-success';
+    if (normalized.includes('SEDANG')) return 'bg-warning';
+    if (normalized.includes('KECIL')) return 'bg-danger';
+    return 'bg-secondary';
+}
+
+function formatSAWActualStatus(status) {
+    return status ? status.replace(/_/g, ' ') : 'N/A';
+}
+
+function mapSAWActualToPredicted(actualStatus) {
+    const mapping = {
+        'LULUS_TINGGI': 'Peluang Lulus Tinggi',
+        'LULUS_SEDANG': 'Peluang Lulus Sedang',
+        'LULUS_KECIL': 'Peluang Lulus Kecil'
+    };
+    return mapping[actualStatus] || actualStatus;
 } 

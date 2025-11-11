@@ -448,21 +448,21 @@ $(document).ready(function() {
                     text: "Tambah Mahasiswa",
                     template: '<button class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync" onclick="showAddMahasiswaForm()"><i class="fas fa-plus"></i> <span class="k-button-text">Tambah Mahasiswa</span></button>'
                 },
-                { 
-                    name: "syncAll", 
-                    text: "Sync Semua Nilai",
-                    template: '<button id="syncAllNilai" class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync" onclick="syncAllNilai()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">Sync Nilai D/E/K</span></button>'
-                },
-                {
-                    name: "batchKlasifikasi",
-                    text: "Klasifikasi Batch Metode Fuzzy",
-                    template: '<button id="batchKlasifikasi" class="k-button k-button-md k-rounded-md k-button-solid custom-button-fis" onclick="showBatchKlasifikasi()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">FIS Batch</span></button>'
-                },
-                {
-                    name: "batchKlasifikasiSAW",
-                    text: "Klasifikasi Batch Metode SAW",
-                    template: '<button id="batchKlasifikasiSAW" class="k-button k-button-md k-rounded-md k-button-solid custom-button-saw" onclick="showBatchKlasifikasiSAW()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">SAW Batch</span></button>'
-                }
+                // { 
+                //     name: "syncAll", 
+                //     text: "Sync Semua Nilai",
+                //     template: '<button id="syncAllNilai" class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync" onclick="syncAllNilai()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">Sync Nilai D/E/K</span></button>'
+                // },
+                // {
+                //     name: "batchKlasifikasi",
+                //     text: "Klasifikasi Batch Metode Fuzzy",
+                //     template: '<button id="batchKlasifikasi" class="k-button k-button-md k-rounded-md k-button-solid custom-button-fis" onclick="showBatchKlasifikasi()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">FIS Batch</span></button>'
+                // },
+                // {
+                //     name: "batchKlasifikasiSAW",
+                //     text: "Klasifikasi Batch Metode SAW",
+                //     template: '<button id="batchKlasifikasiSAW" class="k-button k-button-md k-rounded-md k-button-solid custom-button-saw" onclick="showBatchKlasifikasiSAW()"><i class="fas fa-sync-alt"></i> <span class="k-button-text">SAW Batch</span></button>'
+                // }
             ],
         columns: [
             {
@@ -487,7 +487,7 @@ $(document).ready(function() {
             {
                 field: "program_studi",
                 title: "Program Studi",
-                width: 150,
+                width: 250,
                 headerAttributes: {
                     style: "text-align: center; vertical-align: middle; font-weight: bold;"
                 },
@@ -561,25 +561,25 @@ $(document).ready(function() {
                         text: "Hapus",
                         template: '<button class="k-button k-button-md k-rounded-md k-button-solid custom-button-delete" type="button"><i class="fas fa-trash"></i> <span class="k-button-text">Hapus</span></button>'
                     },
-                    { 
-                        name: "syncNilai",
-                        text: "Sync",
-                        click: syncNilai,
-                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync" href="\\#" onclick="syncNilai(event, this);"><i class="fas fa-sync-alt"></i> <span class="k-button-text">D/E/K</span></a>'
-                    },
-                    { 
-                        name: "klasifikasi",
-                        text: "Klasifikasi",
-                        click: showKlasifikasi,
-                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid custom-button-fis" href="\\#" onclick="showKlasifikasi(event, this);"><i class="fas fa-chart-line"></i> <span class="k-button-text">FIS</span></a>'
-                    }
-                    ,
-                    { 
-                        name: "klasifikasiSAW",
-                        text: "Klasifikasi SAW",
-                        click: showKlasifikasiSAW,
-                        template: '<a class="k-button k-button-md k-rounded-md k-button-solid custom-button-saw" href="\\#" onclick="showKlasifikasiSAW(event, this);"><i class="fas fa-chart-line"></i> <span class="k-button-text">SAW</span></a>'
-                    }
+                    // { 
+                    //     name: "syncNilai",
+                    //     text: "Sync",
+                    //     click: syncNilai,
+                    //     template: '<a class="k-button k-button-md k-rounded-md k-button-solid custom-button-sync" href="\\#" onclick="syncNilai(event, this);"><i class="fas fa-sync-alt"></i> <span class="k-button-text">D/E/K</span></a>'
+                    // },
+                    // { 
+                    //     name: "klasifikasi",
+                    //     text: "Klasifikasi",
+                    //     click: showKlasifikasi,
+                    //     template: '<a class="k-button k-button-md k-rounded-md k-button-solid custom-button-fis" href="\\#" onclick="showKlasifikasi(event, this);"><i class="fas fa-chart-line"></i> <span class="k-button-text">FIS</span></a>'
+                    // }
+                    // ,
+                    // { 
+                    //     name: "klasifikasiSAW",
+                    //     text: "Klasifikasi SAW",
+                    //     click: showKlasifikasiSAW,
+                    //     template: '<a class="k-button k-button-md k-rounded-md k-button-solid custom-button-saw" href="\\#" onclick="showKlasifikasiSAW(event, this);"><i class="fas fa-chart-line"></i> <span class="k-button-text">SAW</span></a>'
+                    // }
                     
                 ],
                 title: "Aksi",

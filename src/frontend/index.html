@@ -893,8 +893,8 @@
                                     <p>Simple Additive Weighting (SAW) adalah metode yang digunakan untuk mengklasifikasikan peluang kelulusan mahasiswa dengan mempertimbangkan bobot dari setiap kriteria:</p>
                                     <ul>
                                         <li><strong>IPK (35%)</strong> - Benefit: Semakin tinggi semakin baik</li>
-                                        <li><strong>Total SKS (32.5%)</strong> - Benefit: Semakin tinggi semakin baik</li>
-                                        <li><strong>Nilai D/E/K (32.5%)</strong> - Cost: Semakin rendah semakin baik</li>
+                                        <li><strong>Total SKS (37.5%)</strong> - Benefit: Semakin tinggi semakin baik</li>
+                                        <li><strong>Nilai D/E/K (37.5%)</strong> - Cost: Semakin rendah semakin baik</li>
                                     </ul>
                                     <p>Metode ini menghitung nilai preferensi untuk setiap alternatif dengan mengalikan nilai ternormalisasi setiap kriteria dengan bobotnya.</p>
                                     <div class="threshold-info">
@@ -939,17 +939,17 @@
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label for="sawEvaluationIpkWeight">Bobot IPK (%):</label>
-                                            <input type="number" id="sawEvaluationIpkWeight" value="35" min="0" max="100" class="form-control">
+                                            <input type="number" id="sawEvaluationIpkWeight" value="40" min="0" max="100" class="form-control">
                                             <small class="form-text">Bobot untuk kriteria IPK (0-100%)</small>
                                         </div>
                                         <div class="form-group">
                                             <label for="sawEvaluationSksWeight">Bobot SKS (%):</label>
-                                            <input type="number" id="sawEvaluationSksWeight" value="32.5" min="0" max="100" class="form-control">
+                                            <input type="number" id="sawEvaluationSksWeight" value="35" min="0" max="100" class="form-control">
                                             <small class="form-text">Bobot untuk kriteria SKS (0-100%)</small>
                                         </div>
                                         <div class="form-group">
                                             <label for="sawEvaluationDekWeight">Bobot D/E/K (%):</label>
-                                            <input type="number" id="sawEvaluationDekWeight" value="32.5" min="0" max="100" class="form-control">
+                                            <input type="number" id="sawEvaluationDekWeight" value="25" min="0" max="100" class="form-control">
                                             <small class="form-text">Bobot untuk kriteria D/E/K (0-100%)</small>
                                         </div>
                                     </div>
@@ -1295,94 +1295,66 @@
                         <!-- Control Panel -->
                         <div class="evaluation-control-panel">
                             <div class="card">
-                                <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0;">
-                                    <h3 style="margin: 0;"><i class="fas fa-cogs"></i> Evaluasi SAW dengan Seluruh Data Berlabel</h3>
+                                <div class="card-header">
+                                    <h3><i class="fas fa-cogs"></i> Pengaturan Evaluasi SAW dengan Data Aktual</h3>
                                 </div>
                                 <div class="card-body">
-                                    
-                                    <!-- Info Box - Penjelasan Evaluasi -->
-                                    <div class="info-box" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); color: #1976D2; border: 2px solid #2196F3; border-radius: 12px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);">
-                                        <h4 style="margin-top: 0; color: #1976D2; font-weight: 600;">
-                                            <i class="fas fa-info-circle"></i> Penjelasan Evaluasi
-                                        </h4>
-                                        <p style="margin-bottom: 12px; color: #424242; line-height: 1.6;">
-                                            Evaluasi ini menggunakan <strong>seluruh data mahasiswa yang sudah memiliki label status lulus aktual</strong> di database. 
-                                            Tidak ada pembagian data training/testing karena SAW adalah metode berbasis aturan yang tidak memerlukan proses pembelajaran.
-                                        </p>
-                                        <ul style="margin: 0; padding-left: 20px; color: #424242; line-height: 1.6;">
-                                            <li><strong>Data yang dievaluasi:</strong> Seluruh data dengan <code>status_lulus_aktual</code> bukan NULL</li>
-                                            <li><strong>Metrik evaluasi:</strong> Accuracy, Precision, Recall, F1-Score, Confusion Matrix</li>
-                                            <li><strong>Kategori:</strong> Lulus Tinggi, Lulus Sedang, Lulus Kecil (3 kategori)</li>
-                                        </ul>
-                                    </div>
-                                    
-                                    <!-- Weight Configuration -->
-                                    <div class="form-row" style="margin-bottom: 20px;">
+                                    <div class="form-row">
                                         <div class="form-group">
-                                            <label for="sawEvaluationActualIpkWeight" style="font-weight: 600; color: #333;">
-                                                <i class="fas fa-star" style="color: #28a745;"></i> Bobot IPK (%):
-                                            </label>
-                                            <input type="number" id="sawEvaluationActualIpkWeight" value="35" min="0" max="100" class="form-control" style="border-radius: 8px;">
-                                            <small class="form-text text-muted">Bobot untuk kriteria IPK (0-100%)</small>
+                                            <label for="sawEvaluationActualIpkWeight">Bobot IPK (%):</label>
+                                            <input type="number" id="sawEvaluationActualIpkWeight" value="40" min="0" max="100" class="form-control">
+                                            <small class="form-text">Bobot untuk kriteria IPK (0-100%)</small>
                                         </div>
                                         <div class="form-group">
-                                            <label for="sawEvaluationActualSksWeight" style="font-weight: 600; color: #333;">
-                                                <i class="fas fa-book" style="color: #ffc107;"></i> Bobot SKS (%):
-                                            </label>
-                                            <input type="number" id="sawEvaluationActualSksWeight" value="32.5" min="0" max="100" class="form-control" style="border-radius: 8px;">
-                                            <small class="form-text text-muted">Bobot untuk kriteria SKS (0-100%)</small>
+                                            <label for="sawEvaluationActualSksWeight">Bobot SKS (%):</label>
+                                            <input type="number" id="sawEvaluationActualSksWeight" value="35" min="0" max="100" class="form-control">
+                                            <small class="form-text">Bobot untuk kriteria SKS (0-100%)</small>
                                         </div>
                                         <div class="form-group">
-                                            <label for="sawEvaluationActualDekWeight" style="font-weight: 600; color: #333;">
-                                                <i class="fas fa-percentage" style="color: #dc3545;"></i> Bobot DEK (%):
-                                            </label>
-                                            <input type="number" id="sawEvaluationActualDekWeight" value="32.5" min="0" max="100" class="form-control" style="border-radius: 8px;">
-                                            <small class="form-text text-muted">Bobot untuk kriteria DEK (0-100%)</small>
+                                            <label for="sawEvaluationActualDekWeight">Bobot DEK (%):</label>
+                                            <input type="number" id="sawEvaluationActualDekWeight" value="25" min="0" max="100" class="form-control">
+                                            <small class="form-text">Bobot untuk kriteria DEK (0-100%)</small>
                                         </div>
                                     </div>
                                     
-                                    <!-- Save to DB Option -->
-                                    <div class="form-row" style="margin-bottom: 20px;">
+                                    <div class="form-row">
                                         <div class="form-group">
-                                            <label style="font-weight: 500; color: #555;">
-                                                <input type="checkbox" id="sawEvaluationActualSaveToDb"> 
-                                                <i class="fas fa-save"></i> Simpan Hasil ke Database
+                                            <label for="sawEvaluationActualTestSize">Ukuran Data Test (%):</label>
+                                            <input type="number" id="sawEvaluationActualTestSize" value="30" min="10" max="50" class="form-control">
+                                            <small class="form-text">Persentase data yang digunakan untuk testing (10-50%)</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sawEvaluationActualRandomState">Random State:</label>
+                                            <input type="number" id="sawEvaluationActualRandomState" value="42" class="form-control">
+                                            <small class="form-text">Seed untuk reproduksi hasil yang konsisten</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>
+                                                <input type="checkbox" id="sawEvaluationActualSaveToDb"> Simpan ke Database
                                             </label>
-                                            <small class="form-text text-muted d-block">Centang untuk menyimpan hasil evaluasi ke database</small>
                                         </div>
                                     </div>
                                     
-                                    <!-- Action Button - Prominent -->
-                                    <div class="action-buttons-row" style="text-align: center; margin: 30px 0;">
-                                        <button id="sawEvaluationActualCalculateBtn" class="btn btn-primary" style="font-size: 18px; padding: 15px 40px; border-radius: 10px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
-                                            <i class="fas fa-calculator"></i>
-                                            Mulai Evaluasi SAW dengan Data Aktual
-                                        </button>
-                                    </div>
-                                    
-                                    <!-- Additional Action Buttons -->
+                                    <!-- Action Buttons Row -->
                                     <div class="action-buttons-row">
-                                        <div class="action-buttons-group" style="justify-content: center;">
-                                            <button id="sawEvaluationActualExportBtn" class="btn btn-secondary" style="border-radius: 8px;">
+                                        <div class="action-buttons-group">
+                                            <button id="sawEvaluationActualCalculateBtn" class="btn btn-primary">
+                                                <i class="fas fa-calculator"></i>
+                                                Hitung Evaluasi SAW dengan Data Aktual
+                                            </button>
+                                            <button id="sawEvaluationActualExportBtn" class="btn btn-secondary">
                                                 <i class="fas fa-download"></i>
                                                 Export Data
                                             </button>
-                                            <button id="sawEvaluationActualPrintBtn" class="btn btn-secondary" style="border-radius: 8px;">
+                                            <button id="sawEvaluationActualPrintBtn" class="btn btn-secondary">
                                                 <i class="fas fa-print"></i>
                                                 Cetak Laporan
                                             </button>
                                         </div>
                                     </div>
-                                    
-                                    <!-- Additional Info -->
-                                    <div class="info-box" style="background: #fff8e1; border-left: 4px solid #ffc107; padding: 15px; margin-top: 20px; border-radius: 6px;">
-                                        <h5 style="margin-top: 0; color: #f57f17;">
-                                            <i class="fas fa-lightbulb"></i> Informasi Tambahan
-                                        </h5>
-                                        <p style="margin: 0; color: #555; line-height: 1.6;">
-                                            SAW (Simple Additive Weighting) adalah metode <strong>berbasis aturan</strong> yang menghitung skor berdasarkan bobot kriteria. 
-                                            Tidak seperti machine learning, SAW tidak memerlukan proses training karena skornya dihitung langsung dari nilai kriteria yang sudah dinormalisasi.
-                                        </p>
+                                    <div class="info-box">
+                                        <h4><i class="fas fa-info-circle"></i> Informasi Evaluasi SAW dengan Data Aktual</h4>
+                                        <p>Evaluasi ini akan mengukur performa metode SAW dengan membandingkan hasil klasifikasi terhadap status lulus yang sebenarnya dari mahasiswa. Data aktual diambil dari field <code>status_lulus_aktual</code> di database.</p>
                                     </div>
                                 </div>
                             </div>
@@ -1437,78 +1409,98 @@
                             </div>
                         </div>
 
-                        <!-- Metrics Section -->
+                        <!-- Metrics & Confusion Matrix Section -->
                         <div class="evaluation-section">
                             <div class="card">
                                 <div class="card-header">
                                     <h3><i class="fas fa-chart-bar"></i> Metrik Evaluasi SAW dengan Data Aktual</h3>
                                 </div>
                                 <div class="card-body">
-                                    <div class="metrics-grid">
-                                        <div class="metric-card">
-                                            <div class="metric-header">
-                                                <i class="fas fa-bullseye"></i>
-                                                <h4>Precision</h4>
+                                    <div class="saw-actual-metrics-layout">
+                                        <div class="saw-actual-metrics-panel">
+                                            <div class="metrics-panel-header">
+                                                <div class="metrics-panel-title">
+                                                    <i class="fas fa-chart-line"></i>
+                                                    <span>Metrik Evaluasi</span>
+                                                </div>
                                             </div>
-                                            <div class="metric-value" id="sawEvaluationActualPrecision">-</div>
-                                            <div class="metric-description">Proporsi prediksi positif yang benar</div>
+                                            <div class="metrics-panel-body">
+                                                <div class="metrics-grid">
+                                                    <div class="metric-card">
+                                                        <div class="metric-header">
+                                                            <i class="fas fa-bullseye"></i>
+                                                            <h4>Precision</h4>
+                                                        </div>
+                                                        <div class="metric-value" id="sawEvaluationActualPrecision">-</div>
+                                                        <div class="metric-description">Proporsi prediksi positif yang benar</div>
+                                                    </div>
+                                                    <div class="metric-card">
+                                                        <div class="metric-header">
+                                                            <i class="fas fa-search"></i>
+                                                            <h4>Recall</h4>
+                                                        </div>
+                                                        <div class="metric-value" id="sawEvaluationActualRecall">-</div>
+                                                        <div class="metric-description">Proporsi kasus positif yang terdeteksi</div>
+                                                    </div>
+                                                    <div class="metric-card">
+                                                        <div class="metric-header">
+                                                            <i class="fas fa-balance-scale"></i>
+                                                            <h4>F1-Score</h4>
+                                                        </div>
+                                                        <div class="metric-value" id="sawEvaluationActualF1Score">-</div>
+                                                        <div class="metric-description">Harmonic mean dari precision dan recall</div>
+                                                    </div>
+                                                    <div class="metric-card">
+                                                        <div class="metric-header">
+                                                            <i class="fas fa-chart-line"></i>
+                                                            <h4>Specificity</h4>
+                                                        </div>
+                                                        <div class="metric-value" id="sawEvaluationActualSpecificity">-</div>
+                                                        <div class="metric-description">Proporsi prediksi negatif yang benar</div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="metric-card">
-                                            <div class="metric-header">
-                                                <i class="fas fa-search"></i>
-                                                <h4>Recall</h4>
+                                        <div class="saw-actual-confusion-panel">
+                                            <div class="confusion-panel-header">
+                                                <div class="confusion-panel-title">
+                                                    <i class="fas fa-table"></i>
+                                                    <span>Confusion Matrix (3x3)</span>
+                                                </div>
+                                                <!-- <span class="confusion-panel-note">
+                                                    <i class="fas fa-mouse-pointer"></i>
+                                                    Klik sel untuk melihat detail mahasiswa 
+                                                </span>  -->
                                             </div>
-                                            <div class="metric-value" id="sawEvaluationActualRecall">-</div>
-                                            <div class="metric-description">Proporsi kasus positif yang terdeteksi</div>
-                                        </div>
-                                        <div class="metric-card">
-                                            <div class="metric-header">
-                                                <i class="fas fa-balance-scale"></i>
-                                                <h4>F1-Score</h4>
-                                            </div>
-                                            <div class="metric-value" id="sawEvaluationActualF1Score">-</div>
-                                            <div class="metric-description">Harmonic mean dari precision dan recall</div>
-                                        </div>
-                                        <div class="metric-card">
-                                            <div class="metric-header">
-                                                <i class="fas fa-chart-line"></i>
-                                                <h4>Specificity</h4>
-                                            </div>
-                                            <div class="metric-value" id="sawEvaluationActualSpecificity">-</div>
-                                            <div class="metric-description">Proporsi prediksi negatif yang benar</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Confusion Matrix Section -->
-                        <div class="evaluation-section">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3><i class="fas fa-table"></i> Confusion Matrix SAW dengan Data Aktual</h3>
-                                </div>
-                                <div class="card-body">
-                                    <div class="confusion-matrix-container">
-                                        <div class="confusion-matrix" id="sawEvaluationActualConfusionMatrix">
-                                            <!-- Confusion matrix akan diisi secara dinamis -->
-                                        </div>
-                                        <div class="confusion-matrix-legend">
-                                            <div class="legend-item">
-                                                <span class="legend-color legend-tp"></span>
-                                                <span>True Positive (TP)</span>
-                                            </div>
-                                            <div class="legend-item">
-                                                <span class="legend-color legend-fp"></span>
-                                                <span>False Positive (FP)</span>
-                                            </div>
-                                            <div class="legend-item">
-                                                <span class="legend-color legend-fn"></span>
-                                                <span>False Negative (FN)</span>
-                                            </div>
-                                            <div class="legend-item">
-                                                <span class="legend-color legend-tn"></span>
-                                                <span>True Negative (TN)</span>
+                                            <div class="confusion-panel-body">
+                                                <div class="confusion-matrix-wrapper">
+                                                    <div class="confusion-matrix" id="sawEvaluationActualConfusionMatrix">
+                                                        <!-- Confusion matrix akan diisi secara dinamis -->
+                                                    </div>
+                                                    <div class="confusion-panel-note-box">
+                                                        <span>
+                                                            <strong>Klik pada cell</strong> untuk melihat daftar mahasiswa sesuai kombinasi Actual vs Prediksi.
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="confusion-matrix-legend">
+                                                    <div class="legend-item">
+                                                        <span class="legend-color legend-tp"></span>
+                                                        <span>True Positive (TP)</span>
+                                                    </div>
+                                                    <div class="legend-item">
+                                                        <span class="legend-color legend-fp"></span>
+                                                        <span>False Positive (FP)</span>
+                                                    </div>
+                                                    <div class="legend-item">
+                                                        <span class="legend-color legend-fn"></span>
+                                                        <span>False Negative (FN)</span>
+                                                    </div>
+                                                    <div class="legend-item">
+                                                        <span class="legend-color legend-tn"></span>
+                                                        <span>True Negative (TN)</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
