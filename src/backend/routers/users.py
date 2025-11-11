@@ -18,7 +18,17 @@ router = APIRouter(prefix="/users", tags=["users"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    # Truncate password to 72 bytes to avoid bcrypt limitation
+    # bcrypt has a maximum password length of 72 bytes
+    password_bytes = password.encode('utf-8')[:72]
+    truncated_password = password_bytes.decode('utf-8', errors='ignore')
+    return pwd_context.hash(truncated_password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    # Truncate password to 72 bytes to match hashing behavior
+    password_bytes = plain_password.encode('utf-8')[:72]
+    truncated_password = password_bytes.decode('utf-8', errors='ignore')
+    return pwd_context.verify(truncated_password, hashed_password)
 
 @router.get("/", response_model=List[UserRead])
 def list_users(q: Optional[str] = Query(None), db: Session = Depends(get_db)):
@@ -76,7 +86,7 @@ def reset_password(user_id: int, data: dict = Body(...), db: Session = Depends(g
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == form_data.username).first()
-    if not user or not pwd_context.verify(form_data.password, user.hashed_password):
+    if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Username atau password salah")
     to_encode = {"sub": user.username, "user_id": user.id, "role": user.role, "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)}
     access_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
