@@ -59,6 +59,7 @@ function loadComparisonData() {
         // Update UI
         updateComparisonStatsFromActual(fisData, sawData, comparisonData);
         updateComparisonChartFromActual(fisData, sawData);
+        updateComparisonConfusionMatrix(fisData, sawData);
         initializeComparisonGrid(comparisonData);
             
             hideComparisonLoading();
@@ -127,8 +128,8 @@ function loadSAWActualEvaluation() {
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
-                weights: { ipk: 0.4, sks: 0.35, dek: 0.25 },
-                test_size: 0.3,
+                weights: { ipk: 0.35, sks: 0.325, dek: 0.325 },
+                test_size: 1.0,
                 random_state: 42,
                 save_to_db: false
             }),
@@ -455,6 +456,103 @@ function updateComparisonChartFromActual(fisData, sawData) {
         console.error('Error initializing comparison chart:', error);
         chartElement.html('<p class="error">Error initializing chart: ' + error.message + '</p>');
     }
+}
+
+// Update Confusion Matrix Comparison
+function updateComparisonConfusionMatrix(fisData, sawData) {
+    console.log('Updating comparison confusion matrix...');
+    
+    // Render FIS Confusion Matrix
+    const fisCM = fisData.confusion_matrix || [];
+    if (fisCM && Array.isArray(fisCM) && fisCM.length === 3) {
+        renderConfusionMatrix(fisCM, '#comparisonFISConfusionMatrix', 'FIS');
+    } else {
+        $('#comparisonFISConfusionMatrix').html('<p class="text-muted">Confusion matrix tidak tersedia</p>');
+    }
+    
+    // Render SAW Confusion Matrix
+    const sawCM = sawData.confusion_matrix || [];
+    if (sawCM && Array.isArray(sawCM) && sawCM.length === 3) {
+        renderConfusionMatrix(sawCM, '#comparisonSAWConfusionMatrix', 'SAW');
+    } else {
+        $('#comparisonSAWConfusionMatrix').html('<p class="text-muted">Confusion matrix tidak tersedia</p>');
+    }
+}
+
+// Render Confusion Matrix Helper Function
+function renderConfusionMatrix(confusionMatrix, containerId, methodName) {
+    const container = $(containerId);
+    container.empty();
+    
+    const predictedConfigs = [
+        { value: 'Peluang Lulus Tinggi', label: 'Pred. Tinggi', headerStyle: 'background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 1px solid #81c784; padding: 10px; font-weight: 600; color: #2e7d32; font-size: 12px;' },
+        { value: 'Peluang Lulus Sedang', label: 'Pred. Sedang', headerStyle: 'background: linear-gradient(135deg, #fff3cd 0%, #ffe082 100%); border: 1px solid #ffd54f; padding: 10px; font-weight: 600; color: #f57f17; font-size: 12px;' },
+        { value: 'Peluang Lulus Kecil', label: 'Pred. Kecil', headerStyle: 'background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border: 1px solid #ef9a9a; padding: 10px; font-weight: 600; color: #c62828; font-size: 12px;' }
+    ];
+
+    const actualConfigs = [
+        {
+            value: 'LULUS_TINGGI',
+            label: 'Actual Tinggi',
+            headerStyle: 'background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 1px solid #81c784; padding: 10px; font-weight: 600; color: #2e7d32; font-size: 12px;',
+            diagonalStyle: 'background: #c8e6c9; font-weight: bold; border: 2px solid #66bb6a; padding: 10px; text-align: center; font-size: 13px; color: #1b5e20;',
+            offDiagonalStyle: 'background: #f1f8e9; border: 1px solid #dcedc8; padding: 10px; text-align: center; font-size: 13px; color: #424242;'
+        },
+        {
+            value: 'LULUS_SEDANG',
+            label: 'Actual Sedang',
+            headerStyle: 'background: linear-gradient(135deg, #fff3cd 0%, #ffe082 100%); border: 1px solid #ffd54f; padding: 10px; font-weight: 600; color: #f57f17; font-size: 12px;',
+            diagonalStyle: 'background: #ffe082; font-weight: bold; border: 2px solid #ffca28; padding: 10px; text-align: center; font-size: 13px; color: #f57f17;',
+            offDiagonalStyle: 'background: #fffde7; border: 1px solid #fff9c4; padding: 10px; text-align: center; font-size: 13px; color: #424242;'
+        },
+        {
+            value: 'LULUS_KECIL',
+            label: 'Actual Kecil',
+            headerStyle: 'background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border: 1px solid #ef9a9a; padding: 10px; font-weight: 600; color: #c62828; font-size: 12px;',
+            diagonalStyle: 'background: #ffcdd2; font-weight: bold; border: 2px solid #e57373; padding: 10px; text-align: center; font-size: 13px; color: #b71c1c;',
+            offDiagonalStyle: 'background: #ffebee; border: 1px solid #ffcdd2; padding: 10px; text-align: center; font-size: 13px; color: #424242;'
+        }
+    ];
+
+    // Calculate total for percentage
+    const total = confusionMatrix.reduce((sum, row) => sum + row.reduce((rowSum, cell) => rowSum + (cell || 0), 0), 0);
+
+    let html = '<table class="confusion-table-simple" style="border-collapse: separate; border-spacing: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 8px; overflow: hidden; width: 100%;">';
+    html += '<thead><tr>';
+    html += '<th style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 1px solid #90caf9; padding: 10px; font-weight: 600; color: #1565C0; font-size: 12px;"></th>';
+    predictedConfigs.forEach(col => {
+        html += `<th style="${col.headerStyle}">${col.label}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    confusionMatrix.forEach((row, i) => {
+        const actualConfig = actualConfigs[i];
+        html += '<tr>';
+        html += `<td style="${actualConfig.headerStyle}"><strong style="font-weight: 600;">${actualConfig.label}</strong></td>`;
+
+        row.forEach((cell, j) => {
+            const value = cell || 0;
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+            const style = (i === j ? actualConfig.diagonalStyle : actualConfig.offDiagonalStyle);
+
+            const displayPercentage = percentage !== '0.0' ? `${percentage}%` : '0.0%';
+            const cellContent = `
+                <div style="font-weight: 700; font-size: 14px; color: inherit;">${value}</div>
+                <div style="font-size: 10px; color: rgba(0,0,0,0.65); margin-top: 2px;">${displayPercentage}</div>
+            `;
+
+            html += `
+                <td style="${style}">
+                    ${cellContent}
+                </td>`;
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    container.html(html);
+    
+    console.log(`${methodName} confusion matrix rendered successfully`);
 }
 
 // Inisialisasi Kendo Grid untuk tabel comparison
