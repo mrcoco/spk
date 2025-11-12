@@ -51,7 +51,7 @@ function loadComparisonData() {
         // Gabungkan data FIS dan SAW untuk perbandingan
         const comparisonData = combineEvaluationData(fisData, sawData);
         
-        // Simpan response lengkap untuk akses data
+                // Simpan response lengkap untuk akses data
         window._fisActualData = fisData;
         window._sawActualData = sawData;
         window._comparisonData = comparisonData;
@@ -326,6 +326,13 @@ function updateComparisonStatsFromActual(fisData, sawData, comparisonData) {
     $('#statDifferent').text(totalDifferent);
     $('#statCorrelation').text(rankingCorrelation.toFixed(3));
     
+    // Pastikan event handler untuk korelasi ranking terpasang
+    $('.stat-card-correlation').off('click').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        showCorrelationRankingModal();
+    });
+    
     console.log('Stats updated successfully');
 }
 
@@ -357,6 +364,174 @@ function calculateRankingCorrelation(comparisonData) {
     
     const correlation = 1 - (6 * sumDSquared) / (n * (n * n - 1));
     return correlation;
+}
+
+// Show modal untuk penjelasan korelasi ranking
+function showCorrelationRankingModal() {
+    // Dapatkan nilai korelasi saat ini
+    const correlationValue = parseFloat($('#statCorrelation').text()) || 0;
+    
+    // Tentukan interpretasi berdasarkan nilai
+    let interpretation = '';
+    let interpretationColor = '';
+    let interpretationIcon = '';
+    
+    if (correlationValue >= 0.7) {
+        interpretation = 'Korelasi Sangat Kuat Positif';
+        interpretationColor = '#4CAF50';
+        interpretationIcon = 'fa-check-circle';
+    } else if (correlationValue >= 0.4) {
+        interpretation = 'Korelasi Sedang Positif';
+        interpretationColor = '#FF9800';
+        interpretationIcon = 'fa-info-circle';
+    } else if (correlationValue >= 0.1) {
+        interpretation = 'Korelasi Lemah Positif';
+        interpretationColor = '#FFC107';
+        interpretationIcon = 'fa-exclamation-circle';
+    } else if (correlationValue >= -0.1) {
+        interpretation = 'Tidak Ada Korelasi';
+        interpretationColor = '#9E9E9E';
+        interpretationIcon = 'fa-minus-circle';
+    } else if (correlationValue >= -0.4) {
+        interpretation = 'Korelasi Lemah Negatif';
+        interpretationColor = '#FF9800';
+        interpretationIcon = 'fa-exclamation-circle';
+    } else if (correlationValue >= -0.7) {
+        interpretation = 'Korelasi Sedang Negatif';
+        interpretationColor = '#FF5722';
+        interpretationIcon = 'fa-times-circle';
+    } else {
+        interpretation = 'Korelasi Sangat Kuat Negatif';
+        interpretationColor = '#F44336';
+        interpretationIcon = 'fa-times-circle';
+    }
+    
+    // Buat konten modal
+    const modalContent = `
+        <div style="padding: 25px;">
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="font-size: 48px; color: ${interpretationColor}; margin-bottom: 15px;">
+                    <i class="fas ${interpretationIcon}"></i>
+                </div>
+                <h3 style="color: #2c3e50; margin: 0 0 10px 0; font-size: 24px; font-weight: 600;">
+                    Korelasi Ranking Spearman
+                </h3>
+                <div style="font-size: 36px; font-weight: 700; color: ${interpretationColor}; margin: 10px 0;">
+                    ${correlationValue.toFixed(3)}
+                </div>
+                <div style="padding: 10px 20px; background: ${interpretationColor}15; border-radius: 8px; display: inline-block; margin-top: 10px;">
+                    <span style="color: ${interpretationColor}; font-weight: 600; font-size: 16px;">
+                        ${interpretation}
+                    </span>
+                </div>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                <h4 style="color: #2c3e50; margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">
+                    <i class="fas fa-info-circle" style="color: #2196F3; margin-right: 8px;"></i>
+                    Penjelasan
+                </h4>
+                <p style="color: #5a6c7d; line-height: 1.8; margin: 0; font-size: 14px; text-align: justify;">
+                    Korelasi Ranking Spearman mengukur seberapa konsisten urutan ranking antara metode FIS dan SAW. 
+                    Nilai ini dihitung dengan membandingkan ranking mahasiswa berdasarkan skor FIS dan skor SAW. 
+                    Semakin tinggi nilai korelasi (mendekati 1), semakin konsisten urutan ranking antara kedua metode.
+                </p>
+            </div>
+            
+            <div style="background: #fff; border: 2px solid #e0e0e0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+                <h4 style="color: #2c3e50; margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">
+                    <i class="fas fa-chart-line" style="color: #673AB7; margin-right: 8px;"></i>
+                    Interpretasi Nilai
+                </h4>
+                <div style="display: grid; gap: 12px;">
+                    <div style="display: flex; align-items: center; padding: 12px; background: #e8f5e9; border-radius: 6px; border-left: 4px solid #4CAF50;">
+                        <div style="flex: 1;">
+                            <strong style="color: #2c3e50;">0.7 - 1.0</strong>
+                            <div style="color: #5a6c7d; font-size: 13px; margin-top: 4px;">Korelasi Sangat Kuat Positif: Ranking sangat konsisten</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; padding: 12px; background: #fff3e0; border-radius: 6px; border-left: 4px solid #FF9800;">
+                        <div style="flex: 1;">
+                            <strong style="color: #2c3e50;">0.4 - 0.69</strong>
+                            <div style="color: #5a6c7d; font-size: 13px; margin-top: 4px;">Korelasi Sedang Positif: Ranking cukup konsisten</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; padding: 12px; background: #fff9c4; border-radius: 6px; border-left: 4px solid #FFC107;">
+                        <div style="flex: 1;">
+                            <strong style="color: #2c3e50;">0.1 - 0.39</strong>
+                            <div style="color: #5a6c7d; font-size: 13px; margin-top: 4px;">Korelasi Lemah Positif: Ranking sedikit konsisten</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; padding: 12px; background: #f5f5f5; border-radius: 6px; border-left: 4px solid #9E9E9E;">
+                        <div style="flex: 1;">
+                            <strong style="color: #2c3e50;">-0.1 - 0.1</strong>
+                            <div style="color: #5a6c7d; font-size: 13px; margin-top: 4px;">Tidak Ada Korelasi: Ranking tidak terkait</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; padding: 12px; background: #ffebee; border-radius: 6px; border-left: 4px solid #F44336;">
+                        <div style="flex: 1;">
+                            <strong style="color: #2c3e50;">&lt; -0.1</strong>
+                            <div style="color: #5a6c7d; font-size: 13px; margin-top: 4px;">Korelasi Negatif: Ranking berlawanan</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196F3;">
+                <h4 style="color: #1976D2; margin: 0 0 10px 0; font-size: 16px; font-weight: 600;">
+                    <i class="fas fa-calculator" style="margin-right: 8px;"></i>
+                    Metode Perhitungan
+                </h4>
+                <p style="color: #1565C0; margin: 0; font-size: 13px; line-height: 1.6;">
+                    Menggunakan <strong>Spearman's Rank Correlation Coefficient</strong> dengan formula:<br>
+                    <code style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 4px; font-size: 12px;">
+                        ρ = 1 - (6 × Σd²) / (n × (n² - 1))
+                    </code><br>
+                    dimana d adalah selisih ranking antara FIS dan SAW untuk setiap mahasiswa.
+                </p>
+            </div>
+        </div>
+    `;
+    
+    // Buat dan tampilkan modal menggunakan Kendo Dialog
+    const dialog = $('<div>')
+        .html(modalContent)
+        .kendoDialog({
+            width: '600px',
+            title: ' Penjelasan Korelasi Ranking',
+            closable: true,
+            modal: true,
+            actions: [
+                {
+                    text: 'Tutup',
+                    primary: true,
+                    action: function() {
+                        return true;
+                    }
+                }
+            ]
+        });
+    
+    const kendoDialog = dialog.data('kendoDialog');
+    
+    // Modifikasi title setelah dialog dibuka untuk menambahkan icon
+    kendoDialog.bind('open', function(e) {
+        setTimeout(function() {
+            // Cari elemen title dari window yang baru dibuka
+            const windowElement = dialog.closest('.k-window');
+            if (windowElement.length) {
+                const titleElement = windowElement.find('.k-window-title');
+                if (titleElement.length) {
+                    titleElement.html('<i class="fas fa-chart-bar"></i> Penjelasan Korelasi Ranking');
+                } else {
+                    // Fallback: cari di seluruh dokumen
+                    $('.k-window:last .k-window-title').html('<i class="fas fa-chart-bar"></i> Penjelasan Korelasi Ranking');
+                }
+            }
+        }, 100);
+    });
+    
+    kendoDialog.open();
 }
 
 // Update chart from actual evaluation data
@@ -842,7 +1017,7 @@ function initializeComparisonGrid(data) {
         console.log('Kendo Grid initialized successfully');
         
         // Simpan referensi grid untuk akses nanti
-        window._comparisonGrid = gridContainer.data('kendoGrid');
+        window._comparisonGrid = gridContainer.data('kendoGrid');      
         
         // Simpan data lengkap ke cache saat pertama kali initialize
         if (data && data.length > 0) {
@@ -917,6 +1092,13 @@ function setupComparisonEventListeners() {
         // Reset filter dropdown ke 'all'
         $('#comparisonFilter').val('all');
         loadComparisonData();
+    });
+    
+    // Event handler untuk klik pada stat-card korelasi ranking
+    $(document).off('click', '.stat-card-correlation').on('click', '.stat-card-correlation', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        showCorrelationRankingModal();
     });
 }
 
