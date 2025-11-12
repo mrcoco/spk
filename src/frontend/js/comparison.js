@@ -775,18 +775,29 @@ function initializeComparisonGrid(data) {
             ],
             dataBound: function(e) {
                 console.log('Comparison grid data bound successfully');
-                // Simpan data ke cache
-                const allData = e.sender.dataSource.data();
-                comparisonDataCache = allData;
+                // Simpan data lengkap ke cache (hanya saat pertama kali atau saat reload)
+                // Jangan update cache jika sedang dalam proses filtering
+                if (!comparisonDataCache || comparisonDataCache.length === 0) {
+                    const allData = e.sender.dataSource.data();
+                    comparisonDataCache = JSON.parse(JSON.stringify(allData)); // Deep copy
+                    console.log('🔧 Comparison data cached:', comparisonDataCache.length, 'items');
+                }
                 // Update statistik berdasarkan data yang difilter
-                updateFilteredStats(allData);
+                const currentData = e.sender.dataSource.data();
+                updateFilteredStats(currentData);
             }
         });
         
         console.log('Kendo Grid initialized successfully');
         
         // Simpan referensi grid untuk akses nanti
-        window._comparisonGrid = gridContainer.data('kendoGrid');      
+        window._comparisonGrid = gridContainer.data('kendoGrid');
+        
+        // Simpan data lengkap ke cache saat pertama kali initialize
+        if (data && data.length > 0) {
+            comparisonDataCache = JSON.parse(JSON.stringify(data)); // Deep copy
+            console.log('🔧 Comparison data cached on initialize:', comparisonDataCache.length, 'items');
+        }      
     } catch (error) {
         console.error('Error initializing Kendo Grid:', error);
         gridContainer.html('<p class="error">Error initializing grid: ' + error.message + '</p>');
@@ -822,6 +833,17 @@ function setupComparisonEventListeners() {
         if (grid) {
             const dataSource = grid.dataSource;
             
+            // Restore data lengkap terlebih dahulu jika ada search filter aktif
+            const searchInput = $("#searchInputComparison").val().trim();
+            if (searchInput) {
+                // Jika ada search input, restore data dari cache dulu
+                if (comparisonDataCache && comparisonDataCache.length > 0) {
+                    dataSource.data(JSON.parse(JSON.stringify(comparisonDataCache)));
+                } else if (window._comparisonData && window._comparisonData.length > 0) {
+                    dataSource.data(JSON.parse(JSON.stringify(window._comparisonData)));
+                }
+            }
+            
             // Clear existing filters
             dataSource.filter([]);
             
@@ -832,6 +854,10 @@ function setupComparisonEventListeners() {
                 dataSource.filter({ field: "is_consistent", operator: "eq", value: false });
             }
             // 'all' atau lainnya, tidak perlu filter tambahan (sudah di-clear di atas)
+            
+            // Update statistik
+            const currentData = dataSource.data();
+            updateFilteredStats(currentData);
         }
     });
     
@@ -942,7 +968,7 @@ function performComparisonSearch() {
         console.log('🔧 Total data di grid:', allData.length);
         
         // Parse multiple keywords
-        // Support comma separator (e.g., "informatika, tinggi")
+        // Support comma separator (e.g., "informatika, tinggi" atau "tinggi,tinggi" atau "tinggi,tinggi,kecil")
         const keywords = searchInput.toLowerCase()
             .split(/[,]+/) // Split by comma
             .map(k => k.trim()) // Trim whitespace
@@ -950,44 +976,186 @@ function performComparisonSearch() {
         
         console.log('🔧 Keywords untuk filter:', keywords);
         
-        // Filter data berdasarkan multiple keywords (AND logic)
-        // Semua keywords harus match di salah satu field
-        const filteredData = allData.filter(item => {
-            // Check if ALL keywords match at least one field
-            return keywords.every(keyword => {
-                // Cek NIM
-                if (item.nim && item.nim.toLowerCase().includes(keyword)) {
-                    return true;
-                }
-                
-                // Cek Nama
-                if (item.nama && item.nama.toLowerCase().includes(keyword)) {
-                    return true;
-                }
-                
-                // Cek Program Studi
-                if (item.program_studi && item.program_studi.toLowerCase().includes(keyword)) {
-                    return true;
-                }
-                
-                // Cek Klasifikasi FIS
-                if (item.fis_kategori && item.fis_kategori.toLowerCase().includes(keyword)) {
-                    return true;
-                }
-                
-                // Cek Klasifikasi SAW
-                if (item.saw_kategori && item.saw_kategori.toLowerCase().includes(keyword)) {
-                    return true;
-                }
-                
-                // Cek Status Lulus Aktual
-                const actualStatus = (item.actual_status || item.actual_class || '').toLowerCase();
-                if (actualStatus && actualStatus.includes(keyword)) {
-                    return true;
-                }
-                
-                return false;
+        // Filter data berdasarkan kombinasi filter spesifik
+        // Kombinasi filter:
+        // - 2 keywords: 
+        //   a) Jika keyword[0] match dengan program_studi → keyword[0] = Program Studi, keyword[1] = Klasifikasi (FIS/SAW/Status)
+        //   b) Jika keyword[0] tidak match dengan program_studi → keyword[0] = FIS kategori, keyword[1] = SAW kategori
+        // - 3 keywords: 
+        //   a) Jika keyword[0] match dengan program_studi → keyword[0] = Program Studi, keyword[1] = FIS kategori, keyword[2] = SAW kategori
+        //   b) Jika keyword[0] tidak match dengan program_studi → keyword[0] = FIS kategori, keyword[1] = SAW kategori, keyword[2] = Status Aktual
+        // - 4 keywords: keyword[0] = Program Studi, keyword[1] = FIS kategori, keyword[2] = SAW kategori, keyword[3] = Status Aktual
+        // - 1 keyword atau >4 keywords: gunakan logika lama (search di semua field)
+        
+        // Cek apakah keyword[0] cocok dengan program studi (untuk kombinasi 2, 3, dan 4 keywords)
+        let isProdiCombination2 = false;
+        let isProdiFisSawCombination = false;
+        let isProdiFisSawStatusCombination = false;
+        
+        if (keywords.length === 2 && allData.length > 0) {
+            // Cek apakah keyword[0] match dengan program_studi di data
+            const keyword0Lower = keywords[0].toLowerCase();
+            const hasProdiMatch = allData.some(item => {
+                const prodi = (item.program_studi || '').toLowerCase();
+                return prodi && prodi.includes(keyword0Lower);
             });
+            isProdiCombination2 = hasProdiMatch;
+            console.log('🔧 Keyword[0] match dengan program studi (2 keywords):', isProdiCombination2, 'keyword:', keywords[0]);
+        }
+        
+        if (keywords.length === 3 && allData.length > 0) {
+            // Cek apakah keyword[0] match dengan program_studi di data
+            const keyword0Lower = keywords[0].toLowerCase();
+            const hasProdiMatch = allData.some(item => {
+                const prodi = (item.program_studi || '').toLowerCase();
+                return prodi && prodi.includes(keyword0Lower);
+            });
+            isProdiFisSawCombination = hasProdiMatch;
+            console.log('🔧 Keyword[0] match dengan program studi (3 keywords):', isProdiFisSawCombination, 'keyword:', keywords[0]);
+        }
+        
+        if (keywords.length === 4 && allData.length > 0) {
+            // Cek apakah keyword[0] match dengan program_studi di data
+            const keyword0Lower = keywords[0].toLowerCase();
+            const hasProdiMatch = allData.some(item => {
+                const prodi = (item.program_studi || '').toLowerCase();
+                return prodi && prodi.includes(keyword0Lower);
+            });
+            isProdiFisSawStatusCombination = hasProdiMatch;
+            console.log('🔧 Keyword[0] match dengan program studi (4 keywords):', isProdiFisSawStatusCombination, 'keyword:', keywords[0]);
+        }
+        
+        const filteredData = allData.filter(item => {
+            if (keywords.length === 2) {
+                if (isProdiCombination2) {
+                    // Kombinasi baru: Program Studi + Klasifikasi (FIS/SAW/Status)
+                    const prodi = (item.program_studi || '').toLowerCase();
+                    const prodiMatch = prodi && prodi.includes(keywords[0]);
+                    
+                    // Cek keyword[1] di FIS, SAW, atau Status Aktual
+                    const keyword1Lower = keywords[1].toLowerCase();
+                    const fisMatch = item.fis_kategori && 
+                        item.fis_kategori.toLowerCase().includes(keyword1Lower);
+                    const sawMatch = item.saw_kategori && 
+                        item.saw_kategori.toLowerCase().includes(keyword1Lower);
+                    const actualStatus = (item.actual_status || item.actual_class || '').toLowerCase();
+                    const statusMatch = actualStatus && actualStatus.includes(keyword1Lower);
+                    
+                    return prodiMatch && (fisMatch || sawMatch || statusMatch);
+                } else {
+                    // Kombinasi lama: FIS kategori + SAW kategori
+                    const fisMatch = item.fis_kategori && 
+                        item.fis_kategori.toLowerCase().includes(keywords[0]);
+                    const sawMatch = item.saw_kategori && 
+                        item.saw_kategori.toLowerCase().includes(keywords[1]);
+                    return fisMatch && sawMatch;
+                }
+            } else if (keywords.length === 3) {
+                if (isProdiFisSawCombination) {
+                    // Kombinasi baru: Program Studi + FIS kategori + SAW kategori
+                    const prodi = (item.program_studi || '').toLowerCase();
+                    const prodiMatch = prodi && prodi.includes(keywords[0]);
+                    const fisMatch = item.fis_kategori && 
+                        item.fis_kategori.toLowerCase().includes(keywords[1]);
+                    const sawMatch = item.saw_kategori && 
+                        item.saw_kategori.toLowerCase().includes(keywords[2]);
+                    return prodiMatch && fisMatch && sawMatch;
+                } else {
+                    // Kombinasi lama: FIS kategori + SAW kategori + Status Aktual
+                    const fisMatch = item.fis_kategori && 
+                        item.fis_kategori.toLowerCase().includes(keywords[0]);
+                    const sawMatch = item.saw_kategori && 
+                        item.saw_kategori.toLowerCase().includes(keywords[1]);
+                    const actualStatus = (item.actual_status || item.actual_class || '').toLowerCase();
+                    const statusMatch = actualStatus && actualStatus.includes(keywords[2]);
+                    return fisMatch && sawMatch && statusMatch;
+                }
+            } else if (keywords.length === 4) {
+                if (isProdiFisSawStatusCombination) {
+                    // Kombinasi: Program Studi + FIS kategori + SAW kategori + Status Aktual
+                    const prodi = (item.program_studi || '').toLowerCase();
+                    const prodiMatch = prodi && prodi.includes(keywords[0]);
+                    const fisMatch = item.fis_kategori && 
+                        item.fis_kategori.toLowerCase().includes(keywords[1]);
+                    const sawMatch = item.saw_kategori && 
+                        item.saw_kategori.toLowerCase().includes(keywords[2]);
+                    const actualStatus = (item.actual_status || item.actual_class || '').toLowerCase();
+                    const statusMatch = actualStatus && actualStatus.includes(keywords[3]);
+                    return prodiMatch && fisMatch && sawMatch && statusMatch;
+                } else {
+                    // Jika keyword[0] tidak match program_studi, gunakan logika lama (search di semua field)
+                    return keywords.every(keyword => {
+                        // Cek NIM
+                        if (item.nim && item.nim.toLowerCase().includes(keyword)) {
+                            return true;
+                        }
+                        
+                        // Cek Nama
+                        if (item.nama && item.nama.toLowerCase().includes(keyword)) {
+                            return true;
+                        }
+                        
+                        // Cek Program Studi
+                        if (item.program_studi && item.program_studi.toLowerCase().includes(keyword)) {
+                            return true;
+                        }
+                        
+                        // Cek Klasifikasi FIS
+                        if (item.fis_kategori && item.fis_kategori.toLowerCase().includes(keyword)) {
+                            return true;
+                        }
+                        
+                        // Cek Klasifikasi SAW
+                        if (item.saw_kategori && item.saw_kategori.toLowerCase().includes(keyword)) {
+                            return true;
+                        }
+                        
+                        // Cek Status Lulus Aktual
+                        const actualStatus = (item.actual_status || item.actual_class || '').toLowerCase();
+                        if (actualStatus && actualStatus.includes(keyword)) {
+                            return true;
+                        }
+                        
+                        return false;
+                    });
+                }
+            } else {
+                // Logika lama: search di semua field (1 keyword atau >3 keywords)
+                return keywords.every(keyword => {
+                    // Cek NIM
+                    if (item.nim && item.nim.toLowerCase().includes(keyword)) {
+                        return true;
+                    }
+                    
+                    // Cek Nama
+                    if (item.nama && item.nama.toLowerCase().includes(keyword)) {
+                        return true;
+                    }
+                    
+                    // Cek Program Studi
+                    if (item.program_studi && item.program_studi.toLowerCase().includes(keyword)) {
+                        return true;
+                    }
+                    
+                    // Cek Klasifikasi FIS
+                    if (item.fis_kategori && item.fis_kategori.toLowerCase().includes(keyword)) {
+                        return true;
+                    }
+                    
+                    // Cek Klasifikasi SAW
+                    if (item.saw_kategori && item.saw_kategori.toLowerCase().includes(keyword)) {
+                        return true;
+                    }
+                    
+                    // Cek Status Lulus Aktual
+                    const actualStatus = (item.actual_status || item.actual_class || '').toLowerCase();
+                    if (actualStatus && actualStatus.includes(keyword)) {
+                        return true;
+                    }
+                    
+                    return false;
+                });
+            }
         });
         
         console.log('🔧 Data yang difilter:', filteredData.length);
@@ -1005,11 +1173,57 @@ function performComparisonSearch() {
         // Update statistik
         updateFilteredStats(filteredData);
         
-        // Build info message
-        const keywordText = keywords.length > 1 ? 
-            `keywords: "${keywords.join('", "')}"` : 
-            `"${searchInput}"`;
-        updateComparisonSearchInfo(`Ditemukan ${filteredData.length} data dengan ${keywordText}`, "success");
+        // Build info message berdasarkan jenis kombinasi filter
+        let infoMessage = '';
+        if (keywords.length === 2) {
+            // Cek apakah kombinasi Prodi+Klasifikasi atau FIS+SAW
+            let isProdiCombination2 = false;
+            if (allData.length > 0) {
+                const keyword0Lower = keywords[0].toLowerCase();
+                const hasProdiMatch = allData.some(item => {
+                    const prodi = (item.program_studi || '').toLowerCase();
+                    return prodi && prodi.includes(keyword0Lower);
+                });
+                isProdiCombination2 = hasProdiMatch;
+            }
+            
+            if (isProdiCombination2) {
+                infoMessage = `Ditemukan ${filteredData.length} data dengan Prodi "${keywords[0]}" dan Klasifikasi "${keywords[1]}"`;
+            } else {
+                infoMessage = `Ditemukan ${filteredData.length} data dengan FIS "${keywords[0]}" dan SAW "${keywords[1]}"`;
+            }
+        } else if (keywords.length === 3) {
+            // Cek apakah kombinasi Prodi+FIS+SAW atau FIS+SAW+Status
+            let isProdiFisSawCombination = false;
+            if (allData.length > 0) {
+                const keyword0Lower = keywords[0].toLowerCase();
+                const hasProdiMatch = allData.some(item => {
+                    const prodi = (item.program_studi || '').toLowerCase();
+                    return prodi && prodi.includes(keyword0Lower);
+                });
+                isProdiFisSawCombination = hasProdiMatch;
+            }
+            
+            if (isProdiFisSawCombination) {
+                infoMessage = `Ditemukan ${filteredData.length} data dengan Prodi "${keywords[0]}", FIS "${keywords[1]}", dan SAW "${keywords[2]}"`;
+            } else {
+                infoMessage = `Ditemukan ${filteredData.length} data dengan FIS "${keywords[0]}", SAW "${keywords[1]}", dan Status "${keywords[2]}"`;
+            }
+        } else if (keywords.length === 4) {
+            // Kombinasi: Program Studi + FIS kategori + SAW kategori + Status Aktual
+            if (isProdiFisSawStatusCombination) {
+                infoMessage = `Ditemukan ${filteredData.length} data dengan Prodi "${keywords[0]}", FIS "${keywords[1]}", SAW "${keywords[2]}", dan Status "${keywords[3]}"`;
+            } else {
+                const keywordText = `keywords: "${keywords.join('", "')}"`;
+                infoMessage = `Ditemukan ${filteredData.length} data dengan ${keywordText}`;
+            }
+        } else {
+            const keywordText = keywords.length > 1 ? 
+                `keywords: "${keywords.join('", "')}"` : 
+                `"${searchInput}"`;
+            infoMessage = `Ditemukan ${filteredData.length} data dengan ${keywordText}`;
+        }
+        updateComparisonSearchInfo(infoMessage, "success");
         
     } catch (error) {
         console.error('🔧 Error dalam pencarian comparison:', error);
@@ -1019,20 +1233,52 @@ function performComparisonSearch() {
 
 // Fungsi untuk clear pencarian comparison
 function clearComparisonSearch() {
+    console.log('🔧 clearComparisonSearch called');
+    
+    // Clear search input
     $("#searchInputComparison").val("");
     
-    // Restore data lengkap dari cache jika tersedia
+    // Reset filter dropdown ke 'all'
+    $('#comparisonFilter').val('all');
+    
+    // Restore data lengkap dari cache atau window._comparisonData
     const grid = window._comparisonGrid;
-    if (grid && comparisonDataCache) {
-        console.log('🔧 Restoring full data from cache');
-        grid.dataSource.data(comparisonDataCache);
-        updateFilteredStats(comparisonDataCache);
-    } else if (grid) {
-        console.log('🔧 Reloading data from server');
-        grid.dataSource.read();
+    if (!grid) {
+        console.error('🔧 Grid comparison tidak ditemukan');
+        updateComparisonSearchInfo("Grid comparison tidak tersedia", "error");
+        return;
     }
     
-    updateComparisonSearchInfo("Pencarian telah dibersihkan", "info");
+    // Prioritas: comparisonDataCache > window._comparisonData > reload dari server
+    let fullData = null;
+    
+    if (comparisonDataCache && comparisonDataCache.length > 0) {
+        console.log('🔧 Restoring full data from comparisonDataCache:', comparisonDataCache.length, 'items');
+        fullData = JSON.parse(JSON.stringify(comparisonDataCache)); // Deep copy
+    } else if (window._comparisonData && window._comparisonData.length > 0) {
+        console.log('🔧 Restoring full data from window._comparisonData:', window._comparisonData.length, 'items');
+        fullData = JSON.parse(JSON.stringify(window._comparisonData)); // Deep copy
+    } else {
+        console.log('🔧 No cache available, reloading data from server');
+        loadComparisonData();
+        updateComparisonSearchInfo("Data sedang dimuat ulang...", "info");
+        return;
+    }
+    
+    // Clear semua filter di dataSource
+    grid.dataSource.filter([]);
+    
+    // Set data lengkap ke grid
+    grid.dataSource.data(fullData);
+    
+    // Update statistik
+    updateFilteredStats(fullData);
+    
+    // Refresh grid untuk memastikan tampilan ter-update
+    grid.refresh();
+    
+    updateComparisonSearchInfo("Pencarian telah dibersihkan, menampilkan semua data", "info");
+    console.log('🔧 Clear search completed, grid now has', fullData.length, 'items');
 }
 
 // Fungsi untuk update search info comparison
