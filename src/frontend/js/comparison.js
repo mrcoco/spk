@@ -594,6 +594,26 @@ function getComparisonBadgeClass(status) {
     return 'bg-secondary';
 }
 
+// Helper function untuk mendapatkan badge class FIS (konsisten dengan FIS actual evaluation)
+function getFISComparisonBadgeClass(category) {
+    if (!category) return 'bg-secondary';
+    const normalized = category.toString().toUpperCase();
+    if (normalized.includes('TINGGI')) return 'bg-success';
+    if (normalized.includes('SEDANG')) return 'bg-warning';
+    if (normalized.includes('KECIL')) return 'bg-danger';
+    return 'bg-secondary';
+}
+
+// Helper function untuk mendapatkan badge class SAW (konsisten dengan SAW actual evaluation)
+function getSAWComparisonBadgeClass(category) {
+    if (!category) return 'bg-secondary';
+    const normalized = category.toString().toUpperCase();
+    if (normalized.includes('TINGGI')) return 'bg-success';
+    if (normalized.includes('SEDANG')) return 'bg-warning';
+    if (normalized.includes('KECIL')) return 'bg-danger';
+    return 'bg-secondary';
+}
+
 // Helper function untuk format status aktual
 function formatComparisonActualStatus(status) {
     if (!status) return 'N/A';
@@ -720,8 +740,7 @@ function initializeComparisonGrid(data) {
                     }
                 },
                 { field: "fis_kategori", title: "Hasil FIS", width: 200, template: function(dataItem) {
-                        const categoryClass = dataItem.fis_kategori ? 
-                            dataItem.fis_kategori.toLowerCase().replace(/\s+/g, '-') : '';
+                        const badgeClass = getFISComparisonBadgeClass(dataItem.fis_kategori);
                         // Tampilkan nilai FIS (sudah dalam skala 0-100)
                         const fisNilai = dataItem.fis_nilai || 0;
                         const fisNilaiFormatted = parseFloat(fisNilai).toFixed(2);
@@ -729,7 +748,7 @@ function initializeComparisonGrid(data) {
                         return `
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <div>
-                                    <span class="result-category fis-category ${categoryClass}" style="font-weight: bold;">
+                                    <span class="badge ${badgeClass}" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">
                                         ${dataItem.fis_kategori || 'N/A'}
                                     </span>
                                 </div>
@@ -738,11 +757,16 @@ function initializeComparisonGrid(data) {
                                 </div>
                             </div>
                         `;
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    },
+                    headerAttributes: {
+                        style: "text-align: center;"
                     }
                 },
                 { field: "saw_kategori", title: "Hasil SAW", width: 240, template: function(dataItem) {
-                        const categoryClass = dataItem.saw_kategori ? 
-                            dataItem.saw_kategori.toLowerCase().replace(/\s+/g, '-') : '';
+                        const badgeClass = getSAWComparisonBadgeClass(dataItem.saw_kategori);
                         // Tampilkan nilai real dan normalized
                         const sawNilaiReal = dataItem.saw_nilai || 0;
                         const sawNilaiNormalized = dataItem.saw_nilai_normalized || 0;
@@ -755,7 +779,7 @@ function initializeComparisonGrid(data) {
                         return `
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <div>
-                                    <span class="result-category saw-category ${categoryClass}" style="font-weight: bold;">
+                                    <span class="badge ${badgeClass}" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">
                                         ${dataItem.saw_kategori || 'N/A'}
                                     </span>
                                 </div>
@@ -766,6 +790,12 @@ function initializeComparisonGrid(data) {
                                 </div>
                             </div>
                         `;
+                    },
+                    attributes: {
+                        style: "text-align: center;"
+                    },
+                    headerAttributes: {
+                        style: "text-align: center;"
                     }
                 },
                 { field: "is_consistent", title: "Konsistensi", width: 120, template: function(dataItem) {
