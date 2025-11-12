@@ -1295,66 +1295,82 @@
                         <!-- Control Panel -->
                         <div class="evaluation-control-panel">
                             <div class="card">
-                                <div class="card-header">
-                                    <h3><i class="fas fa-cogs"></i> Pengaturan Evaluasi SAW dengan Data Aktual</h3>
+                                <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; border-radius: 12px 12px 0 0;">
+                                    <h3 style="margin: 0;"><i class="fas fa-cogs"></i> Pengaturan Evaluasi SAW dengan Data Aktual</h3>
                                 </div>
                                 <div class="card-body">
-                                    <div class="form-row">
+                                    <div class="info-box" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); color: #1976D2; border: 1px solid rgba(33, 150, 243, 0.25); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                                        <h4 style="margin: 0 0 10px 0; font-weight: 600;">
+                                            <i class="fas fa-info-circle"></i> Evaluasi Menggunakan Seluruh Data Berlabel
+                                        </h4>
+                                        <p style="margin: 0; color: #42526e; line-height: 1.6;">
+                                            Semua mahasiswa dengan <code>status_lulus_aktual</code> akan dipakai sebagai data evaluasi. 
+                                            Bobot default mengikuti konfigurasi backend: IPK <strong>35%</strong>, SKS <strong>32.5%</strong>, dan Nilai D/E/K <strong>32.5%</strong>. pastikan total bobot = 100%.
+                                        </p>
+                                    </div>
+
+                                    <div class="form-row" style="margin-bottom: 16px;">
                                         <div class="form-group">
-                                            <label for="sawEvaluationActualIpkWeight">Bobot IPK (%):</label>
-                                            <input type="number" id="sawEvaluationActualIpkWeight" value="40" min="0" max="100" class="form-control">
-                                            <small class="form-text">Bobot untuk kriteria IPK (0-100%)</small>
+                                            <label for="sawEvaluationActualIpkWeight" style="font-weight: 600; color: #333;">
+                                                <i class="fas fa-star" style="color: #28a745;"></i> Bobot IPK (%)
+                                            </label>
+                                            <input type="number" id="sawEvaluationActualIpkWeight" value="35" min="0" max="100" step="0.1" class="form-control" style="border-radius: 10px;">
+                                            <small class="form-text text-muted">Bobot kriteria IPK (default 35%)</small>
                                         </div>
                                         <div class="form-group">
-                                            <label for="sawEvaluationActualSksWeight">Bobot SKS (%):</label>
-                                            <input type="number" id="sawEvaluationActualSksWeight" value="35" min="0" max="100" class="form-control">
-                                            <small class="form-text">Bobot untuk kriteria SKS (0-100%)</small>
+                                            <label for="sawEvaluationActualSksWeight" style="font-weight: 600; color: #333;">
+                                                <i class="fas fa-book" style="color: #f6b93b;"></i> Bobot SKS (%)
+                                            </label>
+                                            <input type="number" id="sawEvaluationActualSksWeight" value="32.5" min="0" max="100" step="0.1" class="form-control" style="border-radius: 10px;">
+                                            <small class="form-text text-muted">Bobot kriteria SKS (default 32.5%)</small>
                                         </div>
                                         <div class="form-group">
-                                            <label for="sawEvaluationActualDekWeight">Bobot DEK (%):</label>
-                                            <input type="number" id="sawEvaluationActualDekWeight" value="25" min="0" max="100" class="form-control">
-                                            <small class="form-text">Bobot untuk kriteria DEK (0-100%)</small>
+                                            <label for="sawEvaluationActualDekWeight" style="font-weight: 600; color: #333;">
+                                                <i class="fas fa-percentage" style="color: #dc3545;"></i> Bobot Nilai D/E/K (%)
+                                            </label>
+                                            <input type="number" id="sawEvaluationActualDekWeight" value="32.5" min="0" max="100" step="0.1" class="form-control" style="border-radius: 10px;">
+                                            <small class="form-text text-muted">Bobot kriteria D/E/K (default 32.5%)</small>
                                         </div>
                                     </div>
-                                    
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="sawEvaluationActualTestSize">Ukuran Data Test (%):</label>
-                                            <input type="number" id="sawEvaluationActualTestSize" value="30" min="10" max="50" class="form-control">
-                                            <small class="form-text">Persentase data yang digunakan untuk testing (10-50%)</small>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="sawEvaluationActualRandomState">Random State:</label>
-                                            <input type="number" id="sawEvaluationActualRandomState" value="42" class="form-control">
-                                            <small class="form-text">Seed untuk reproduksi hasil yang konsisten</small>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>
-                                                <input type="checkbox" id="sawEvaluationActualSaveToDb"> Simpan ke Database
+
+                                    <div class="form-row" style="align-items: center; margin-bottom: 20px;">
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label style="font-weight: 500; color: #555;">
+                                                <input type="checkbox" id="sawEvaluationActualSaveToDb"> Simpan hasil evaluasi ke database
                                             </label>
                                         </div>
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <small class="form-text text-muted">
+                                                Total bobot yang disarankan: <strong>100%</strong>. Sistem akan memberi peringatan jika melewati batas toleransi.
+                                            </small>
+                                        </div>
                                     </div>
-                                    
-                                    <!-- Action Buttons Row -->
-                                    <div class="action-buttons-row">
-                                        <div class="action-buttons-group">
-                                            <button id="sawEvaluationActualCalculateBtn" class="btn btn-primary">
+
+                                    <div class="action-buttons-row" style="margin-bottom: 18px;">
+                                        <div class="action-buttons-group" style="gap: 12px;">
+                                            <button id="sawEvaluationActualCalculateBtn" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 14px 28px; font-size: 16px; border-radius: 10px; box-shadow: 0 10px 25px rgba(102, 126, 234, 0.35);">
                                                 <i class="fas fa-calculator"></i>
-                                                Hitung Evaluasi SAW dengan Data Aktual
+                                                Mulai Evaluasi SAW dengan Data Aktual
                                             </button>
-                                            <button id="sawEvaluationActualExportBtn" class="btn btn-secondary">
+                                            <!-- <button id="sawEvaluationActualExportBtn" class="btn btn-secondary" style="border-radius: 10px;">
                                                 <i class="fas fa-download"></i>
                                                 Export Data
                                             </button>
-                                            <button id="sawEvaluationActualPrintBtn" class="btn btn-secondary">
+                                            <button id="sawEvaluationActualPrintBtn" class="btn btn-secondary" style="border-radius: 10px;">
                                                 <i class="fas fa-print"></i>
                                                 Cetak Laporan
-                                            </button>
+                                            </button> -->
                                         </div>
                                     </div>
-                                    <div class="info-box">
-                                        <h4><i class="fas fa-info-circle"></i> Informasi Evaluasi SAW dengan Data Aktual</h4>
-                                        <p>Evaluasi ini akan mengukur performa metode SAW dengan membandingkan hasil klasifikasi terhadap status lulus yang sebenarnya dari mahasiswa. Data aktual diambil dari field <code>status_lulus_aktual</code> di database.</p>
+
+                                    <div class="info-box" style="background: #fff8e1; border-left: 4px solid #ffc107; padding: 16px; border-radius: 10px;">
+                                        <h4 style="margin: 0 0 8px 0; color: #f57f17;">
+                                            <i class="fas fa-lightbulb"></i> Catatan
+                                        </h4>
+                                        <p style="margin: 0; color: #5d4037; line-height: 1.6;">
+                                            SAW adalah metode berbasis aturan sehingga tidak memerlukan pembagian train/test. 
+                                            Bobot dapat disesuaikan sesuai kebijakan, namun tetap pastikan totalnya 100% agar normalisasi berjalan sempurna.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -1526,12 +1542,12 @@
                                 <div class="card-header">
                                     <h3><i class="fas fa-chart-pie"></i> Visualisasi Hasil SAW dengan Data Aktual</h3>
                                     <div class="card-actions">
-                                        <button class="btn btn-secondary btn-sm" onclick="window.sawEvaluationActual.exportData()">
+                                        <!-- <button class="btn btn-secondary btn-sm" onclick="window.sawEvaluationActual.exportData()">
                                             <i class="fas fa-download"></i> Export Data
                                         </button>
                                         <button class="btn btn-secondary btn-sm" onclick="window.sawEvaluationActual.printReport()">
                                             <i class="fas fa-print"></i> Print Report
-                                        </button>
+                                        </button> -->
                                     </div>
                                 </div>
                                 <div class="card-body">
