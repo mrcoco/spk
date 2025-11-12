@@ -1848,6 +1848,16 @@ function displayFISActualEvaluationResults(result) {
     // Update sample data section
     updateFISActualSampleSection(result);
     
+    // Reset cache saat data baru dimuat
+    window.fisActualEvaluationDataCache = null;
+    
+    // Update full data untuk modal confusion matrix
+    if (result.full_data) {
+        window.fisActualEvaluationFullData = result.full_data;
+    } else if (result.results) {
+        window.fisActualEvaluationFullData = result.results;
+    }
+    
     // Show all sections
     $('#fisActualSummarySection, #fisActualMetricsSection, #fisActualCategorySection, #fisActualSampleSection, #fisActualInterpretationSection').show();
 }
@@ -2022,10 +2032,7 @@ function updateFISActualSampleSection(result) {
                 mode: "multiple",
                 allowUnsort: true
             },
-            filterable: {
-                mode: "row",
-                extra: false
-            },
+            filterable: false, // Disable default Kendo filters, use custom search instead
             pageable: {
                 refresh: true,
                 pageSizes: [10, 20, 50, 100, "all"],
@@ -2056,13 +2063,6 @@ function updateFISActualSampleSection(result) {
                     field: "nim", 
                     title: "NIM", 
                     width: 130,
-                    filterable: {
-                        cell: {
-                            operator: "contains",
-                            showOperators: false,
-                            suggestionOperator: "contains"
-                        }
-                    },
                     template: function(dataItem) {
                         return `<span style="font-family: monospace; font-weight: 500; color: #1976D2;">${dataItem.nim || 'N/A'}</span>`;
                     }
@@ -2071,13 +2071,6 @@ function updateFISActualSampleSection(result) {
                     field: "nama", 
                     title: "Nama Mahasiswa", 
                     width: 220,
-                    filterable: {
-                        cell: {
-                            operator: "contains",
-                            showOperators: false,
-                            suggestionOperator: "contains"
-                        }
-                    },
                     template: function(dataItem) {
                         return `<span style="font-weight: 500; color: #333;">${dataItem.nama || 'N/A'}</span>`;
                     }
@@ -2086,16 +2079,6 @@ function updateFISActualSampleSection(result) {
                     field: "program_studi", 
                     title: "Program Studi", 
                     width: 180,
-                    filterable: {
-                        multi: true,
-                        search: true,
-                        dataSource: getUniqueProdiList(fullData),
-                        checkAll: true,
-                        itemTemplate: function(e) {
-                            const prodiColor = getProdiColor(e.program_studi);
-                            return `<span style="padding: 2px 8px; background: ${prodiColor.bg}; color: ${prodiColor.text}; border-radius: 3px; font-size: 11px; font-weight: 500; display: inline-block; margin: 2px 0;">${e.program_studi}</span>`;
-                        }
-                    },
                     template: function(dataItem) {
                         const prodiColor = getProdiColor(dataItem.program_studi);
                         return `<span style="padding: 4px 10px; background: ${prodiColor.bg}; color: ${prodiColor.text}; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">${dataItem.program_studi || 'N/A'}</span>`;
@@ -2180,20 +2163,6 @@ function updateFISActualSampleSection(result) {
                     field: "predicted_category", 
                     title: "Prediksi FIS", 
                     width: 180,
-                    filterable: {
-                        multi: true,
-                        search: true,
-                        dataSource: [
-                            { predicted_category: "Peluang Lulus Tinggi" },
-                            { predicted_category: "Peluang Lulus Sedang" },
-                            { predicted_category: "Peluang Lulus Kecil" }
-                        ],
-                        checkAll: true,
-                        itemTemplate: function(e) {
-                            const badgeClass = getFISClassificationBadgeClass(e.predicted_category);
-                            return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 4px 10px; font-weight: 600; white-space: nowrap;">${e.predicted_category}</span>`;
-                        }
-                    },
                     template: function(dataItem) {
                         const badgeClass = getFISClassificationBadgeClass(dataItem.predicted_category);
                         return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">${dataItem.predicted_category || 'N/A'}</span>`;
@@ -2203,32 +2172,6 @@ function updateFISActualSampleSection(result) {
                     field: "actual_status", 
                     title: "Status Aktual", 
                     width: 150,
-                    filterable: {
-                        multi: true,
-                        search: true,
-                        dataSource: [
-                            { actual_status: "LULUS_TINGGI", text: "LULUS TINGGI" },
-                            { actual_status: "LULUS_SEDANG", text: "LULUS SEDANG" },
-                            { actual_status: "LULUS_KECIL", text: "LULUS KECIL" }
-                        ],
-                        checkAll: true,
-                        itemTemplate: function(e) {
-                            const getActualStatusBadgeClass = (status) => {
-                                switch(status) {
-                                    case 'LULUS_TINGGI':
-                                        return 'bg-success';
-                                    case 'LULUS_SEDANG':
-                                        return 'bg-warning';
-                                    case 'LULUS_KECIL':
-                                        return 'bg-danger';
-                                    default:
-                                        return 'bg-secondary';
-                                }
-                            };
-                            const badgeClass = getActualStatusBadgeClass(e.actual_status);
-                            return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 4px 10px; font-weight: 600; white-space: nowrap;">${e.text}</span>`;
-                        }
-                    },
                     template: function(dataItem) {
                         const getActualStatusBadgeClass = (status) => {
                             switch(status) {
@@ -2273,6 +2216,20 @@ function updateFISActualSampleSection(result) {
                 console.log('FIS Actual Sample Grid Data Bound');
                 const grid = e.sender;
                 const totalRecords = grid.dataSource.total();
+                
+                // Simpan data lengkap ke cache untuk custom search
+                const allData = grid.dataSource.data();
+                if (!window.fisActualEvaluationDataCache || window.fisActualEvaluationDataCache.length === 0) {
+                    window.fisActualEvaluationDataCache = JSON.parse(JSON.stringify(allData)); // Deep copy
+                    console.log('🔧 FIS Actual Evaluation data cached:', window.fisActualEvaluationDataCache.length, 'items');
+                }
+                
+                // Update total data di toolbar
+                const total = window.fisActualEvaluationDataCache ? window.fisActualEvaluationDataCache.length : allData.length;
+                const totalElement = $('#fisActualGridTotal');
+                if (totalElement.length) {
+                    totalElement.text(total);
+                }
                 
                 // Update info text
                 const infoText = `Menampilkan ${totalRecords} data mahasiswa dengan status lulus aktual`;
@@ -2958,4 +2915,329 @@ function getStatusBadgeColor(status) {
 function printFISActualEvaluationResults() {
     console.log('🖨️ Print hasil evaluasi FIS...');
     window.print();
-} 
+}
+
+// Cache untuk data FIS Actual Evaluation
+window.fisActualEvaluationDataCache = null;
+
+// Fungsi untuk melakukan pencarian FIS Actual Evaluation
+// Mendukung pencarian berdasarkan: NIM, Nama, Program Studi, Klasifikasi FIS, Status Lulus Aktual
+// Mendukung multiple keywords dengan kombinasi filter seperti comparison
+function performFISActualSearch() {
+    console.log('🔧 performFISActualSearch dipanggil');
+    
+    const searchInput = $("#searchInputFISActual").val().trim();
+    
+    if (!searchInput) {
+        console.log('🔧 Input pencarian kosong, tampilkan semua data');
+        const grid = $('#fisActualSampleDataGrid').data('kendoGrid');
+        if (grid && window.fisActualEvaluationDataCache) {
+            grid.dataSource.data(JSON.parse(JSON.stringify(window.fisActualEvaluationDataCache))); // Deep copy
+            grid.refresh();
+            updateFISActualSearchInfo("Menampilkan semua data evaluasi FIS", "info");
+        }
+        return;
+    }
+    
+    console.log('🔧 Memulai pencarian evaluasi FIS untuk:', searchInput);
+    
+    try {
+        const grid = $('#fisActualSampleDataGrid').data('kendoGrid');
+        if (!grid) {
+            console.error('🔧 Grid FIS Actual tidak ditemukan');
+            updateFISActualSearchInfo("Grid tidak tersedia", "error");
+            return;
+        }
+        
+        // Gunakan data dari cache jika tersedia
+        const allData = window.fisActualEvaluationDataCache || grid.dataSource.data();
+        console.log('🔧 Total data di grid:', allData.length);
+        
+        // Parse multiple keywords
+        const keywords = searchInput.toLowerCase()
+            .split(/[,]+/) // Split by comma
+            .map(k => k.trim()) // Trim whitespace
+            .filter(k => k.length > 0); // Remove empty strings
+        
+        console.log('🔧 Keywords untuk filter:', keywords);
+        
+        // Filter data berdasarkan kombinasi filter spesifik (sama seperti comparison)
+        // Cek apakah keyword[0] cocok dengan program studi
+        let isProdiCombination2 = false;
+        let isProdiFisStatusCombination = false;
+        let isProdiFisStatusFieldCombination = false;
+        
+        if (keywords.length === 2 && allData.length > 0) {
+            const keyword0Lower = keywords[0].toLowerCase();
+            const hasProdiMatch = allData.some(item => {
+                const prodi = (item.program_studi || '').toLowerCase();
+                return prodi && prodi.includes(keyword0Lower);
+            });
+            isProdiCombination2 = hasProdiMatch;
+        }
+        
+        if (keywords.length === 3 && allData.length > 0) {
+            const keyword0Lower = keywords[0].toLowerCase();
+            const hasProdiMatch = allData.some(item => {
+                const prodi = (item.program_studi || '').toLowerCase();
+                return prodi && prodi.includes(keyword0Lower);
+            });
+            isProdiFisStatusCombination = hasProdiMatch;
+        }
+        
+        if (keywords.length === 4 && allData.length > 0) {
+            const keyword0Lower = keywords[0].toLowerCase();
+            const hasProdiMatch = allData.some(item => {
+                const prodi = (item.program_studi || '').toLowerCase();
+                return prodi && prodi.includes(keyword0Lower);
+            });
+            isProdiFisStatusFieldCombination = hasProdiMatch;
+        }
+        
+        const filteredData = allData.filter(item => {
+            if (keywords.length === 2) {
+                if (isProdiCombination2) {
+                    // Kombinasi: Program Studi + Klasifikasi (FIS/Status)
+                    const prodi = (item.program_studi || '').toLowerCase();
+                    const prodiMatch = prodi && prodi.includes(keywords[0]);
+                    
+                    const keyword1Lower = keywords[1].toLowerCase();
+                    const fisMatch = item.predicted_category && 
+                        item.predicted_category.toLowerCase().includes(keyword1Lower);
+                    const actualStatus = (item.actual_status || '').toLowerCase();
+                    const statusMatch = actualStatus && actualStatus.includes(keyword1Lower);
+                    
+                    return prodiMatch && (fisMatch || statusMatch);
+                } else {
+                    // Kombinasi: FIS kategori + Status Aktual
+                    const fisMatch = item.predicted_category && 
+                        item.predicted_category.toLowerCase().includes(keywords[0]);
+                    const actualStatus = (item.actual_status || '').toLowerCase();
+                    const statusMatch = actualStatus && actualStatus.includes(keywords[1]);
+                    return fisMatch && statusMatch;
+                }
+            } else if (keywords.length === 3) {
+                if (isProdiFisStatusCombination) {
+                    // Kombinasi: Program Studi + FIS kategori + Status Aktual
+                    const prodi = (item.program_studi || '').toLowerCase();
+                    const prodiMatch = prodi && prodi.includes(keywords[0]);
+                    const fisMatch = item.predicted_category && 
+                        item.predicted_category.toLowerCase().includes(keywords[1]);
+                    const actualStatus = (item.actual_status || '').toLowerCase();
+                    const statusMatch = actualStatus && actualStatus.includes(keywords[2]);
+                    return prodiMatch && fisMatch && statusMatch;
+                } else {
+                    // Kombinasi: FIS kategori + Status Aktual + (field lain)
+                    const fisMatch = item.predicted_category && 
+                        item.predicted_category.toLowerCase().includes(keywords[0]);
+                    const actualStatus = (item.actual_status || '').toLowerCase();
+                    const statusMatch = actualStatus && actualStatus.includes(keywords[1]);
+                    // Keyword[2] bisa match di field manapun
+                    const keyword2Match = 
+                        (item.nim && item.nim.toLowerCase().includes(keywords[2])) ||
+                        (item.nama && item.nama.toLowerCase().includes(keywords[2])) ||
+                        (item.program_studi && item.program_studi.toLowerCase().includes(keywords[2]));
+                    return fisMatch && statusMatch && keyword2Match;
+                }
+            } else if (keywords.length === 4) {
+                if (isProdiFisStatusFieldCombination) {
+                    // Kombinasi: Program Studi + FIS kategori + Status Aktual + (field lain)
+                    const prodi = (item.program_studi || '').toLowerCase();
+                    const prodiMatch = prodi && prodi.includes(keywords[0]);
+                    const fisMatch = item.predicted_category && 
+                        item.predicted_category.toLowerCase().includes(keywords[1]);
+                    const actualStatus = (item.actual_status || '').toLowerCase();
+                    const statusMatch = actualStatus && actualStatus.includes(keywords[2]);
+                    // Keyword[3] bisa match di field manapun
+                    const keyword3Match = 
+                        (item.nim && item.nim.toLowerCase().includes(keywords[3])) ||
+                        (item.nama && item.nama.toLowerCase().includes(keywords[3]));
+                    return prodiMatch && fisMatch && statusMatch && keyword3Match;
+                } else {
+                    // Logika lama: search di semua field
+                    return keywords.every(keyword => {
+                        if (item.nim && item.nim.toLowerCase().includes(keyword)) return true;
+                        if (item.nama && item.nama.toLowerCase().includes(keyword)) return true;
+                        if (item.program_studi && item.program_studi.toLowerCase().includes(keyword)) return true;
+                        if (item.predicted_category && item.predicted_category.toLowerCase().includes(keyword)) return true;
+                        const actualStatus = (item.actual_status || '').toLowerCase();
+                        if (actualStatus && actualStatus.includes(keyword)) return true;
+                        return false;
+                    });
+                }
+            } else {
+                // Logika lama: search di semua field (1 keyword atau >4 keywords)
+                return keywords.every(keyword => {
+                    if (item.nim && item.nim.toLowerCase().includes(keyword)) return true;
+                    if (item.nama && item.nama.toLowerCase().includes(keyword)) return true;
+                    if (item.program_studi && item.program_studi.toLowerCase().includes(keyword)) return true;
+                    if (item.predicted_category && item.predicted_category.toLowerCase().includes(keyword)) return true;
+                    const actualStatus = (item.actual_status || '').toLowerCase();
+                    if (actualStatus && actualStatus.includes(keyword)) return true;
+                    return false;
+                });
+            }
+        });
+        
+        console.log('🔧 Data yang difilter:', filteredData.length);
+        
+        if (filteredData.length === 0) {
+            grid.dataSource.data([]);
+            grid.refresh();
+            updateFISActualSearchInfo(`Tidak ada data ditemukan untuk "${searchInput}"`, "warning");
+            return;
+        }
+        
+        // Update grid dengan data hasil pencarian
+        grid.dataSource.data(filteredData);
+        grid.refresh();
+        
+        // Build info message
+        let infoMessage = '';
+        if (keywords.length === 2) {
+            if (isProdiCombination2) {
+                infoMessage = `Ditemukan ${filteredData.length} data dengan Prodi "${keywords[0]}" dan Klasifikasi "${keywords[1]}"`;
+            } else {
+                infoMessage = `Ditemukan ${filteredData.length} data dengan FIS "${keywords[0]}" dan Status "${keywords[1]}"`;
+            }
+        } else if (keywords.length === 3) {
+            if (isProdiFisStatusCombination) {
+                infoMessage = `Ditemukan ${filteredData.length} data dengan Prodi "${keywords[0]}", FIS "${keywords[1]}", dan Status "${keywords[2]}"`;
+            } else {
+                const keywordText = `keywords: "${keywords.join('", "')}"`;
+                infoMessage = `Ditemukan ${filteredData.length} data dengan ${keywordText}`;
+            }
+        } else if (keywords.length === 4) {
+            if (isProdiFisStatusFieldCombination) {
+                infoMessage = `Ditemukan ${filteredData.length} data dengan Prodi "${keywords[0]}", FIS "${keywords[1]}", Status "${keywords[2]}", dan "${keywords[3]}"`;
+            } else {
+                const keywordText = `keywords: "${keywords.join('", "')}"`;
+                infoMessage = `Ditemukan ${filteredData.length} data dengan ${keywordText}`;
+            }
+        } else {
+            const keywordText = keywords.length > 1 ? 
+                `keywords: "${keywords.join('", "')}"` : 
+                `"${searchInput}"`;
+            infoMessage = `Ditemukan ${filteredData.length} data dengan ${keywordText}`;
+        }
+        updateFISActualSearchInfo(infoMessage, "success");
+        
+    } catch (error) {
+        console.error('🔧 Error dalam pencarian FIS Actual:', error);
+        updateFISActualSearchInfo("Terjadi kesalahan saat mencari data: " + error.message, "error");
+    }
+}
+
+// Fungsi untuk clear pencarian FIS Actual Evaluation
+function clearFISActualSearch() {
+    console.log('🔧 clearFISActualSearch called');
+    
+    // Clear search input
+    $("#searchInputFISActual").val("");
+    
+    // Restore data lengkap dari cache
+    const grid = $('#fisActualSampleDataGrid').data('kendoGrid');
+    if (!grid) {
+        console.error('🔧 Grid FIS Actual tidak ditemukan');
+        updateFISActualSearchInfo("Grid tidak tersedia", "error");
+        return;
+    }
+    
+    if (window.fisActualEvaluationDataCache && window.fisActualEvaluationDataCache.length > 0) {
+        console.log('🔧 Restoring full data from cache:', window.fisActualEvaluationDataCache.length, 'items');
+        grid.dataSource.data(JSON.parse(JSON.stringify(window.fisActualEvaluationDataCache))); // Deep copy
+        grid.refresh();
+    } else {
+        console.log('🔧 No cache available, reloading data');
+        // Reload data jika cache tidak tersedia
+        if (window.fisActualEvaluationFullData && window.fisActualEvaluationFullData.length > 0) {
+            grid.dataSource.data(JSON.parse(JSON.stringify(window.fisActualEvaluationFullData)));
+            grid.refresh();
+        }
+    }
+    
+    updateFISActualSearchInfo("Pencarian telah dibersihkan, menampilkan semua data", "info");
+}
+
+// Fungsi untuk update search info FIS Actual Evaluation
+function updateFISActualSearchInfo(message, type) {
+    const searchInfo = $("#searchInfoFISActual");
+    const searchResultText = $("#searchResultTextFISActual");
+    
+    if (searchResultText.length) {
+        searchResultText.text(message);
+    }
+    
+    // Update icon berdasarkan type
+    const icon = searchInfo.find("i");
+    if (icon.length) {
+        icon.removeClass("fa-info-circle fa-exclamation-triangle fa-check-circle fa-times-circle");
+        
+        switch(type) {
+            case "success":
+                icon.addClass("fa-check-circle");
+                searchInfo.css("color", "#28a745");
+                break;
+            case "warning":
+                icon.addClass("fa-exclamation-triangle");
+                searchInfo.css("color", "#ffc107");
+                break;
+            case "error":
+                icon.addClass("fa-times-circle");
+                searchInfo.css("color", "#dc3545");
+                break;
+            default:
+                icon.addClass("fa-info-circle");
+                searchInfo.css("color", "#17a2b8");
+        }
+    }
+}
+
+// Initialize search handlers untuk FIS Actual Evaluation
+function initializeFISActualSearchHandlers() {
+    console.log('Initializing FIS Actual Evaluation search handlers...');
+    
+    // Event handler untuk tombol pencarian
+    $("#btnSearchFISActual").off('click').on('click', () => {
+        console.log('🔍 Tombol pencarian FIS Actual diklik');
+        performFISActualSearch();
+    });
+    
+    // Event handler untuk tombol clear pencarian
+    $("#btnClearSearchFISActual").off('click').on('click', () => {
+        console.log('🔍 Tombol clear pencarian FIS Actual diklik');
+        clearFISActualSearch();
+    });
+    
+    // Event handler untuk input pencarian
+    $("#searchInputFISActual").off('input').on('input', () => {
+        const searchTerm = $("#searchInputFISActual").val().trim();
+        if (searchTerm.length >= 3) {
+            // Auto search setelah 3 karakter
+            clearTimeout(window.fisActualSearchTimeout);
+            window.fisActualSearchTimeout = setTimeout(() => {
+                performFISActualSearch();
+            }, 500);
+        } else if (searchTerm.length === 0) {
+            // Clear search jika input kosong
+            clearFISActualSearch();
+        }
+    });
+    
+    // Event handler untuk enter key pada input pencarian
+    $("#searchInputFISActual").off('keypress').on('keypress', (e) => {
+        if (e.which === 13) { // Enter key
+            console.log('🔍 Enter key ditekan pada input pencarian FIS Actual');
+            performFISActualSearch();
+        }
+    });
+}
+
+// Initialize search handlers saat document ready
+$(document).ready(function() {
+    // Initialize search handlers untuk FIS Actual Evaluation
+    // Delay sedikit untuk memastikan DOM sudah ready
+    setTimeout(() => {
+        initializeFISActualSearchHandlers();
+    }, 500);
+}); 

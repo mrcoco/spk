@@ -1531,6 +1531,43 @@
                                     <h3><i class="fas fa-list"></i> Hasil Evaluasi SAW dengan Data Aktual</h3>
                                 </div>
                                 <div class="card-body">
+                                    <!-- Filter Pencarian SAW Actual Evaluation -->
+                                    <div class="search-filter-container" style="margin: 15px 0;">
+                                        <div>
+                                            <div class="search-input-group">
+                                                <label for="searchInputSAWActual">
+                                                    <i class="fas fa-search"></i> Cari Hasil Evaluasi SAW:
+                                                </label>
+                                                <input 
+                                                    type="text" 
+                                                    id="searchInputSAWActual" 
+                                                    placeholder="Cari berdasarkan NIM, Nama, Program Studi, Klasifikasi SAW, atau Status Lulus Aktual... (gunakan koma untuk multiple filter)"
+                                                >
+                                                <small style="color: #666; font-size: 11px; margin-top: 5px; display: block;">
+                                                    <i class="fas fa-info-circle"></i> 
+                                                    <strong>Single:</strong> "19812", "Budi", "Informatika", "Tinggi" |
+                                                    <strong>Multiple:</strong> "informatika, tinggi" |
+                                                    <strong>Kombinasi 2a:</strong> "akuntansi,tinggi" (Prodi akuntansi + Klasifikasi tinggi) |
+                                                    <strong>Kombinasi 2b:</strong> "tinggi,tinggi" (FIS tinggi + SAW tinggi) |
+                                                    <strong>Kombinasi 3a:</strong> "akuntansi,tinggi,tinggi" (Prodi akuntansi + FIS tinggi + SAW tinggi) |
+                                                    <strong>Kombinasi 3b:</strong> "tinggi,tinggi,kecil" (FIS tinggi + SAW tinggi + Status kecil) |
+                                                    <strong>Kombinasi 4:</strong> "manajemen,tinggi,tinggi,tinggi" (Prodi manajemen + FIS tinggi + SAW tinggi + Status tinggi)
+                                                </small>
+                                            </div>
+                                            <div class="search-button-group">
+                                                <button id="btnSearchSAWActual" class="k-button k-primary">
+                                                    <i class="fas fa-search"></i> Cari
+                                                </button>
+                                                <button id="btnClearSearchSAWActual" class="k-button">
+                                                    <i class="fas fa-times"></i> Clear
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="searchInfoSAWActual">
+                                            <i class="fas fa-info-circle"></i> 
+                                            <span id="searchResultTextSAWActual">Menampilkan hasil pencarian...</span>
+                                        </div>
+                                    </div>
                                     <div id="sawEvaluationActualResultsGrid"></div>
                                 </div>
                             </div>
@@ -2558,29 +2595,40 @@
                                 <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px 8px 0 0;">
                                     <h3 style="color: white; margin-bottom: 8px;"><i class="fas fa-table"></i> Data Lengkap Evaluasi</h3>
                                     <p style="margin: 0; font-size: 14px; opacity: 0.95;">
-                                        <i class="fas fa-info-circle"></i> Menampilkan seluruh data mahasiswa yang memiliki status lulus aktual dengan fitur filter, sorting, dan export Excel
+                                        <i class="fas fa-info-circle"></i> Menampilkan seluruh data mahasiswa yang memiliki status lulus aktual dengan fitur custom search, sorting, dan export Excel
                                     </p>
                                 </div>
                                 <div class="card-body" style="padding: 25px;">
-                                    <!-- Filter Tips -->
-                                    <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196F3;">
-                                        <h5 style="color: #1565C0; margin-bottom: 10px; font-size: 14px;">
-                                            <i class="fas fa-lightbulb"></i> Tips Menggunakan Filter & Sorting:
-                                        </h5>
-                                        <ul style="margin: 0; padding-left: 20px; color: #424242; font-size: 13px; line-height: 1.8;">
-                                            <li><strong>Filter Cepat:</strong> Gunakan kolom filter di bawah header untuk:
-                                                <ul style="margin: 5px 0; padding-left: 20px;">
-                                                    <li>NIM & Nama: Ketik langsung untuk mencari</li>
-                                                    <li>Program Studi: Pilih multiple prodi dengan checkbox</li>
-                                                    <li>Prediksi FIS: Pilih kategori (Tinggi/Sedang/Kecil)</li>
-                                                    <li>Status Aktual: Filter berdasarkan status lulus aktual</li>
-                                                </ul>
-                                            </li>
-                                            <li><strong>Sorting:</strong> Klik nama kolom untuk mengurutkan data (klik lagi untuk reverse)</li>
-                                            <li><strong>Multi-Sort:</strong> Tahan Shift + klik kolom lain untuk sorting multi kolom</li>
-                                            <li><strong>Export Excel:</strong> Klik tombol di toolbar untuk download semua data</li>
-                                            <li><strong>Pagination:</strong> Pilih 10, 20, 50, 100, atau "all" untuk tampilkan semua</li>
-                                        </ul>
+                                    <!-- Filter Pencarian FIS Actual Evaluation -->
+                                    <div class="search-filter-container" style="margin-bottom: 20px;">
+                                        <div>
+                                            <div class="search-input-group">
+                                                <label for="searchInputFISActual">
+                                                    <i class="fas fa-search"></i> Cari Hasil Evaluasi FIS:
+                                                </label>
+                                                <input 
+                                                    type="text" 
+                                                    id="searchInputFISActual" 
+                                                    placeholder="Cari berdasarkan NIM, Nama, Program Studi, Klasifikasi FIS, atau Status Lulus Aktual... (gunakan koma untuk multiple filter)"
+                                                >
+                                                <small style="color: #666; font-size: 11px; margin-top: 5px; display: block;">
+                                                    <i class="fas fa-info-circle"></i> 
+                                                    <strong>Contoh:</strong> "19812", "informatika, tinggi", "akuntansi,tinggi,tinggi", "manajemen,tinggi,tinggi,tinggi"
+                                                </small>
+                                            </div>
+                                            <div class="search-button-group">
+                                                <button id="btnSearchFISActual" class="k-button k-primary">
+                                                    <i class="fas fa-search"></i> Cari
+                                                </button>
+                                                <button id="btnClearSearchFISActual" class="k-button">
+                                                    <i class="fas fa-times"></i> Clear
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="searchInfoFISActual">
+                                            <i class="fas fa-info-circle"></i> 
+                                            <span id="searchResultTextFISActual">Menampilkan hasil pencarian...</span>
+                                        </div>
                                     </div>
                                     
                                     <div id="fisActualSampleDataContainer">

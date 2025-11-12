@@ -40,6 +40,48 @@ class SAWEvaluationActual {
         $(document).on('input', '#sawEvaluationActualIpkWeight, #sawEvaluationActualSksWeight, #sawEvaluationActualDekWeight', () => {
             this.validateWeights();
         });
+        
+        // Initialize search handlers
+        this.initializeSearchHandlers();
+    }
+    
+    initializeSearchHandlers() {
+        console.log('Initializing SAW Actual Evaluation search handlers...');
+        
+        // Event handler untuk tombol pencarian
+        $("#btnSearchSAWActual").off('click').on('click', () => {
+            console.log('🔍 Tombol pencarian SAW Actual diklik');
+            this.performSAWActualSearch();
+        });
+        
+        // Event handler untuk tombol clear pencarian
+        $("#btnClearSearchSAWActual").off('click').on('click', () => {
+            console.log('🔍 Tombol clear pencarian SAW Actual diklik');
+            this.clearSAWActualSearch();
+        });
+        
+        // Event handler untuk input pencarian
+        $("#searchInputSAWActual").off('input').on('input', () => {
+            const searchTerm = $("#searchInputSAWActual").val().trim();
+            if (searchTerm.length >= 3) {
+                // Auto search setelah 3 karakter
+                clearTimeout(window.sawActualSearchTimeout);
+                window.sawActualSearchTimeout = setTimeout(() => {
+                    this.performSAWActualSearch();
+                }, 500);
+            } else if (searchTerm.length === 0) {
+                // Clear search jika input kosong
+                this.clearSAWActualSearch();
+            }
+        });
+        
+        // Event handler untuk enter key pada input pencarian
+        $("#searchInputSAWActual").off('keypress').on('keypress', (e) => {
+            if (e.which === 13) { // Enter key
+                console.log('🔍 Enter key ditekan pada input pencarian SAW Actual');
+                this.performSAWActualSearch();
+            }
+        });
     }
 
     validateWeights() {
@@ -155,6 +197,8 @@ class SAWEvaluationActual {
 
         // Update results grid
         if (data.results) {
+            // Reset cache saat data baru dimuat
+            window.sawActualEvaluationDataCache = null;
             this.updateResultsGrid(data.results);
         }
 
@@ -769,10 +813,7 @@ class SAWEvaluationActual {
                 mode: "multiple",
                 allowUnsort: true
             },
-            filterable: {
-                mode: "row",
-                extra: false
-            },
+            filterable: false, // Disable default Kendo filters, use custom search instead
             pageable: {
                 refresh: true,
                 pageSizes: [10, 20, 50, 100, "all"],
@@ -803,13 +844,6 @@ class SAWEvaluationActual {
                     field: "nim", 
                     title: "NIM", 
                     width: 130,
-                    filterable: {
-                        cell: {
-                            operator: "contains",
-                            showOperators: false,
-                            suggestionOperator: "contains"
-                        }
-                    },
                     template: function(dataItem) {
                         const nim = dataItem.nim || 'N/A';
                         return `<span style="font-family: monospace; font-weight: 500; color: #1976D2;">${nim}</span>`;
@@ -819,13 +853,6 @@ class SAWEvaluationActual {
                     field: "nama", 
                     title: "Nama", 
                     width: 200,
-                    filterable: {
-                        cell: {
-                            operator: "contains",
-                            showOperators: false,
-                            suggestionOperator: "contains"
-                        }
-                    },
                     template: function(dataItem) {
                         const nama = dataItem.nama || 'N/A';
                         return `<span style="font-weight: 500; color: #333;">${nama}</span>`;
@@ -841,17 +868,6 @@ class SAWEvaluationActual {
                         }
                         const colors = getSAWProdiColor(dataItem.program_studi);
                         return `<span style="display: inline-block; padding: 4px 10px; background: ${colors.bg}; color: ${colors.text}; border-radius: 4px; font-size: 12px; font-weight: 500;">${dataItem.program_studi}</span>`;
-                    },
-                    filterable: {
-                        multi: true,
-                        search: true,
-                        dataSource: getUniqueProdiListSAW(results),
-                        checkAll: true,
-                        itemTemplate: function(e) {
-                            if (!e.program_studi) return '';
-                            const colors = getSAWProdiColor(e.program_studi);
-                            return `<span style="display: inline-block; padding: 2px 8px; margin: 2px 0; background: ${colors.bg}; color: ${colors.text}; border-radius: 4px; font-size: 11px; font-weight: 500;">${e.program_studi}</span>`;
-                        }
                     }
                 },
                 { 
@@ -953,20 +969,6 @@ class SAWEvaluationActual {
                         const badgeClass = getSAWBadgeClass(dataItem.predicted_class);
                         return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">${dataItem.predicted_class || 'N/A'}</span>`;
                     },
-                    filterable: {
-                        multi: true,
-                        search: true,
-                        dataSource: [
-                            { predicted_class: 'Peluang Lulus Tinggi' },
-                            { predicted_class: 'Peluang Lulus Sedang' },
-                            { predicted_class: 'Peluang Lulus Kecil' }
-                        ],
-                        checkAll: true,
-                        itemTemplate: function(e) {
-                            const badgeClass = getSAWBadgeClass(e.predicted_class);
-                            return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 4px 10px; font-weight: 600; white-space: nowrap;">${e.predicted_class}</span>`;
-                        }
-                    },
                     attributes: {
                         style: "text-align: center;"
                     },
@@ -982,21 +984,6 @@ class SAWEvaluationActual {
                         const badgeClass = getSAWBadgeClass(dataItem.actual_status);
                         const statusText = formatSAWActualStatus(dataItem.actual_status);
                         return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 6px 12px; font-weight: 600; white-space: nowrap;">${statusText}</span>`;
-                    },
-                    filterable: {
-                        multi: true,
-                        search: true,
-                        dataSource: [
-                            { actual_status: 'LULUS_TINGGI', text: 'LULUS TINGGI' },
-                            { actual_status: 'LULUS_SEDANG', text: 'LULUS SEDANG' },
-                            { actual_status: 'LULUS_KECIL', text: 'LULUS KECIL' }
-                        ],
-                        checkAll: true,
-                        itemTemplate: function(e) {
-                            const badgeClass = getSAWBadgeClass(e.actual_status);
-                            const statusText = formatSAWActualStatus(e.text || e.actual_status);
-                            return `<span class="badge ${badgeClass}" style="font-size: 11px; padding: 4px 10px; font-weight: 600; white-space: nowrap;">${statusText}</span>`;
-                        }
                     },
                     attributes: {
                         style: "text-align: center;"
@@ -1031,6 +1018,13 @@ class SAWEvaluationActual {
                 const totalFormatted = totalRecords.toLocaleString('id-ID');
                 $('#sawActualGridTotal').text(totalFormatted);
                 $('#sawActualResultsInfoText').text(`Menampilkan ${totalFormatted} data mahasiswa dengan status lulus aktual`);
+                
+                // Simpan data lengkap ke cache untuk custom search
+                const allData = grid.dataSource.data();
+                if (!window.sawActualEvaluationDataCache || window.sawActualEvaluationDataCache.length === 0) {
+                    window.sawActualEvaluationDataCache = JSON.parse(JSON.stringify(allData)); // Deep copy
+                    console.log('🔧 SAW Actual Evaluation data cached:', window.sawActualEvaluationDataCache.length, 'items');
+                }
             }
         });
         
@@ -1703,6 +1697,282 @@ function getSAWBadgeClass(value) {
 function formatSAWActualStatus(status) {
     return status ? status.replace(/_/g, ' ') : 'N/A';
 }
+
+// Cache untuk data SAW Actual Evaluation
+window.sawActualEvaluationDataCache = null;
+
+// Fungsi untuk melakukan pencarian SAW Actual Evaluation
+// Mendukung pencarian berdasarkan: NIM, Nama, Program Studi, Klasifikasi SAW, Status Lulus Aktual
+// Mendukung multiple keywords dengan kombinasi filter seperti comparison
+SAWEvaluationActual.prototype.performSAWActualSearch = function() {
+    console.log('🔧 performSAWActualSearch dipanggil');
+    
+    const searchInput = $("#searchInputSAWActual").val().trim();
+    
+    if (!searchInput) {
+        console.log('🔧 Input pencarian kosong, tampilkan semua data');
+        const grid = $('#sawEvaluationActualResultsGrid').data('kendoGrid');
+        if (grid && window.sawActualEvaluationDataCache) {
+            grid.dataSource.data(JSON.parse(JSON.stringify(window.sawActualEvaluationDataCache))); // Deep copy
+            grid.refresh();
+            this.updateSAWActualSearchInfo("Menampilkan semua data evaluasi SAW", "info");
+        }
+        return;
+    }
+    
+    console.log('🔧 Memulai pencarian evaluasi SAW untuk:', searchInput);
+    
+    try {
+        const grid = $('#sawEvaluationActualResultsGrid').data('kendoGrid');
+        if (!grid) {
+            console.error('🔧 Grid SAW Actual tidak ditemukan');
+            this.updateSAWActualSearchInfo("Grid tidak tersedia", "error");
+            return;
+        }
+        
+        // Gunakan data dari cache jika tersedia
+        const allData = window.sawActualEvaluationDataCache || grid.dataSource.data();
+        console.log('🔧 Total data di grid:', allData.length);
+        
+        // Parse multiple keywords
+        const keywords = searchInput.toLowerCase()
+            .split(/[,]+/) // Split by comma
+            .map(k => k.trim()) // Trim whitespace
+            .filter(k => k.length > 0); // Remove empty strings
+        
+        console.log('🔧 Keywords untuk filter:', keywords);
+        
+        // Filter data berdasarkan kombinasi filter spesifik (sama seperti comparison)
+        // Cek apakah keyword[0] cocok dengan program studi
+        let isProdiCombination2 = false;
+        let isProdiFisSawCombination = false;
+        let isProdiFisSawStatusCombination = false;
+        
+        if (keywords.length === 2 && allData.length > 0) {
+            const keyword0Lower = keywords[0].toLowerCase();
+            const hasProdiMatch = allData.some(item => {
+                const prodi = (item.program_studi || '').toLowerCase();
+                return prodi && prodi.includes(keyword0Lower);
+            });
+            isProdiCombination2 = hasProdiMatch;
+        }
+        
+        if (keywords.length === 3 && allData.length > 0) {
+            const keyword0Lower = keywords[0].toLowerCase();
+            const hasProdiMatch = allData.some(item => {
+                const prodi = (item.program_studi || '').toLowerCase();
+                return prodi && prodi.includes(keyword0Lower);
+            });
+            isProdiFisSawCombination = hasProdiMatch;
+        }
+        
+        if (keywords.length === 4 && allData.length > 0) {
+            const keyword0Lower = keywords[0].toLowerCase();
+            const hasProdiMatch = allData.some(item => {
+                const prodi = (item.program_studi || '').toLowerCase();
+                return prodi && prodi.includes(keyword0Lower);
+            });
+            isProdiFisSawStatusCombination = hasProdiMatch;
+        }
+        
+        const filteredData = allData.filter(item => {
+            if (keywords.length === 2) {
+                if (isProdiCombination2) {
+                    // Kombinasi: Program Studi + Klasifikasi (SAW/Status)
+                    const prodi = (item.program_studi || '').toLowerCase();
+                    const prodiMatch = prodi && prodi.includes(keywords[0]);
+                    
+                    const keyword1Lower = keywords[1].toLowerCase();
+                    const sawMatch = item.predicted_class && 
+                        item.predicted_class.toLowerCase().includes(keyword1Lower);
+                    const actualStatus = (item.actual_status || '').toLowerCase();
+                    const statusMatch = actualStatus && actualStatus.includes(keyword1Lower);
+                    
+                    return prodiMatch && (sawMatch || statusMatch);
+                } else {
+                    // Kombinasi: SAW kategori + Status Aktual
+                    const sawMatch = item.predicted_class && 
+                        item.predicted_class.toLowerCase().includes(keywords[0]);
+                    const actualStatus = (item.actual_status || '').toLowerCase();
+                    const statusMatch = actualStatus && actualStatus.includes(keywords[1]);
+                    return sawMatch && statusMatch;
+                }
+            } else if (keywords.length === 3) {
+                if (isProdiFisSawCombination) {
+                    // Kombinasi: Program Studi + SAW kategori + Status Aktual
+                    const prodi = (item.program_studi || '').toLowerCase();
+                    const prodiMatch = prodi && prodi.includes(keywords[0]);
+                    const sawMatch = item.predicted_class && 
+                        item.predicted_class.toLowerCase().includes(keywords[1]);
+                    const actualStatus = (item.actual_status || '').toLowerCase();
+                    const statusMatch = actualStatus && actualStatus.includes(keywords[2]);
+                    return prodiMatch && sawMatch && statusMatch;
+                } else {
+                    // Kombinasi: SAW kategori + Status Aktual + (field lain)
+                    const sawMatch = item.predicted_class && 
+                        item.predicted_class.toLowerCase().includes(keywords[0]);
+                    const actualStatus = (item.actual_status || '').toLowerCase();
+                    const statusMatch = actualStatus && actualStatus.includes(keywords[1]);
+                    // Keyword[2] bisa match di field manapun
+                    const keyword2Match = 
+                        (item.nim && item.nim.toLowerCase().includes(keywords[2])) ||
+                        (item.nama && item.nama.toLowerCase().includes(keywords[2])) ||
+                        (item.program_studi && item.program_studi.toLowerCase().includes(keywords[2]));
+                    return sawMatch && statusMatch && keyword2Match;
+                }
+            } else if (keywords.length === 4) {
+                if (isProdiFisSawStatusCombination) {
+                    // Kombinasi: Program Studi + SAW kategori + Status Aktual + (field lain)
+                    const prodi = (item.program_studi || '').toLowerCase();
+                    const prodiMatch = prodi && prodi.includes(keywords[0]);
+                    const sawMatch = item.predicted_class && 
+                        item.predicted_class.toLowerCase().includes(keywords[1]);
+                    const actualStatus = (item.actual_status || '').toLowerCase();
+                    const statusMatch = actualStatus && actualStatus.includes(keywords[2]);
+                    // Keyword[3] bisa match di field manapun
+                    const keyword3Match = 
+                        (item.nim && item.nim.toLowerCase().includes(keywords[3])) ||
+                        (item.nama && item.nama.toLowerCase().includes(keywords[3]));
+                    return prodiMatch && sawMatch && statusMatch && keyword3Match;
+                } else {
+                    // Logika lama: search di semua field
+                    return keywords.every(keyword => {
+                        if (item.nim && item.nim.toLowerCase().includes(keyword)) return true;
+                        if (item.nama && item.nama.toLowerCase().includes(keyword)) return true;
+                        if (item.program_studi && item.program_studi.toLowerCase().includes(keyword)) return true;
+                        if (item.predicted_class && item.predicted_class.toLowerCase().includes(keyword)) return true;
+                        const actualStatus = (item.actual_status || '').toLowerCase();
+                        if (actualStatus && actualStatus.includes(keyword)) return true;
+                        return false;
+                    });
+                }
+            } else {
+                // Logika lama: search di semua field (1 keyword atau >4 keywords)
+                return keywords.every(keyword => {
+                    if (item.nim && item.nim.toLowerCase().includes(keyword)) return true;
+                    if (item.nama && item.nama.toLowerCase().includes(keyword)) return true;
+                    if (item.program_studi && item.program_studi.toLowerCase().includes(keyword)) return true;
+                    if (item.predicted_class && item.predicted_class.toLowerCase().includes(keyword)) return true;
+                    const actualStatus = (item.actual_status || '').toLowerCase();
+                    if (actualStatus && actualStatus.includes(keyword)) return true;
+                    return false;
+                });
+            }
+        });
+        
+        console.log('🔧 Data yang difilter:', filteredData.length);
+        
+        if (filteredData.length === 0) {
+            grid.dataSource.data([]);
+            grid.refresh();
+            this.updateSAWActualSearchInfo(`Tidak ada data ditemukan untuk "${searchInput}"`, "warning");
+            return;
+        }
+        
+        // Update grid dengan data hasil pencarian
+        grid.dataSource.data(filteredData);
+        grid.refresh();
+        
+        // Build info message
+        let infoMessage = '';
+        if (keywords.length === 2) {
+            if (isProdiCombination2) {
+                infoMessage = `Ditemukan ${filteredData.length} data dengan Prodi "${keywords[0]}" dan Klasifikasi "${keywords[1]}"`;
+            } else {
+                infoMessage = `Ditemukan ${filteredData.length} data dengan SAW "${keywords[0]}" dan Status "${keywords[1]}"`;
+            }
+        } else if (keywords.length === 3) {
+            if (isProdiFisSawCombination) {
+                infoMessage = `Ditemukan ${filteredData.length} data dengan Prodi "${keywords[0]}", SAW "${keywords[1]}", dan Status "${keywords[2]}"`;
+            } else {
+                const keywordText = `keywords: "${keywords.join('", "')}"`;
+                infoMessage = `Ditemukan ${filteredData.length} data dengan ${keywordText}`;
+            }
+        } else if (keywords.length === 4) {
+            if (isProdiFisSawStatusCombination) {
+                infoMessage = `Ditemukan ${filteredData.length} data dengan Prodi "${keywords[0]}", SAW "${keywords[1]}", Status "${keywords[2]}", dan "${keywords[3]}"`;
+            } else {
+                const keywordText = `keywords: "${keywords.join('", "')}"`;
+                infoMessage = `Ditemukan ${filteredData.length} data dengan ${keywordText}`;
+            }
+        } else {
+            const keywordText = keywords.length > 1 ? 
+                `keywords: "${keywords.join('", "')}"` : 
+                `"${searchInput}"`;
+            infoMessage = `Ditemukan ${filteredData.length} data dengan ${keywordText}`;
+        }
+        this.updateSAWActualSearchInfo(infoMessage, "success");
+        
+    } catch (error) {
+        console.error('🔧 Error dalam pencarian SAW Actual:', error);
+        this.updateSAWActualSearchInfo("Terjadi kesalahan saat mencari data: " + error.message, "error");
+    }
+};
+
+// Fungsi untuk clear pencarian SAW Actual Evaluation
+SAWEvaluationActual.prototype.clearSAWActualSearch = function() {
+    console.log('🔧 clearSAWActualSearch called');
+    
+    // Clear search input
+    $("#searchInputSAWActual").val("");
+    
+    // Restore data lengkap dari cache
+    const grid = $('#sawEvaluationActualResultsGrid').data('kendoGrid');
+    if (!grid) {
+        console.error('🔧 Grid SAW Actual tidak ditemukan');
+        this.updateSAWActualSearchInfo("Grid tidak tersedia", "error");
+        return;
+    }
+    
+    if (window.sawActualEvaluationDataCache && window.sawActualEvaluationDataCache.length > 0) {
+        console.log('🔧 Restoring full data from cache:', window.sawActualEvaluationDataCache.length, 'items');
+        grid.dataSource.data(JSON.parse(JSON.stringify(window.sawActualEvaluationDataCache))); // Deep copy
+        grid.refresh();
+    } else {
+        console.log('🔧 No cache available, reloading data');
+        // Reload data jika cache tidak tersedia
+        if (this.fullData && this.fullData.length > 0) {
+            grid.dataSource.data(JSON.parse(JSON.stringify(this.fullData)));
+            grid.refresh();
+        }
+    }
+    
+    this.updateSAWActualSearchInfo("Pencarian telah dibersihkan, menampilkan semua data", "info");
+};
+
+// Fungsi untuk update search info SAW Actual Evaluation
+SAWEvaluationActual.prototype.updateSAWActualSearchInfo = function(message, type) {
+    const searchInfo = $("#searchInfoSAWActual");
+    const searchResultText = $("#searchResultTextSAWActual");
+    
+    if (searchResultText.length) {
+        searchResultText.text(message);
+    }
+    
+    // Update icon berdasarkan type
+    const icon = searchInfo.find("i");
+    if (icon.length) {
+        icon.removeClass("fa-info-circle fa-exclamation-triangle fa-check-circle fa-times-circle");
+        
+        switch(type) {
+            case "success":
+                icon.addClass("fa-check-circle");
+                searchInfo.css("color", "#28a745");
+                break;
+            case "warning":
+                icon.addClass("fa-exclamation-triangle");
+                searchInfo.css("color", "#ffc107");
+                break;
+            case "error":
+                icon.addClass("fa-times-circle");
+                searchInfo.css("color", "#dc3545");
+                break;
+            default:
+                icon.addClass("fa-info-circle");
+                searchInfo.css("color", "#17a2b8");
+        }
+    }
+};
 
 function mapSAWActualToPredicted(actualStatus) {
     const mapping = {

@@ -676,6 +676,20 @@ function initializeComparisonGrid(data) {
             scrollable: true,
             sortable: true,
             filterable: false, // Disable default Kendo filters, use custom search instead
+            toolbar: [
+                {
+                    template: function() {
+                        const total = comparisonDataCache ? comparisonDataCache.length : (data ? data.length : 0);
+                        return `<div style="margin-left: 10px; padding: 8px 15px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 6px; display: inline-block;">
+                            <i class="fas fa-info-circle" style="color: #1976D2;"></i> 
+                            <span style="color: #1565C0; font-weight: 500;">Total: <strong id="comparisonGridTotal">${total}</strong> data</span>
+                        </div>
+                        <button class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-primary" onclick="exportComparisonResults(); return false;" style="margin-left: 10px;">
+                            <i class="fas fa-file-excel"></i> Export Excel
+                        </button>`;
+                    }
+                }
+            ],
             pageable: {
                 buttonCount: 5,
                 pageSizes: [10, 25, 50, 100],
@@ -785,6 +799,13 @@ function initializeComparisonGrid(data) {
                 // Update statistik berdasarkan data yang difilter
                 const currentData = e.sender.dataSource.data();
                 updateFilteredStats(currentData);
+                
+                // Update total data di toolbar
+                const total = comparisonDataCache ? comparisonDataCache.length : currentData.length;
+                const totalElement = $('#comparisonGridTotal');
+                if (totalElement.length) {
+                    totalElement.text(total);
+                }
             }
         });
         
@@ -1308,6 +1329,342 @@ function updateComparisonSearchInfo(message, type) {
         default:
             icon.addClass("fa-info-circle");
             searchInfo.css("color", "#17a2b8");
+    }
+}
+
+// Function untuk export Comparison Results ke Excel
+function exportComparisonResults() {
+    console.log('🔧 exportComparisonResults called');
+    
+    try {
+        const grid = window._comparisonGrid;
+        console.log('🔧 Grid instance:', grid ? 'Found' : 'Not found');
+        
+        if (!grid) {
+            console.error('❌ Grid not found');
+            showNotification('error', 'Error', 'Grid tidak ditemukan. Pastikan data sudah dimuat.');
+            return;
+        }
+        
+        // Get data from grid (data yang sedang ditampilkan, termasuk yang sudah difilter)
+        const dataSource = grid.dataSource;
+        console.log('🔧 DataSource:', dataSource);
+        
+        const data = dataSource.data();
+        console.log('🔧 Data length:', data ? data.length : 0);
+        console.log('🔧 Data sample:', data && data.length > 0 ? data[0] : 'No data');
+        
+        if (!data || data.length === 0) {
+            console.error('❌ No data to export');
+            showNotification('warning', 'Peringatan', 'Tidak ada data untuk diekspor');
+            return;
+        }
+        
+        console.log('✅ Exporting ' + data.length + ' records...');
+        
+        // Convert to plain array
+        const plainData = [];
+        for (let i = 0; i < data.length; i++) {
+            const item = data[i];
+            plainData.push({
+                nim: item.nim,
+                nama: item.nama,
+                program_studi: item.program_studi,
+                fis_kategori: item.fis_kategori,
+                fis_nilai: item.fis_nilai,
+                saw_kategori: item.saw_kategori,
+                saw_nilai: item.saw_nilai,
+                saw_nilai_normalized: item.saw_nilai_normalized,
+                is_consistent: item.is_consistent,
+                actual_status: item.actual_status || item.actual_class
+            });
+        }
+        
+        console.log('✅ Plain data prepared:', plainData.length, 'records');
+        
+        // Use custom export function
+        exportComparisonResultsCustom(plainData);
+        
+    } catch (error) {
+        console.error('❌ Error exporting to Excel:', error);
+        console.error('❌ Error stack:', error.stack);
+        showNotification('error', 'Error', 'Gagal mengekspor ke Excel: ' + error.message);
+    }
+}
+
+// Alternative: Export with custom data processing
+function exportComparisonResultsCustom(fullData) {
+    console.log('🔧 exportComparisonResultsCustom called');
+    console.log('🔧 Data received:', fullData ? fullData.length : 0, 'records');
+    
+    if (!fullData || !Array.isArray(fullData) || fullData.length === 0) {
+        console.error('❌ No data to export');
+        showNotification('error', 'Error', 'Tidak ada data untuk diekspor');
+        return;
+    }
+    
+    try {
+        // Check if JSZip is available (required for Excel export)
+        console.log('🔧 Checking JSZip availability...');
+        console.log('🔧 typeof JSZip:', typeof JSZip);
+        
+        if (typeof JSZip === 'undefined') {
+            console.warn('⚠️ JSZip not available, using CSV export instead');
+            console.warn('⚠️ Excel export requires JSZip library');
+            exportComparisonToCSV(fullData);
+            return;
+        }
+        
+        // Check if Kendo OOXML is available
+        console.log('🔧 Checking Kendo availability...');
+        console.log('🔧 typeof kendo:', typeof kendo);
+        console.log('🔧 typeof kendo.ooxml:', typeof kendo !== 'undefined' ? typeof kendo.ooxml : 'N/A');
+        
+        if (typeof kendo === 'undefined' || typeof kendo.ooxml === 'undefined') {
+            console.warn('⚠️ Kendo OOXML not available, using CSV export instead');
+            exportComparisonToCSV(fullData);
+            return;
+        }
+        
+        console.log('✅ JSZip and Kendo OOXML are available');
+        
+        // Prepare data for export
+        const exportData = fullData.map(item => ({
+            'NIM': item.nim || '',
+            'Nama Mahasiswa': item.nama || '',
+            'Program Studi': item.program_studi || '',
+            'Hasil FIS': item.fis_kategori || '',
+            'Nilai FIS': item.fis_nilai ? parseFloat(item.fis_nilai).toFixed(2) : '',
+            'Hasil SAW': item.saw_kategori || '',
+            'Nilai SAW Real': item.saw_nilai ? (item.saw_nilai <= 1 ? parseFloat(item.saw_nilai).toFixed(4) : parseFloat(item.saw_nilai).toFixed(2)) : '',
+            'Nilai SAW Normalized': item.saw_nilai_normalized ? parseFloat(item.saw_nilai_normalized).toFixed(2) : '',
+            'Konsistensi': item.is_consistent ? 'Konsisten' : 'Berbeda',
+            'Status Lulus Aktual': item.actual_status ? item.actual_status.replace(/_/g, ' ') : ''
+        }));
+        
+        console.log('Creating workbook with ' + exportData.length + ' rows...');
+        
+        // Create workbook
+        const workbook = new kendo.ooxml.Workbook({
+            sheets: [
+                {
+                    name: "Detail Perbandingan FIS vs SAW",
+                    columns: [
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true },
+                        { autoWidth: true }
+                    ],
+                    rows: [
+                        // Title row
+                        {
+                            cells: [
+                                {
+                                    value: "Detail Perbandingan FIS vs SAW - Data Lengkap",
+                                    bold: true,
+                                    fontSize: 16,
+                                    color: "#1976D2",
+                                    colSpan: 11,
+                                    textAlign: "center"
+                                }
+                            ]
+                        },
+                        // Metadata row
+                        {
+                            cells: [
+                                {
+                                    value: "Exported: " + new Date().toLocaleString('id-ID') + " | Total Data: " + fullData.length,
+                                    colSpan: 11,
+                                    textAlign: "center",
+                                    color: "#666"
+                                }
+                            ]
+                        },
+                        // Empty row
+                        { cells: [] },
+                        // Header row
+                        {
+                            cells: [
+                                { value: "NIM", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Nama Mahasiswa", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Program Studi", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Hasil FIS", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Nilai FIS", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Hasil SAW", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Nilai SAW Real", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Nilai SAW Normalized", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Konsistensi", bold: true, background: "#667eea", color: "#ffffff" },
+                                { value: "Status Lulus Aktual", bold: true, background: "#667eea", color: "#ffffff" }
+                            ]
+                        }
+                    ].concat(
+                        // Data rows
+                        exportData.map((item, index) => ({
+                            cells: [
+                                { value: item['NIM'], background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Nama Mahasiswa'], background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Program Studi'], background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Hasil FIS'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Nilai FIS'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Hasil SAW'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Nilai SAW Real'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Nilai SAW Normalized'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Konsistensi'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" },
+                                { value: item['Status Lulus Aktual'], textAlign: "center", background: index % 2 === 0 ? "#f8f9fa" : "#ffffff" }
+                            ]
+                        }))
+                    )
+                }
+            ]
+        });
+        
+        // Save the workbook
+        const fileName = "Perbandingan_FIS_SAW_" + new Date().toISOString().split('T')[0] + ".xlsx";
+        
+        console.log('🔧 Saving workbook to file:', fileName);
+        console.log('🔧 Converting workbook to data URL...');
+        
+        // Convert to data URL and download
+        const dataURL = workbook.toDataURL();
+        console.log('🔧 Data URL generated, length:', dataURL ? dataURL.length : 0);
+        
+        if (!dataURL || dataURL.length === 0) {
+            console.error('❌ Empty data URL generated');
+            throw new Error('Failed to generate Excel data URL');
+        }
+        
+        // Create download link - Use multiple methods for better compatibility
+        console.log('🔧 Creating download link...');
+        
+        // Method 1: Try using Kendo's saveAs if available
+        if (typeof kendo.saveAs === 'function') {
+            console.log('🔧 Using kendo.saveAs method...');
+            try {
+                kendo.saveAs({
+                    dataURI: dataURL,
+                    fileName: fileName
+                });
+                showNotification('success', 'Berhasil', 'File Excel berhasil diunduh: ' + fileName);
+                console.log('✅ Excel export completed successfully (kendo.saveAs)');
+                return;
+            } catch (saveAsError) {
+                console.warn('⚠️ kendo.saveAs failed, trying manual method:', saveAsError);
+            }
+        }
+        
+        // Method 2: Manual link creation and click
+        console.log('🔧 Using manual download method...');
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = fileName;
+        link.target = '_blank';
+        link.style.display = 'none';
+        
+        // Add to document
+        console.log('🔧 Appending link to body...');
+        document.body.appendChild(link);
+        
+        // Force a visible click event
+        console.log('🔧 Triggering download click...');
+        
+        // Try multiple click methods
+        if (typeof link.click === 'function') {
+            link.click();
+        } else if (document.createEvent) {
+            const event = document.createEvent('MouseEvents');
+            event.initEvent('click', true, true);
+            link.dispatchEvent(event);
+        }
+        
+        // Clean up after a delay
+        console.log('🔧 Scheduling link removal...');
+        setTimeout(function() {
+            if (document.body.contains(link)) {
+                document.body.removeChild(link);
+            }
+            console.log('🔧 Link removed from body');
+        }, 100);
+        
+        showNotification('success', 'Berhasil', 'File Excel berhasil diunduh: ' + fileName);
+        console.log('✅ Excel export completed successfully (manual download)');
+        
+    } catch (error) {
+        console.error('Error in custom Excel export:', error);
+        console.error('Error details:', error);
+        // Fallback to CSV
+        console.log('Falling back to CSV export...');
+        exportComparisonToCSV(fullData);
+    }
+}
+
+// Fallback CSV export function
+function exportComparisonToCSV(fullData) {
+    console.log('Exporting to CSV format...');
+    
+    try {
+        // Prepare CSV header
+        const headers = ['NIM', 'Nama Mahasiswa', 'Program Studi', 'Hasil FIS', 'Nilai FIS', 'Hasil SAW', 'Nilai SAW Real', 'Nilai SAW Normalized', 'Konsistensi', 'Status Lulus Aktual'];
+        
+        // Prepare CSV rows
+        const rows = fullData.map(item => [
+            item.nim || '',
+            item.nama || '',
+            item.program_studi || '',
+            item.fis_kategori || '',
+            item.fis_nilai ? parseFloat(item.fis_nilai).toFixed(2) : '',
+            item.saw_kategori || '',
+            item.saw_nilai ? (item.saw_nilai <= 1 ? parseFloat(item.saw_nilai).toFixed(4) : parseFloat(item.saw_nilai).toFixed(2)) : '',
+            item.saw_nilai_normalized ? parseFloat(item.saw_nilai_normalized).toFixed(2) : '',
+            item.is_consistent ? 'Konsisten' : 'Berbeda',
+            item.actual_status ? item.actual_status.replace(/_/g, ' ') : ''
+        ]);
+        
+        // Combine header and rows
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(cell => {
+                // Escape commas and quotes in CSV
+                const cellStr = String(cell || '');
+                if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                    return '"' + cellStr.replace(/"/g, '""') + '"';
+                }
+                return cellStr;
+            }).join(','))
+        ].join('\n');
+        
+        // Add UTF-8 BOM for Excel compatibility
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+        
+        // Create download link
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = 'Perbandingan_FIS_SAW_' + new Date().toISOString().split('T')[0] + '.csv';
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        // Clean up
+        setTimeout(function() {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 100);
+        
+        showNotification('success', 'Berhasil', 'File CSV berhasil diunduh');
+        console.log('✅ CSV export completed successfully');
+        
+    } catch (error) {
+        console.error('❌ Error exporting to CSV:', error);
+        showNotification('error', 'Error', 'Gagal mengekspor ke CSV: ' + error.message);
     }
 }
 
