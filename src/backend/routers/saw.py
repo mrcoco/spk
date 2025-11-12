@@ -111,19 +111,60 @@ def calculate_saw_individual(nim: str, db: Session = Depends(get_db)):
 def calculate_saw_batch(db: Session = Depends(get_db)):
     """
     Menghitung SAW untuk semua mahasiswa (batch processing) dan simpan ke database
+    
+    Normalisasi min/max dihitung dari SELURUH data mahasiswa di database.
     """
     try:
-        results = batch_calculate_saw(db, save_to_db=True)
+        results = batch_calculate_saw(db, save_to_db=True, use_labeled_data_only=False)
         
         return {
             "total_mahasiswa": len(results),
             "message": "Hasil SAW telah disimpan ke database",
+            "normalization_source": "all_data",
             "data": results
         }
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Terjadi kesalahan saat menghitung SAW batch: {str(e)}"
+        )
+
+@router.get("/batch-labeled")
+def calculate_saw_batch_labeled(db: Session = Depends(get_db)):
+    """
+    Menghitung SAW untuk semua mahasiswa (batch processing) menggunakan data berlabel untuk normalisasi
+    
+    Normalisasi min/max dihitung HANYA dari data mahasiswa yang memiliki status_lulus_aktual:
+    - LULUS_TINGGI
+    - LULUS_SEDANG
+    - LULUS_KECIL
+    
+    Ini membuat hasil klasifikasi batch SAW konsisten dengan hasil evaluasi SAW dengan data aktual.
+    """
+    try:
+        # Hitung jumlah data berlabel untuk informasi
+        labeled_count = db.query(Mahasiswa).filter(
+            Mahasiswa.status_lulus_aktual.in_(['LULUS_TINGGI', 'LULUS_SEDANG', 'LULUS_KECIL']),
+            Mahasiswa.ipk.isnot(None),
+            Mahasiswa.sks.isnot(None),
+            Mahasiswa.persen_dek.isnot(None)
+        ).count()
+        
+        # Hitung SAW dengan normalisasi dari data berlabel
+        results = batch_calculate_saw(db, save_to_db=True, use_labeled_data_only=True)
+        
+        return {
+            "total_mahasiswa": len(results),
+            "labeled_data_count": labeled_count,
+            "message": "Hasil SAW telah disimpan ke database (normalisasi dari data berlabel)",
+            "normalization_source": "labeled_data_only",
+            "description": "Min/max dihitung dari data dengan status_lulus_aktual (LULUS_TINGGI, LULUS_SEDANG, LULUS_KECIL)",
+            "data": results
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Terjadi kesalahan saat menghitung SAW batch dengan data berlabel: {str(e)}"
         )
 
 @router.get("/results")
@@ -282,6 +323,13 @@ def get_saw_detail(nim: str, db: Session = Depends(get_db)):
     Mendapatkan detail lengkap hasil SAW untuk mahasiswa tertentu
     """
     try:
+        # Validasi: NIM tidak boleh mengandung tanda hubung (untuk menghindari konflik dengan route lain)
+        if '-' in nim:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Route tidak ditemukan"
+            )
+        
         # Validasi mahasiswa exists
         mahasiswa = db.query(Mahasiswa).filter(Mahasiswa.nim == nim).first()
         if not mahasiswa:

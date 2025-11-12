@@ -151,10 +151,10 @@ def calculate_saw(db: Session, nim: str, save_to_db: bool = True) -> Optional[Di
     """
     Menghitung nilai SAW berdasarkan implementasi di FIS_SAW_fix.ipynb
     
-    Normalisasi:
+    Normalisasi (sesuai fis_saw_fix.py):
     - IPK (benefit): nilai / nilai_max
     - SKS (benefit): nilai / nilai_max  
-    - Nilai D/E/K (cost): (nilai_max - nilai) / (nilai_max - nilai_min)
+    - Nilai D/E/K (cost): min / nilai (jika nilai = 0, gunakan 0.01 untuk hindari pembagian nol)
     
     Bobot sesuai FIS_SAW_fix.ipynb:
     - IPK: 0.35 (35%)
@@ -188,21 +188,24 @@ def calculate_saw(db: Session, nim: str, save_to_db: bool = True) -> Optional[Di
         "Nilai D/E/K": float(mahasiswa.persen_dek)
     }
 
-    # Normalisasi yang benar untuk cost criteria
-    # IPK dan SKS adalah benefit criteria (semakin tinggi semakin baik)
-    # Nilai D/E/K adalah cost criteria (semakin rendah semakin baik)
+    # Normalisasi sesuai fis_saw_fix.py
+    # IPK dan SKS adalah benefit criteria: nilai / max
+    # Nilai D/E/K adalah cost criteria: min / nilai (sesuai fis_saw_fix.py line 242)
+    nilai_dek_fix = criteria_values["Nilai D/E/K"]
+    if nilai_dek_fix == 0:
+        nilai_dek_fix = 0.01  # Hindari pembagian nol (sesuai fis_saw_fix.py line 241)
     
-    # Normalisasi cost criteria: (max - nilai) / (max - min)
-    # Jika max = min, maka semua nilai sama, berikan skor 1.0
-    if nilai_dek_max == nilai_dek_min:
-        nilai_dek_normalized = 1.0
-    else:
-        nilai_dek_normalized = (nilai_dek_max - criteria_values["Nilai D/E/K"]) / (nilai_dek_max - nilai_dek_min)
+    nilai_dek_min_fix = nilai_dek_min
+    if nilai_dek_min_fix == 0:
+        nilai_dek_min_fix = 0.01  # Hindari pembagian nol
+    
+    # Formula cost criteria sesuai fis_saw_fix.py: min / nilai
+    nilai_dek_normalized = nilai_dek_min_fix / nilai_dek_fix
     
     normalized_values = {
-        "IPK": criteria_values["IPK"] / ipk_max,
-        "SKS": criteria_values["SKS"] / sks_max,
-        "Nilai D/E/K": nilai_dek_normalized
+        "IPK": criteria_values["IPK"] / ipk_max,  # Benefit: nilai / max
+        "SKS": criteria_values["SKS"] / sks_max,  # Benefit: nilai / max
+        "Nilai D/E/K": nilai_dek_normalized  # Cost: min / nilai
     }
     
     # Bobot sesuai FIS_SAW_fix.ipynb
@@ -252,9 +255,15 @@ def calculate_saw(db: Session, nim: str, save_to_db: bool = True) -> Optional[Di
 # Fungsi ini mengambil seluruh data mahasiswa, lalu menghitung skor SAW untuk masing-masing mahasiswa secara batch.
 # Nilai min/max diambil sekali untuk seluruh batch agar efisien.
 # Hasil perhitungan (termasuk normalisasi, skor, dan klasifikasi) disimpan ke database jika save_to_db=True.
-def batch_calculate_saw(db: Session, save_to_db: bool = True) -> List[Dict[str, Any]]:
+def batch_calculate_saw(db: Session, save_to_db: bool = True, use_labeled_data_only: bool = False) -> List[Dict[str, Any]]:
     """
     Menghitung SAW untuk semua mahasiswa sekaligus (batch processing)
+    
+    Args:
+        db: Database session
+        save_to_db: Apakah menyimpan hasil ke database
+        use_labeled_data_only: Jika True, min/max dihitung hanya dari data yang memiliki status_lulus_aktual
+                              (LULUS_TINGGI, LULUS_SEDANG, LULUS_KECIL). Default: False (menggunakan seluruh data)
     """
     # Inisialisasi kriteria jika belum ada
     initialize_saw_criteria(db)
@@ -262,13 +271,32 @@ def batch_calculate_saw(db: Session, save_to_db: bool = True) -> List[Dict[str, 
     # Ambil semua mahasiswa dengan satu query
     all_mahasiswa = db.query(Mahasiswa).all()
     
-    # Ambil nilai min/max untuk normalisasi dengan satu query yang dioptimasi
-    stats = db.query(
-        func.max(Mahasiswa.ipk).label('ipk_max'),
-        func.max(Mahasiswa.sks).label('sks_max'),
-        func.min(Mahasiswa.persen_dek).label('nilai_dek_min'),
-        func.max(Mahasiswa.persen_dek).label('nilai_dek_max')
-    ).first()
+    # Ambil nilai min/max untuk normalisasi
+    # Jika use_labeled_data_only=True, gunakan hanya data yang berlabel status_lulus_aktual
+    if use_labeled_data_only:
+        # Gunakan min/max dari data yang memiliki status_lulus_aktual (3 kategori)
+        stats_query = db.query(
+            func.max(Mahasiswa.ipk).label('ipk_max'),
+            func.max(Mahasiswa.sks).label('sks_max'),
+            func.min(Mahasiswa.persen_dek).label('nilai_dek_min'),
+            func.max(Mahasiswa.persen_dek).label('nilai_dek_max')
+        ).filter(
+            Mahasiswa.status_lulus_aktual.in_(['LULUS_TINGGI', 'LULUS_SEDANG', 'LULUS_KECIL']),
+            Mahasiswa.ipk.isnot(None),
+            Mahasiswa.sks.isnot(None),
+            Mahasiswa.persen_dek.isnot(None)
+        )
+        stats = stats_query.first()
+        print(f"📊 Batch SAW: Menggunakan min/max dari data berlabel status_lulus_aktual")
+    else:
+        # Gunakan min/max dari seluruh data (default behavior)
+        stats = db.query(
+            func.max(Mahasiswa.ipk).label('ipk_max'),
+            func.max(Mahasiswa.sks).label('sks_max'),
+            func.min(Mahasiswa.persen_dek).label('nilai_dek_min'),
+            func.max(Mahasiswa.persen_dek).label('nilai_dek_max')
+        ).first()
+        print(f"📊 Batch SAW: Menggunakan min/max dari seluruh data")
     
     ipk_max = stats.ipk_max or 4.0
     sks_max = stats.sks_max or 200.0
@@ -293,18 +321,25 @@ def batch_calculate_saw(db: Session, save_to_db: bool = True) -> List[Dict[str, 
             "Nilai D/E/K": float(mahasiswa.persen_dek)
         }
         
-        # Normalisasi yang benar untuk cost criteria
-        # Normalisasi cost criteria: (max - nilai) / (max - min)
-        if nilai_dek_max == nilai_dek_min:
-            nilai_dek_normalized = 1.0
-        else:
-            nilai_dek_normalized = (nilai_dek_max - criteria_values["Nilai D/E/K"]) / (nilai_dek_max - nilai_dek_min)
+        # Normalisasi sesuai fis_saw_fix.py
+        # IPK dan SKS adalah benefit criteria: nilai / max
+        # Nilai D/E/K adalah cost criteria: min / nilai (sesuai fis_saw_fix.py line 242)
+        nilai_dek_fix = criteria_values["Nilai D/E/K"]
+        if nilai_dek_fix == 0:
+            nilai_dek_fix = 0.01  # Hindari pembagian nol (sesuai fis_saw_fix.py line 241)
+        
+        nilai_dek_min_fix = nilai_dek_min
+        if nilai_dek_min_fix == 0:
+            nilai_dek_min_fix = 0.01  # Hindari pembagian nol
+        
+        # Formula cost criteria sesuai fis_saw_fix.py: min / nilai
+        nilai_dek_normalized = nilai_dek_min_fix / nilai_dek_fix
         
         # Normalisasi
         normalized_values = {
-            "IPK": criteria_values["IPK"] / ipk_max,
-            "SKS": criteria_values["SKS"] / sks_max,
-            "Nilai D/E/K": nilai_dek_normalized
+            "IPK": criteria_values["IPK"] / ipk_max,  # Benefit: nilai / max
+            "SKS": criteria_values["SKS"] / sks_max,  # Benefit: nilai / max
+            "Nilai D/E/K": nilai_dek_normalized  # Cost: min / nilai
         }
         
         # Nilai terbobot
@@ -649,23 +684,28 @@ def evaluate_saw_performance(
         'dek': min(m.persen_dek for m in training_data)
     }
     
-    # Fungsi untuk menghitung skor SAW
+    # Fungsi untuk menghitung skor SAW sesuai fis_saw_fix.py
     def calculate_saw_score(mahasiswa):
-        # Normalisasi dengan pengecekan division by zero
-        ipk_range = max_values['ipk'] - min_values['ipk']
-        sks_range = max_values['sks'] - min_values['sks']
-        dek_range = max_values['dek'] - min_values['dek']
+        # Normalisasi benefit criteria: nilai / max (sesuai fis_saw_fix.py)
+        normalized_ipk = mahasiswa.ipk / max_values['ipk'] if max_values['ipk'] > 0 else 0.0
+        normalized_sks = mahasiswa.sks / max_values['sks'] if max_values['sks'] > 0 else 0.0
         
-        # Jika range = 0, berarti semua nilai sama, berikan nilai 1.0
-        normalized_ipk = (mahasiswa.ipk - min_values['ipk']) / ipk_range if ipk_range > 0 else 1.0
-        normalized_sks = (mahasiswa.sks - min_values['sks']) / sks_range if sks_range > 0 else 1.0
-        normalized_dek = (mahasiswa.persen_dek - min_values['dek']) / dek_range if dek_range > 0 else 1.0
+        # Normalisasi cost criteria: min / nilai (sesuai fis_saw_fix.py line 242)
+        nilai_dek_fix = mahasiswa.persen_dek
+        if nilai_dek_fix == 0:
+            nilai_dek_fix = 0.01  # Hindari pembagian nol (sesuai fis_saw_fix.py line 241)
+        
+        dek_min_fix = min_values['dek']
+        if dek_min_fix == 0:
+            dek_min_fix = 0.01  # Hindari pembagian nol
+        
+        normalized_dek = dek_min_fix / nilai_dek_fix
         
         # Hitung skor SAW
         saw_score = (
             weights['ipk'] * normalized_ipk +
             weights['sks'] * normalized_sks +
-            weights['dek'] * (1 - normalized_dek)  # D/E/K adalah cost criteria
+            weights['dek'] * normalized_dek  # Cost: min / nilai (sudah dinormalisasi)
         )
         
         return saw_score

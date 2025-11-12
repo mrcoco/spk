@@ -2078,9 +2078,9 @@ function executeBatchKlasifikasiSAW() {
     // Buka loading dialog
     loadingDialog.data("kendoDialog").open();
 
-    // Panggil API batch klasifikasi SAW
+    // Panggil API batch klasifikasi SAW dengan normalisasi dari data berlabel
     $.ajax({
-        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW) + "/batch",
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW) + "/batch-labeled",
         method: "GET",
         success: function(response) {
             console.log('SAW batch API success:', response); // Debug log
@@ -2089,9 +2089,13 @@ function executeBatchKlasifikasiSAW() {
             // Tampilkan hasil batch
             displayBatchSAWResults(response);
             
+            const message = `Berhasil mengklasifikasi ${response.total_mahasiswa || 0} mahasiswa dengan metode SAW`;
+            const detailMessage = response.labeled_data_count ? 
+                ` (Normalisasi dari ${response.labeled_data_count} data berlabel)` : 
+                ' (Normalisasi dari data berlabel)';
             showNotification(
                 "Sukses",
-                `Berhasil mengklasifikasi ${response.total_mahasiswa || 0} mahasiswa dengan metode SAW`,
+                message + detailMessage,
                 "success"
             );
             

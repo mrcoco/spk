@@ -100,22 +100,26 @@ function initializeBatchButton() {
         
         // First, get current data to show "before" state
         $.ajax({
-            url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch'),
+            url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch-labeled'),
             type: 'GET',
             success: function(beforeData) {
                 // Display before state
                 displayBeforeResults(beforeData);
                 
-                // Now perform batch classification
+                // Now perform batch classification using labeled data for normalization
                 $.ajax({
-                    url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch'),
+                    url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch-labeled'),
                     type: 'GET',
                     success: function(afterData) {
                         const endTime = new Date();
                         const processingTime = ((endTime - startTime) / 1000).toFixed(2);
                         
                         hideSAWBatchResultsLoading();
-                        showNotification("Success", `Berhasil mengklasifikasi ${afterData.total_mahasiswa} mahasiswa`, "success");
+                        const message = `Berhasil mengklasifikasi ${afterData.total_mahasiswa} mahasiswa`;
+                        const detailMessage = afterData.labeled_data_count ? 
+                            ` (Normalisasi dari ${afterData.labeled_data_count} data berlabel)` : 
+                            ' (Normalisasi dari data berlabel)';
+                        showNotification("Success", message + detailMessage, "success");
                         
                         // Display after state and comparison
                         displayAfterResults(afterData);
@@ -846,12 +850,16 @@ function loadSAWResultsTable() {
     
     console.log('Fetching SAW results table from server');
     
-    // Gunakan endpoint /batch yang memberikan data lengkap dengan IPK, SKS, D/E/K, dan Klasifikasi
+    // Gunakan endpoint /batch-labeled yang memberikan data lengkap dengan IPK, SKS, D/E/K, dan Klasifikasi
+    // Normalisasi min/max dihitung dari data berlabel untuk konsistensi dengan evaluasi aktual
     $.ajax({
-        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch'),
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch-labeled'),
         type: 'GET',
         success: function(response) {
             console.log('SAW results table loaded successfully:', response);
+            if (response.normalization_source === 'labeled_data_only') {
+                console.log(`📊 Normalisasi dari ${response.labeled_data_count || 'data berlabel'} records`);
+            }
             
             // Simpan ke cache
             sawDataCache.results = response;
@@ -936,11 +944,15 @@ function showSAWStatsLoading() {
 }
 
 function loadInitialSAWBatchResults() {
+    // Gunakan endpoint /batch-labeled untuk konsistensi dengan evaluasi aktual
     $.ajax({
-        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch'),
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch-labeled'),
         type: 'GET',
         success: function(data) {
             displayBatchResults(data);
+            if (data.normalization_source === 'labeled_data_only') {
+                console.log(`📊 Batch SAW: Normalisasi dari ${data.labeled_data_count || 'data berlabel'} records`);
+            }
         },
         error: function(xhr, status, error) {
             console.error('Error loading initial SAW batch results:', error);
@@ -1855,8 +1867,9 @@ function loadSAWGridLazy(page = 0, pageSize = 50) {
     
     console.log('Fetching SAW grid from server (lazy)');
     
+    // Gunakan endpoint /batch-labeled untuk konsistensi dengan evaluasi aktual
     $.ajax({
-        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch'),
+        url: CONFIG.getApiUrl(CONFIG.ENDPOINTS.SAW + '/batch-labeled'),
         type: 'GET',
         data: {
             skip: page * pageSize,
@@ -1864,6 +1877,9 @@ function loadSAWGridLazy(page = 0, pageSize = 50) {
         },
         success: function(response) {
             console.log('SAW grid loaded successfully (lazy):', response);
+            if (response.normalization_source === 'labeled_data_only') {
+                console.log(`📊 Normalisasi dari ${response.labeled_data_count || 'data berlabel'} records`);
+            }
             
             // Simpan ke cache jika ini adalah halaman pertama
             if (page === 0) {

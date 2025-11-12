@@ -903,8 +903,8 @@
                                     <p>Simple Additive Weighting (SAW) adalah metode yang digunakan untuk mengklasifikasikan peluang kelulusan mahasiswa dengan mempertimbangkan bobot dari setiap kriteria:</p>
                                     <ul>
                                         <li><strong>IPK (35%)</strong> - Benefit: Semakin tinggi semakin baik</li>
-                                        <li><strong>Total SKS (37.5%)</strong> - Benefit: Semakin tinggi semakin baik</li>
-                                        <li><strong>Nilai D/E/K (37.5%)</strong> - Cost: Semakin rendah semakin baik</li>
+                                        <li><strong>Total SKS (32.5%)</strong> - Benefit: Semakin tinggi semakin baik</li>
+                                        <li><strong>Nilai D/E/K (32.5%)</strong> - Cost: Semakin rendah semakin baik</li>
                                     </ul>
                                     <p>Metode ini menghitung nilai preferensi untuk setiap alternatif dengan mengalikan nilai ternormalisasi setiap kriteria dengan bobotnya.</p>
                                     <div class="threshold-info">
@@ -914,6 +914,12 @@
                                             <li>0.45 ≤ Skor < 0.7 = Peluang Lulus Sedang</li>
                                             <li>Skor < 0.45 = Peluang Lulus Kecil</li>
                                         </ul>
+                                    </div>
+                                    <div class="normalization-info" style="margin-top: 15px; padding: 12px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196F3;">
+                                        <h4 style="margin: 0 0 8px 0; color: #1976D2;"><i class="fas fa-chart-bar"></i> Informasi Normalisasi</h4>
+                                        <p style="margin: 0; font-size: 13px; color: #1565C0;">
+                                            <strong>Normalisasi min/max dihitung dari data berlabel</strong> (mahasiswa dengan status_lulus_aktual: LULUS_TINGGI, LULUS_SEDANG, LULUS_KECIL) untuk konsistensi dengan hasil evaluasi SAW dengan data aktual.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
