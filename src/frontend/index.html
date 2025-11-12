@@ -3608,6 +3608,38 @@
                                             </button>
                                         </div>
                                     </div>
+                                    <!-- Filter Pencarian Comparison -->
+                                    <div class="search-filter-container" style="margin: 15px 20px;">
+                                        <div>
+                                            <div class="search-input-group">
+                                                <label for="searchInputComparison">
+                                                    <i class="fas fa-search"></i> Cari Detail Perbandingan:
+                                                </label>
+                                                <input 
+                                                    type="text" 
+                                                    id="searchInputComparison" 
+                                                    placeholder="Cari berdasarkan NIM, Nama, Program Studi, Klasifikasi FIS, Klasifikasi SAW, atau Status Lulus Aktual... (gunakan koma untuk multiple filter)"
+                                                >
+                                                <small style="color: #666; font-size: 11px; margin-top: 5px; display: block;">
+                                                    <i class="fas fa-info-circle"></i> 
+                                                    <strong>Single:</strong> "19812", "Budi", "Informatika", "Tinggi" |
+                                                    <strong>Multiple:</strong> "informatika, tinggi", "sistem, sedang"
+                                                </small>
+                                            </div>
+                                            <div class="search-button-group">
+                                                <button id="btnSearchComparison" class="k-button k-primary">
+                                                    <i class="fas fa-search"></i> Cari
+                                                </button>
+                                                <button id="btnClearSearchComparison" class="k-button">
+                                                    <i class="fas fa-times"></i> Clear
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="searchInfoComparison">
+                                            <i class="fas fa-info-circle"></i> 
+                                            <span id="searchResultTextComparison">Menampilkan hasil pencarian...</span>
+                                        </div>
+                                    </div>
                                     <div class="table-responsive">
                                         <table class="comparison-table">
                                             <thead>

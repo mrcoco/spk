@@ -216,6 +216,7 @@ function combineEvaluationData(fisData, sawData) {
             comparisonData.push({
                 nim: fisItem.nim,
                 nama: fisItem.nama,
+                program_studi: fisItem.program_studi || sawItem.program_studi || null,
                 ipk: fisItem.ipk,
                 sks: fisItem.sks,
                 persen_dek: fisItem.persen_dek,
@@ -555,6 +556,50 @@ function renderConfusionMatrix(confusionMatrix, containerId, methodName) {
     console.log(`${methodName} confusion matrix rendered successfully`);
 }
 
+// Helper function untuk mendapatkan warna Program Studi (untuk comparison page)
+function getProdiColorComparison(prodi) {
+    if (!prodi) return { bg: '#e0e0e0', text: '#666' };
+    
+    const prodiColors = {
+        'Teknik Informatika': { bg: '#e3f2fd', text: '#1565C0' },
+        'Sistem Informasi': { bg: '#e8f5e9', text: '#2e7d32' },
+        'Teknik Komputer': { bg: '#fff3e0', text: '#e65100' },
+        'Manajemen Informatika': { bg: '#f3e5f5', text: '#6a1b9a' },
+        'Komputerisasi Akuntansi': { bg: '#fff9c4', text: '#f57f17' },
+        'Teknik Elektro': { bg: '#ffebee', text: '#c62828' },
+        'Pendidikan Jasmani': { bg: '#e1f5fe', text: '#0277bd' },
+        'Pendidikan Ekonomi': { bg: '#f1f8e9', text: '#33691e' },
+        'Manajemen': { bg: '#ede7f6', text: '#4527a0' },
+        'Akuntansi': { bg: '#fff8e1', text: '#ef6c00' },
+        'default': { bg: '#e0e0e0', text: '#424242' }
+    };
+    
+    // Check if prodi contains any of the keywords
+    for (const [key, color] of Object.entries(prodiColors)) {
+        if (key !== 'default' && prodi.toUpperCase().includes(key.toUpperCase())) {
+            return color;
+        }
+    }
+    
+    return prodiColors['default'];
+}
+
+// Helper function untuk mendapatkan badge class berdasarkan status aktual
+function getComparisonBadgeClass(status) {
+    if (!status) return 'bg-secondary';
+    const normalized = status.toString().toUpperCase();
+    if (normalized.includes('TINGGI')) return 'bg-success';
+    if (normalized.includes('SEDANG')) return 'bg-warning';
+    if (normalized.includes('KECIL')) return 'bg-danger';
+    return 'bg-secondary';
+}
+
+// Helper function untuk format status aktual
+function formatComparisonActualStatus(status) {
+    if (!status) return 'N/A';
+    return status.replace(/_/g, ' ');
+}
+
 // Inisialisasi Kendo Grid untuk tabel comparison
 function initializeComparisonGrid(data) {
     console.log('Initializing Kendo Grid with data:', data);
@@ -614,12 +659,13 @@ function initializeComparisonGrid(data) {
                         fields: {
                             nim: { type: "string" },
                             nama: { type: "string" },
+                            program_studi: { type: "string" },
                             fis_kategori: { type: "string" },
                             fis_nilai: { type: "number" },
                             saw_kategori: { type: "string" },
                             saw_nilai: { type: "number" },
-                            nilai_selisih: { type: "number" },
-                            selisih_category: { type: "string" },
+                            actual_status: { type: "string" },
+                            actual_class: { type: "string" },
                             is_consistent: { type: "boolean" }
                         }
                     }
@@ -629,9 +675,7 @@ function initializeComparisonGrid(data) {
             height: 500,
             scrollable: true,
             sortable: true,
-            filterable: {
-                mode: "row"
-            },
+            filterable: false, // Disable default Kendo filters, use custom search instead
             pageable: {
                 buttonCount: 5,
                 pageSizes: [10, 25, 50, 100],
@@ -651,16 +695,14 @@ function initializeComparisonGrid(data) {
                 }
             },
             columns: [
-                { field: "nim", title: "NIM", width: 120, filterable: {
-                        cell: {
-                            operator: "contains"
+                { field: "nim", title: "NIM", width: 120 },
+                { field: "nama", title: "Nama", width: 200 },
+                { field: "program_studi", title: "Program Studi", width: 200, template: function(dataItem) {
+                        if (!dataItem.program_studi) {
+                            return '<span style="color: #999;">N/A</span>';
                         }
-                    }
-                },
-                { field: "nama", title: "Nama", width: 200, filterable: {
-                        cell: {
-                            operator: "contains"
-                        }
+                        const colors = getProdiColorComparison(dataItem.program_studi);
+                        return `<span style="display: inline-block; padding: 4px 10px; background: ${colors.bg}; color: ${colors.text}; border-radius: 12px; font-size: 11px; font-weight: 500;">${dataItem.program_studi}</span>`;
                     }
                 },
                 { field: "fis_kategori", title: "Hasil FIS", width: 200, template: function(dataItem) {
@@ -682,10 +724,6 @@ function initializeComparisonGrid(data) {
                                 </div>
                             </div>
                         `;
-                    }, filterable: {
-                        cell: {
-                            operator: "contains"
-                        }
                     }
                 },
                 { field: "saw_kategori", title: "Hasil SAW", width: 240, template: function(dataItem) {
@@ -714,10 +752,6 @@ function initializeComparisonGrid(data) {
                                 </div>
                             </div>
                         `;
-                    }, filterable: {
-                        cell: {
-                            operator: "contains"
-                        }
                     }
                 },
                 { field: "is_consistent", title: "Konsistensi", width: 120, template: function(dataItem) {
@@ -726,41 +760,26 @@ function initializeComparisonGrid(data) {
                            '<i class="fas fa-times text-danger"></i>';
                         const text = dataItem.is_consistent ? 'Konsisten' : 'Berbeda';
                         return `${icon} ${text}`;
-                    }, filterable: {
-                        cell: {
-                            template: function(args) {
-                                args.element.kendoDropDownList({
-                                    dataSource: [
-                                        { text: "Semua", value: "" },
-                                        { text: "Konsisten", value: "true" },
-                                        { text: "Berbeda", value: "false" }
-                                    ],
-                                    dataTextField: "text",
-                                    dataValueField: "value",
-                                    value: args.filter ? args.filter.value : ""
-                                });
-                            }
-                        }
                     }
                 },
-                { field: "nilai_selisih", title: "Selisih Nilai", width: 140, template: function(dataItem) {
-                        const selisihClass = dataItem.selisih_category ? 
-                            dataItem.selisih_category.toLowerCase().replace(/\s+/g, '-') : '';
-                        // Format selisih dengan 2 desimal dan tunjukkan dalam skala 0-100
-                        const selisihFormatted = dataItem.nilai_selisih ? parseFloat(dataItem.nilai_selisih).toFixed(2) : 'N/A';
-                        return `<span class="selisih-value" title="Selisih dalam skala 0-100">${selisihFormatted}</span> <span class="selisih-category ${selisihClass}">${dataItem.selisih_category || 'N/A'}</span>`;
-                    }, filterable: {
-                        cell: {
-                            operator: "gte"
+                { field: "actual_status", title: "Status Lulus Aktual", width: 180, template: function(dataItem) {
+                        const actualStatus = dataItem.actual_status || dataItem.actual_class || '';
+                        if (!actualStatus) {
+                            return '<span style="color: #999;">N/A</span>';
                         }
+                        const badgeClass = getComparisonBadgeClass(actualStatus);
+                        const statusText = formatComparisonActualStatus(actualStatus);
+                        return `<span class="badge ${badgeClass}" style="font-size: 12px; padding: 6px 12px; font-weight: 600;">${statusText}</span>`;
                     }
                 }
             ],
             dataBound: function(e) {
                 console.log('Comparison grid data bound successfully');
+                // Simpan data ke cache
+                const allData = e.sender.dataSource.data();
+                comparisonDataCache = allData;
                 // Update statistik berdasarkan data yang difilter
-                const filteredData = e.sender.dataSource.data();
-                updateFilteredStats(filteredData);
+                updateFilteredStats(allData);
             }
         });
         
@@ -787,8 +806,14 @@ function updateFilteredStats(filteredData) {
     console.log('Updated filtered stats:', { total, consistent, different });
 }
 
+// Cache untuk data comparison
+let comparisonDataCache = null;
+
 // Setup event listeners untuk comparison
 function setupComparisonEventListeners() {
+    // Initialize search handlers
+    initializeComparisonSearchHandlers();
+    
     // Filter dropdown
     $('#comparisonFilter').off('change').on('change', function() {
         const filter = $(this).val();
@@ -836,6 +861,207 @@ function ensureComparisonSectionVisible() {
         console.log('Comparison Chart visibility:', chartElement.css('visibility')); 
     } else {
         console.error('Comparison chart element not found');
+    }
+}
+
+// Inisialisasi event handler untuk pencarian comparison
+function initializeComparisonSearchHandlers() {
+    console.log('Initializing comparison search handlers...');
+    
+    // Event handler untuk tombol pencarian comparison
+    $("#btnSearchComparison").off('click').on('click', function() {
+        console.log('🔍 Tombol pencarian comparison diklik');
+        performComparisonSearch();
+    });
+    
+    // Event handler untuk tombol clear pencarian comparison
+    $("#btnClearSearchComparison").off('click').on('click', function() {
+        console.log('🔍 Tombol clear pencarian comparison diklik');
+        clearComparisonSearch();
+    });
+    
+    // Event handler untuk input pencarian comparison
+    $("#searchInputComparison").off('input').on('input', function() {
+        const searchTerm = $(this).val().trim();
+        if (searchTerm.length >= 3) {
+            // Auto search setelah 3 karakter
+            clearTimeout(window.comparisonSearchTimeout);
+            window.comparisonSearchTimeout = setTimeout(function() {
+                performComparisonSearch();
+            }, 500);
+        } else if (searchTerm.length === 0) {
+            // Clear search jika input kosong
+            clearComparisonSearch();
+        }
+    });
+    
+    // Event handler untuk enter key pada input pencarian comparison
+    $("#searchInputComparison").off('keypress').on('keypress', function(e) {
+        if (e.which === 13) { // Enter key
+            console.log('🔍 Enter key ditekan pada input pencarian comparison');
+            performComparisonSearch();
+        }
+    });
+    
+    // Focus pada input pencarian saat halaman dimuat
+    $("#searchInputComparison").focus();
+}
+
+// Fungsi untuk melakukan pencarian detail perbandingan
+// Mendukung pencarian berdasarkan: NIM, Nama, Program Studi, Klasifikasi FIS, Klasifikasi SAW, Status Lulus Aktual
+// Mendukung multiple keywords dengan koma sebagai separator
+function performComparisonSearch() {
+    console.log('🔧 performComparisonSearch dipanggil');
+    
+    const searchInput = $("#searchInputComparison").val().trim();
+    
+    if (!searchInput) {
+        console.log('🔧 Input pencarian kosong, tampilkan semua data');
+        const grid = window._comparisonGrid;
+        if (grid && comparisonDataCache) {
+            grid.dataSource.data(comparisonDataCache);
+            updateFilteredStats(comparisonDataCache);
+        }
+        updateComparisonSearchInfo("Menampilkan semua data perbandingan", "info");
+        return;
+    }
+    
+    console.log('🔧 Memulai pencarian perbandingan untuk:', searchInput);
+    
+    try {
+        // Tampilkan loading pada grid
+        const grid = window._comparisonGrid;
+        if (!grid) {
+            console.error('🔧 Grid comparison tidak ditemukan');
+            updateComparisonSearchInfo("Grid comparison tidak tersedia", "error");
+            return;
+        }
+        
+        // Gunakan data dari cache jika tersedia
+        const allData = comparisonDataCache || grid.dataSource.data();
+        console.log('🔧 Total data di grid:', allData.length);
+        
+        // Parse multiple keywords
+        // Support comma separator (e.g., "informatika, tinggi")
+        const keywords = searchInput.toLowerCase()
+            .split(/[,]+/) // Split by comma
+            .map(k => k.trim()) // Trim whitespace
+            .filter(k => k.length > 0); // Remove empty strings
+        
+        console.log('🔧 Keywords untuk filter:', keywords);
+        
+        // Filter data berdasarkan multiple keywords (AND logic)
+        // Semua keywords harus match di salah satu field
+        const filteredData = allData.filter(item => {
+            // Check if ALL keywords match at least one field
+            return keywords.every(keyword => {
+                // Cek NIM
+                if (item.nim && item.nim.toLowerCase().includes(keyword)) {
+                    return true;
+                }
+                
+                // Cek Nama
+                if (item.nama && item.nama.toLowerCase().includes(keyword)) {
+                    return true;
+                }
+                
+                // Cek Program Studi
+                if (item.program_studi && item.program_studi.toLowerCase().includes(keyword)) {
+                    return true;
+                }
+                
+                // Cek Klasifikasi FIS
+                if (item.fis_kategori && item.fis_kategori.toLowerCase().includes(keyword)) {
+                    return true;
+                }
+                
+                // Cek Klasifikasi SAW
+                if (item.saw_kategori && item.saw_kategori.toLowerCase().includes(keyword)) {
+                    return true;
+                }
+                
+                // Cek Status Lulus Aktual
+                const actualStatus = (item.actual_status || item.actual_class || '').toLowerCase();
+                if (actualStatus && actualStatus.includes(keyword)) {
+                    return true;
+                }
+                
+                return false;
+            });
+        });
+        
+        console.log('🔧 Data yang difilter:', filteredData.length);
+        
+        if (filteredData.length === 0) {
+            grid.dataSource.data([]);
+            updateFilteredStats([]);
+            updateComparisonSearchInfo(`Tidak ada data ditemukan untuk "${searchInput}"`, "warning");
+            return;
+        }
+        
+        // Update grid dengan data hasil pencarian
+        grid.dataSource.data(filteredData);
+        
+        // Update statistik
+        updateFilteredStats(filteredData);
+        
+        // Build info message
+        const keywordText = keywords.length > 1 ? 
+            `keywords: "${keywords.join('", "')}"` : 
+            `"${searchInput}"`;
+        updateComparisonSearchInfo(`Ditemukan ${filteredData.length} data dengan ${keywordText}`, "success");
+        
+    } catch (error) {
+        console.error('🔧 Error dalam pencarian comparison:', error);
+        updateComparisonSearchInfo("Terjadi kesalahan saat mencari data: " + error.message, "error");
+    }
+}
+
+// Fungsi untuk clear pencarian comparison
+function clearComparisonSearch() {
+    $("#searchInputComparison").val("");
+    
+    // Restore data lengkap dari cache jika tersedia
+    const grid = window._comparisonGrid;
+    if (grid && comparisonDataCache) {
+        console.log('🔧 Restoring full data from cache');
+        grid.dataSource.data(comparisonDataCache);
+        updateFilteredStats(comparisonDataCache);
+    } else if (grid) {
+        console.log('🔧 Reloading data from server');
+        grid.dataSource.read();
+    }
+    
+    updateComparisonSearchInfo("Pencarian telah dibersihkan", "info");
+}
+
+// Fungsi untuk update search info comparison
+function updateComparisonSearchInfo(message, type) {
+    const searchInfo = $("#searchInfoComparison");
+    const searchResultText = $("#searchResultTextComparison");
+    
+    searchResultText.text(message);
+    
+    // Update icon berdasarkan type
+    const icon = searchInfo.find("i");
+    icon.removeClass("fa-info-circle fa-exclamation-triangle fa-check-circle fa-times-circle");
+    
+    switch(type) {
+        case "success":
+            icon.addClass("fa-check-circle");
+            searchInfo.css("color", "#28a745");
+            break;
+        case "warning":
+            icon.addClass("fa-exclamation-triangle");
+            searchInfo.css("color", "#ffc107");
+            break;
+        case "error":
+            icon.addClass("fa-times-circle");
+            searchInfo.css("color", "#dc3545");
+            break;
+        default:
+            icon.addClass("fa-info-circle");
+            searchInfo.css("color", "#17a2b8");
     }
 }
 
