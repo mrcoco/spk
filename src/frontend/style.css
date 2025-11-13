@@ -4441,6 +4441,72 @@ body.drawer-expanded .content-wrapper {
     margin: 20px 0;
 }
 
+/* Styling untuk confusion matrix cell yang bisa diklik pada comparison page */
+.confusion-table-simple td[data-actual] {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.confusion-table-simple td[data-actual]:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+    filter: brightness(1.1);
+}
+
+.confusion-table-simple td[data-actual]::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(103, 58, 183, 0.1);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.confusion-table-simple td[data-actual]:hover::after {
+    opacity: 1;
+}
+
+/* Styling untuk grid di modal confusion matrix comparison */
+.k-dialog .k-grid td {
+    color: #2c3e50 !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+}
+
+.k-dialog .k-grid th {
+    color: #2c3e50 !important;
+    font-size: 13px !important;
+    font-weight: bold !important;
+    background-color: #f8f9fa !important;
+}
+
+.k-dialog .k-grid .k-grid-content td {
+    padding: 10px 12px !important;
+}
+
+.k-dialog .k-grid .k-grid-header th {
+    padding: 12px !important;
+}
+
+.k-dialog .k-grid .k-pager {
+    color: #2c3e50 !important;
+    font-size: 13px !important;
+}
+
+.k-dialog .k-grid .k-pager .k-pager-numbers .k-link {
+    color: #2c3e50 !important;
+}
+
+.k-dialog .k-grid .k-pager .k-pager-numbers .k-state-selected {
+    color: #fff !important;
+    background-color: #673AB7 !important;
+}
+
 .confusion-table {
     border-collapse: collapse;
     border: 2px solid #dee2e6;

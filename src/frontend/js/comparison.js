@@ -717,8 +717,19 @@ function renderConfusionMatrix(confusionMatrix, containerId, methodName) {
                 <div style="font-size: 10px; color: rgba(0,0,0,0.65); margin-top: 2px;">${displayPercentage}</div>
             `;
 
+            // Tambahkan data attributes dan cursor pointer untuk klik
+            const actualStatus = actualConfigs[i].value;
+            const predictedCategory = predictedConfigs[j].value;
+            const cellId = `cm-cell-${methodName}-${i}-${j}`;
+            
             html += `
-                <td style="${style}">
+                <td style="${style}; cursor: pointer;" 
+                    data-actual="${actualStatus}" 
+                    data-predicted="${predictedCategory}" 
+                    data-method="${methodName}"
+                    data-count="${value}"
+                    id="${cellId}"
+                    title="Klik untuk melihat detail data">
                     ${cellContent}
                 </td>`;
         });
@@ -728,7 +739,360 @@ function renderConfusionMatrix(confusionMatrix, containerId, methodName) {
     html += '</tbody></table>';
     container.html(html);
     
+    // Tambahkan event handler untuk klik pada cell confusion matrix
+    container.find('td[data-actual]').off('click').on('click', function() {
+        const actualStatus = $(this).data('actual');
+        const predictedCategory = $(this).data('predicted');
+        const method = $(this).data('method');
+        const count = $(this).data('count');
+        
+        showComparisonConfusionMatrixDetailModal(actualStatus, predictedCategory, method, count);
+    });
+    
     console.log(`${methodName} confusion matrix rendered successfully`);
+}
+
+// Show detail modal untuk confusion matrix cell pada comparison page
+function showComparisonConfusionMatrixDetailModal(actualStatus, predictedCategory, method, count) {
+    // Dapatkan data berdasarkan method (FIS atau SAW)
+    let fullData = [];
+    let methodData = null;
+    
+    if (method === 'FIS') {
+        methodData = window._fisActualData;
+        fullData = methodData?.full_data || methodData?.results || methodData?.sample_data || [];
+    } else if (method === 'SAW') {
+        methodData = window._sawActualData;
+        fullData = methodData?.full_data || methodData?.results || methodData?.sample_data || [];
+    }
+    
+    if (!fullData || fullData.length === 0) {
+        showNotification('Error', 'Data evaluasi tidak tersedia', 'error');
+        return;
+    }
+    
+    console.log('=== Comparison Confusion Matrix Modal Debug ===');
+    console.log('Method:', method);
+    console.log('Total full data available:', fullData.length);
+    console.log('Looking for:', { actualStatus, predictedCategory, count });
+    
+    // Filter data berdasarkan actual status dan predicted category
+    const filteredData = fullData.filter(item => {
+        const itemActualStatus = item.actual_status || item.status_lulus_aktual;
+        const itemPredicted = item.predicted_class || item.predicted_category || 
+                            (method === 'FIS' ? item.fis_kategori : item.saw_kategori);
+        
+        return itemActualStatus === actualStatus && itemPredicted === predictedCategory;
+    });
+    
+    console.log('Filtered data count:', filteredData.length);
+    console.log('Expected count from confusion matrix:', count);
+    
+    if (filteredData.length === 0) {
+        showNotification('Info', 'Tidak ada data detail untuk kombinasi ini', 'info');
+        return;
+    }
+    
+    // Format label untuk display
+    const actualLabel = actualStatus.replace(/_/g, ' ');
+    const predictedLabel = predictedCategory;
+    const isCorrect = actualStatus.replace('LULUS_', '') === predictedCategory.replace('Peluang Lulus ', '').toUpperCase();
+    
+    // Generate unique ID untuk grid container
+    const uniqueGridId = 'comparisonCmDetailGrid_' + Date.now() + '_' + method;
+    
+    // Helper function untuk badge class
+    function getClassificationBadgeClass(category) {
+        if (category.includes('Tinggi')) return 'badge-success';
+        if (category.includes('Sedang')) return 'badge-warning';
+        if (category.includes('Kecil')) return 'badge-danger';
+        return 'badge-secondary';
+    }
+    
+    function getStatusBadgeColor(status) {
+        if (status === 'LULUS_TINGGI') return 'success';
+        if (status === 'LULUS_SEDANG') return 'warning';
+        if (status === 'LULUS_KECIL') return 'danger';
+        return 'secondary';
+    }
+    
+    // Create modal content with unique ID - ensure grid container is directly accessible
+    const modalContent = $(`
+        <div style="padding: 20px;">
+            <div style="background: ${isCorrect ? '#e8f5e9' : '#ffebee'}; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 10px 0; color: ${isCorrect ? '#2e7d32' : '#c62828'};">
+                    <i class="fas ${isCorrect ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                    ${isCorrect ? 'Prediksi Benar' : 'Prediksi Salah'}
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <strong>Status Aktual:</strong><br>
+                        <span class="badge bg-${getStatusBadgeColor(actualStatus)}" style="font-size: 14px; padding: 8px 12px; margin-top: 5px; display: inline-block;">
+                            ${actualLabel}
+                        </span>
+                    </div>
+                    <div>
+                        <strong>Prediksi ${method}:</strong><br>
+                        <span class="badge ${getClassificationBadgeClass(predictedCategory)}" style="font-size: 14px; padding: 8px 12px; margin-top: 5px; display: inline-block;">
+                            ${predictedLabel}
+                        </span>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1);">
+                    <strong><i class="fas fa-users"></i> Jumlah Mahasiswa:</strong> ${filteredData.length} dari ${count} (${((filteredData.length/count)*100).toFixed(1)}%)
+                </div>
+            </div>
+            
+            <h5 style="margin-bottom: 15px; color: #333;">
+                <i class="fas fa-table"></i> Detail Data Mahasiswa dan Prediksi ${method}
+            </h5>
+            <div id="${uniqueGridId}" style="min-height: 450px;"></div>
+        </div>
+    `);
+    
+    // Create Kendo Dialog
+    const dialog = modalContent.kendoDialog({
+        width: "1100px",
+        height: "750px",
+        title: `Detail Confusion Matrix ${method} - ${actualLabel} → ${predictedLabel}`,
+        closable: true,
+        modal: true,
+        actions: [
+            {
+                text: "Tutup",
+                action: function() {
+                    return true;
+                }
+            }
+        ],
+        open: function(e) {
+            console.log('Modal opened, initializing grid with ID:', uniqueGridId);
+            console.log('Filtered data count:', filteredData.length);
+            console.log('Filtered data sample:', filteredData[0]);
+            console.log('Modal wrapper:', e.sender.wrapper);
+            
+            // Store reference to filteredData in a way that's accessible
+            const gridData = filteredData;
+            const gridId = uniqueGridId;
+            
+            // Use longer delay to ensure modal is fully rendered
+            setTimeout(function() {
+                // Try multiple ways to find the grid container
+                let gridContainer = $('#' + gridId);
+                
+                // If not found, try searching within the dialog wrapper
+                if (gridContainer.length === 0 && e.sender && e.sender.wrapper) {
+                    gridContainer = $(e.sender.wrapper).find('#' + gridId);
+                }
+                
+                // If still not found, try searching in the entire document
+                if (gridContainer.length === 0) {
+                    gridContainer = $('#' + gridId);
+                }
+                
+                // Check if element exists
+                if (gridContainer.length === 0) {
+                    console.error('Grid container not found:', gridId);
+                    console.error('Searching in modal wrapper...');
+                    if (e.sender && e.sender.wrapper) {
+                        const allDivs = $(e.sender.wrapper).find('div');
+                        console.error('Available divs in modal:', allDivs.length);
+                        allDivs.each(function(i) {
+                            if (this.id) {
+                                console.log('Found div with ID:', this.id);
+                            }
+                        });
+                    }
+                    showNotification('Error', 'Grid container tidak ditemukan: ' + gridId, 'error');
+                    return;
+                }
+                
+                console.log('Grid container found:', gridContainer.length, 'elements');
+                console.log('Grid container element:', gridContainer[0]);
+                
+                // Destroy existing grid if any
+                if (gridContainer.data('kendoGrid')) {
+                    console.log('Destroying existing grid...');
+                    gridContainer.data('kendoGrid').destroy();
+                }
+                
+                // Clear container
+                gridContainer.empty();
+                
+                try {
+                    console.log('Initializing grid with', gridData.length, 'records...');
+                    
+                    // Initialize Kendo Grid inside modal
+                    // Pastikan grid tidak dalam mode editing - gunakan konfigurasi minimal
+                    gridContainer.kendoGrid({
+                    dataSource: {
+                        data: gridData,
+                        pageSize: 10
+                    },
+                    height: 450,
+                    scrollable: true,
+                    sortable: true,
+                    editable: false,
+                    pageable: {
+                        refresh: true,
+                        pageSizes: [10, 20, 50],
+                        buttonCount: 5
+                    },
+                    columns: [
+                        { 
+                            field: "nim", 
+                            title: "NIM", 
+                            width: 120,
+                            template: function(dataItem) {
+                                const nim = String(dataItem.nim || 'N/A');
+                                return kendo.htmlEncode(nim);
+                            }
+                        },
+                        { 
+                            field: "nama", 
+                            title: "Nama", 
+                            width: 180,
+                            template: function(dataItem) {
+                                const nama = String(dataItem.nama || 'N/A');
+                                return kendo.htmlEncode(nama);
+                            }
+                        },
+                        { 
+                            field: "program_studi", 
+                            title: "Program Studi", 
+                            width: 200,
+                            template: function(dataItem) {
+                                try {
+                                    const prodi = dataItem.program_studi || 'N/A';
+                                    const colors = getProdiColorComparison(prodi);
+                                    const escapedProdi = kendo.htmlEncode(String(prodi));
+                                    return '<span style="display: inline-block; padding: 4px 10px; background: ' + colors.bg + '; color: ' + colors.text + '; border-radius: 12px; font-size: 12px; font-weight: 600;">' + escapedProdi + '</span>';
+                                } catch(e) {
+                                    return kendo.htmlEncode(String(dataItem.program_studi || 'N/A'));
+                                }
+                            }
+                        },
+                        { 
+                            field: "ipk", 
+                            title: "IPK", 
+                            width: 80,
+                            template: function(dataItem) {
+                                try {
+                                    const ipk = parseFloat(dataItem.ipk) || 0;
+                                    const color = ipk >= 3.5 ? '#28a745' : ipk >= 3.0 ? '#ffc107' : '#dc3545';
+                                    const ipkFormatted = ipk.toFixed(2);
+                                    return '<span style="color: ' + color + '; font-weight: bold; font-size: 13px;">' + ipkFormatted + '</span>';
+                                } catch(e) {
+                                    return String(dataItem.ipk || 0);
+                                }
+                            }
+                        },
+                        { 
+                            field: "sks", 
+                            title: "SKS", 
+                            width: 80,
+                            template: function(dataItem) {
+                                const sks = parseFloat(dataItem.sks) || 0;
+                                return String(Math.round(sks));
+                            }
+                        },
+                        { 
+                            field: method === 'FIS' ? "fuzzy_score" : "final_value", 
+                            title: method === 'FIS' ? "Skor FIS" : "Skor SAW", 
+                            width: 120,
+                            template: function(dataItem) {
+                                try {
+                                    const score = method === 'FIS' ? 
+                                        (parseFloat(dataItem.fuzzy_score) || parseFloat(dataItem.final_value) || 0) : 
+                                        (parseFloat(dataItem.final_value) || parseFloat(dataItem.saw_score) || 0);
+                                    const scoreFormatted = score.toFixed(4);
+                                    return '<span style="font-weight: bold; color: #2c3e50; font-size: 13px;">' + scoreFormatted + '</span>';
+                                } catch(e) {
+                                    return '0.0000';
+                                }
+                            }
+                        },
+                        { 
+                            field: "actual_status", 
+                            title: "Status Aktual", 
+                            width: 150,
+                            template: function(dataItem) {
+                                try {
+                                    const status = dataItem.actual_status || dataItem.status_lulus_aktual || 'N/A';
+                                    const statusLabel = String(status).replace(/_/g, ' ');
+                                    const escapedStatusLabel = kendo.htmlEncode(statusLabel);
+                                    const badgeColor = getStatusBadgeColor(status);
+                                    const badgeColors = {
+                                        'success': { bg: '#28a745', text: '#fff' },
+                                        'warning': { bg: '#ffc107', text: '#000' },
+                                        'danger': { bg: '#dc3545', text: '#fff' },
+                                        'secondary': { bg: '#6c757d', text: '#fff' }
+                                    };
+                                    const colors = badgeColors[badgeColor] || badgeColors['secondary'];
+                                    return '<span style="display: inline-block; padding: 6px 12px; background: ' + colors.bg + '; color: ' + colors.text + '; border-radius: 6px; font-size: 12px; font-weight: 600;">' + escapedStatusLabel + '</span>';
+                                } catch(e) {
+                                    return kendo.htmlEncode(String(dataItem.actual_status || dataItem.status_lulus_aktual || 'N/A'));
+                                }
+                            }
+                        },
+                        { 
+                            field: method === 'FIS' ? "predicted_category" : "predicted_class", 
+                            title: method === 'FIS' ? "Prediksi FIS" : "Prediksi SAW", 
+                            width: 180,
+                            template: function(dataItem) {
+                                try {
+                                    const category = method === 'FIS' ? 
+                                        (dataItem.predicted_category || dataItem.fis_kategori) : 
+                                        (dataItem.predicted_class || dataItem.saw_kategori);
+                                    const categoryStr = String(category || 'N/A');
+                                    const escapedCategory = kendo.htmlEncode(categoryStr);
+                                    const badgeClass = getClassificationBadgeClass(categoryStr);
+                                    const badgeColors = {
+                                        'badge-success': { bg: '#28a745', text: '#fff' },
+                                        'badge-warning': { bg: '#ffc107', text: '#000' },
+                                        'badge-danger': { bg: '#dc3545', text: '#fff' },
+                                        'badge-secondary': { bg: '#6c757d', text: '#fff' }
+                                    };
+                                    const colors = badgeColors[badgeClass] || badgeColors['badge-secondary'];
+                                    return '<span style="display: inline-block; padding: 6px 12px; background: ' + colors.bg + '; color: ' + colors.text + '; border-radius: 6px; font-size: 12px; font-weight: 600;">' + escapedCategory + '</span>';
+                                } catch(e) {
+                                    return kendo.htmlEncode(String(dataItem.predicted_category || dataItem.predicted_class || 'N/A'));
+                                }
+                            }
+                        }
+                    ],
+                    dataBound: function(e) {
+                        console.log('Grid data bound successfully. Total records:', e.sender.dataSource.total());
+                        // Pastikan grid tidak dalam mode editing setelah data bound
+                        if (e.sender.options.editable !== false) {
+                            e.sender.options.editable = false;
+                        }
+                    },
+                    error: function(e) {
+                        console.error('Grid error:', e);
+                        console.error('Grid error details:', JSON.stringify(e, null, 2));
+                        showNotification('Error', 'Terjadi kesalahan saat memuat grid: ' + (e.xhr ? e.xhr.responseText : e.message || 'Unknown error'), 'error');
+                    }
+                });
+                
+                // Pastikan grid tidak dalam mode editing setelah dibuat
+                const grid = gridContainer.data('kendoGrid');
+                if (grid) {
+                    grid.options.editable = false;
+                    grid.options.selectable = false;
+                }
+                
+                console.log('Grid initialized successfully');
+                } catch (error) {
+                    console.error('Error initializing grid:', error);
+                    gridContainer.html('<div style="padding: 20px; color: #dc3545;"><strong>Error:</strong> ' + error.message + '</div>');
+                    showNotification('Error', 'Gagal menginisialisasi grid: ' + error.message, 'error');
+                }
+            }, 200);
+        }
+    });
+    
+    dialog.data('kendoDialog').open();
 }
 
 // Helper function untuk mendapatkan warna Program Studi (untuk comparison page)
