@@ -771,6 +771,17 @@ function showComparisonConfusionMatrixDetailModal(actualStatus, predictedCategor
         return;
     }
     
+    // Hitung total data evaluasi dan persentase cakupan
+    const totalEvaluated = methodData?.evaluation_info?.total_data || fullData.length;
+    const evaluationPercentageRaw = methodData?.evaluation_info?.evaluation_percentage ??
+        methodData?.evaluation_info?.evaluation_coverage ??
+        methodData?.evaluation_info?.data_percentage ??
+        methodData?.evaluation_info?.coverage_percentage;
+    const evaluationPercentageValue = evaluationPercentageRaw !== undefined ? parseFloat(evaluationPercentageRaw) : 85.0;
+    const evaluationPercentage = isFinite(evaluationPercentageValue)
+        ? (evaluationPercentageValue > 1 ? evaluationPercentageValue : evaluationPercentageValue * 100)
+        : 85.0;
+    
     console.log('=== Comparison Confusion Matrix Modal Debug ===');
     console.log('Method:', method);
     console.log('Total full data available:', fullData.length);
@@ -803,10 +814,10 @@ function showComparisonConfusionMatrixDetailModal(actualStatus, predictedCategor
     
     // Helper function untuk badge class
     function getClassificationBadgeClass(category) {
-        if (category.includes('Tinggi')) return 'badge-success';
-        if (category.includes('Sedang')) return 'badge-warning';
-        if (category.includes('Kecil')) return 'badge-danger';
-        return 'badge-secondary';
+        if (category.includes('Tinggi')) return 'bg-success';
+        if (category.includes('Sedang')) return 'bg-warning';
+        if (category.includes('Kecil')) return 'bg-danger';
+        return 'bg-secondary';
     }
     
     function getStatusBadgeColor(status) {
@@ -839,7 +850,10 @@ function showComparisonConfusionMatrixDetailModal(actualStatus, predictedCategor
                     </div>
                 </div>
                 <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1);">
-                    <strong><i class="fas fa-users"></i> Jumlah Mahasiswa:</strong> ${filteredData.length} dari ${count} (${((filteredData.length/count)*100).toFixed(1)}%)
+                    <strong><i class="fas fa-users"></i> Jumlah Mahasiswa:</strong> ${filteredData.length} dari ${totalEvaluated} (${((filteredData.length/totalEvaluated)*100).toFixed(1)}%)
+                </div>
+                <div style="margin-top: 6px; color: #546E7A; font-size: 12px;">
+                    <i class="fas fa-info-circle"></i> Total data yang dievaluasi: ${totalEvaluated} mahasiswa
                 </div>
             </div>
             
