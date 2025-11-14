@@ -2651,8 +2651,11 @@ function showConfusionMatrixDetailModal(actualStatus, predictedCategory, count) 
         return;
     }
     
+    // Hitung total evaluasi dari full data
+    const totalEvaluated = fisActualEvaluationFullData.length;
+    
     console.log('=== Confusion Matrix Modal Debug ===');
-    console.log('Total full data available:', fisActualEvaluationFullData.length);
+    console.log('Total full data available:', totalEvaluated);
     console.log('Looking for:', { actualStatus, predictedCategory, count });
     
     // Filter data berdasarkan actual status dan predicted category DARI FULL DATA
@@ -2706,7 +2709,10 @@ function showConfusionMatrixDetailModal(actualStatus, predictedCategory, count) 
                     </div>
                 </div>
                 <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1);">
-                    <strong><i class="fas fa-users"></i> Jumlah Mahasiswa:</strong> ${filteredData.length} dari ${count} (${((filteredData.length/count)*100).toFixed(1)}%)
+                    <strong><i class="fas fa-users"></i> Jumlah Mahasiswa:</strong> ${filteredData.length} dari ${totalEvaluated} (${((filteredData.length/totalEvaluated)*100).toFixed(1)}%)
+                </div>
+                <div style="margin-top: 6px; color: #546E7A; font-size: 12px;">
+                    <i class="fas fa-info-circle"></i> Total data yang dievaluasi: ${totalEvaluated} mahasiswa
                 </div>
             </div>
             

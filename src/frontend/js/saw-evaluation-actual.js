@@ -489,6 +489,9 @@ class SAWEvaluationActual {
             return;
         }
 
+        // Hitung total evaluasi dari full data
+        const totalEvaluated = this.fullData.length;
+
         const filteredData = this.fullData.filter(item => {
             const actual = item.actual_status || item.actual_class || '';
             const predicted = item.predicted_class || item.predicted_category || '';
@@ -503,7 +506,8 @@ class SAWEvaluationActual {
         const actualLabel = formatSAWActualStatus(actualStatus);
         const expectedPredicted = mapSAWActualToPredicted(actualStatus);
         const isCorrect = predictedCategory === expectedPredicted;
-        const matchPercentage = count > 0 ? ((filteredData.length / count) * 100).toFixed(1) : '0.0';
+        // Hitung persentase berdasarkan total evaluasi, bukan count cell
+        const matchPercentage = totalEvaluated > 0 ? ((filteredData.length / totalEvaluated) * 100).toFixed(1) : '0.0';
 
         const uniqueGridId = 'sawCMDetailGrid_' + Date.now();
         const summaryBackground = isCorrect ? '#e8f5e9' : '#ffebee';
@@ -529,8 +533,11 @@ class SAWEvaluationActual {
                         <div>
                             <strong>Jumlah Mahasiswa:</strong><br>
                             <span style="font-size: 18px; font-weight: 700; color: #1565C0;">${filteredData.length}</span>
-                            <span style="font-size: 13px; color: #555;"> dari ${count} (${matchPercentage}%)</span>
+                            <span style="font-size: 13px; color: #555;"> dari ${totalEvaluated} (${matchPercentage}%)</span>
                         </div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1); color: #546E7A; font-size: 12px;">
+                        <i class="fas fa-info-circle"></i> Total data yang dievaluasi: ${totalEvaluated} mahasiswa
                     </div>
                 </div>
 
