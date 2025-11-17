@@ -3897,6 +3897,7 @@
                                     <h3><i class="fas fa-chart-bar"></i> Visualisasi Perbandingan</h3>
                                     <div id="comparisonChart"></div>
                                 </div>
+
                                 <!-- Confusion Matrix Comparison -->
                                 <div class="comparison-card">
                                     <div class="comparison-table-header">
@@ -3925,6 +3926,93 @@
                                         </div>
                                     </div>
                                 </div>
+                                
+                                <!-- Metrics Comparison Table -->
+                                <div class="comparison-card">
+                                    <div class="comparison-table-header">
+                                        <h3><i class="fas fa-chart-line"></i> Perbandingan Metrik Evaluasi</h3>
+                                    </div>
+                                    <div class="comparison-metrics-table-container" style="padding: 20px;">
+                                        <div style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                            <table id="comparisonMetricsTable" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                                <thead>
+                                                    <tr style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                                                        <th style="padding: 15px; text-align: left; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0; width: 30%;">
+                                                            <i class="fas fa-chart-bar"></i> Metrik
+                                                        </th>
+                                                        <th style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0; width: 25%;">
+                                                            <i class="fas fa-calculator"></i> FIS
+                                                        </th>
+                                                        <th style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0; width: 25%;">
+                                                            <i class="fas fa-calculator"></i> SAW
+                                                        </th>
+                                                        <th style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0; width: 20%;">
+                                                            <i class="fas fa-balance-scale"></i> Selisih
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr class="comparison-metric-row" data-metric="precision" style="cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8f9fa';" onmouseout="this.style.backgroundColor='white';">
+                                                        <td style="padding: 15px; border: 1px solid #dee2e6; font-weight: 600; color: #1a237e;">
+                                                            <i class="fas fa-bullseye" style="margin-right: 8px; color: #1a237e;"></i>
+                                                            Precision
+                                                            <i class="fas fa-info-circle" style="margin-left: 8px; font-size: 12px; opacity: 0.7; color: #1a237e;"></i>
+                                                        </td>
+                                                        <td id="comparisonFISPrecision" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1a237e;">-</td>
+                                                        <td id="comparisonSAWPrecision" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1a237e;">-</td>
+                                                        <td id="comparisonPrecisionDiffTable" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">-</td>
+                                                    </tr>
+                                                    <tr class="comparison-metric-row" data-metric="recall" style="cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8f9fa';" onmouseout="this.style.backgroundColor='white';">
+                                                        <td style="padding: 15px; border: 1px solid #dee2e6; font-weight: 600; color: #f57f17;">
+                                                            <i class="fas fa-search" style="margin-right: 8px; color: #f57f17;"></i>
+                                                            Recall
+                                                            <i class="fas fa-info-circle" style="margin-left: 8px; font-size: 12px; opacity: 0.7; color: #f57f17;"></i>
+                                                        </td>
+                                                        <td id="comparisonFISRecall" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #f57f17;">-</td>
+                                                        <td id="comparisonSAWRecall" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #f57f17;">-</td>
+                                                        <td id="comparisonRecallDiffTable" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">-</td>
+                                                    </tr>
+                                                    <tr class="comparison-metric-row" data-metric="f1score" style="cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8f9fa';" onmouseout="this.style.backgroundColor='white';">
+                                                        <td style="padding: 15px; border: 1px solid #dee2e6; font-weight: 600; color: #dc3545;">
+                                                            <i class="fas fa-balance-scale" style="margin-right: 8px; color: #dc3545;"></i>
+                                                            F1-Score
+                                                            <i class="fas fa-info-circle" style="margin-left: 8px; font-size: 12px; opacity: 0.7; color: #dc3545;"></i>
+                                                        </td>
+                                                        <td id="comparisonFISF1Score" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #dc3545;">-</td>
+                                                        <td id="comparisonSAWF1Score" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #dc3545;">-</td>
+                                                        <td id="comparisonF1ScoreDiffTable" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">-</td>
+                                                    </tr>
+                                                    <tr class="comparison-metric-row" data-metric="specificity" style="cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8f9fa';" onmouseout="this.style.backgroundColor='white';">
+                                                        <td style="padding: 15px; border: 1px solid #dee2e6; font-weight: 600; color: #6c757d;">
+                                                            <i class="fas fa-chart-line" style="margin-right: 8px; color: #6c757d;"></i>
+                                                            Specificity
+                                                            <i class="fas fa-info-circle" style="margin-left: 8px; font-size: 12px; opacity: 0.7; color: #6c757d;"></i>
+                                                        </td>
+                                                        <td id="comparisonFISSpecificity" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #6c757d;">-</td>
+                                                        <td id="comparisonSAWSpecificity" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #6c757d;">-</td>
+                                                        <td id="comparisonSpecificityDiffTable" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">-</td>
+                                                    </tr>
+                                                    <tr style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                                        <td style="padding: 15px; border: 1px solid #dee2e6; font-weight: 700; color: #1a237e;">
+                                                            <i class="fas fa-bullseye" style="margin-right: 8px; color: #28a745;"></i>
+                                                            Accuracy
+                                                        </td>
+                                                        <td id="comparisonFISAccuracy" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #28a745;">-</td>
+                                                        <td id="comparisonSAWAccuracy" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #28a745;">-</td>
+                                                        <td id="comparisonAccuracyDiffTable" style="padding: 15px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">-</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div style="margin-top: 15px; padding: 12px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 6px; border-left: 4px solid #2196F3;">
+                                            <div style="font-size: 12px; color: #1565C0;">
+                                                <i class="fas fa-info-circle"></i> <strong>Catatan:</strong> Klik pada baris metrik untuk melihat penjelasan detail perhitungan. Selisih = FIS - SAW (nilai positif berarti FIS lebih baik, nilai negatif berarti SAW lebih baik).
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>                               
+                
+
                                 <!-- Tabel -->
                                 <div class="comparison-card">
                                     <div class="comparison-table-header">

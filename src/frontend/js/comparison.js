@@ -59,6 +59,7 @@ function loadComparisonData() {
         // Update UI
         updateComparisonStatsFromActual(fisData, sawData, comparisonData);
         updateComparisonChartFromActual(fisData, sawData);
+        updateComparisonMetricsTable(fisData, sawData);
         updateComparisonConfusionMatrix(fisData, sawData);
         initializeComparisonGrid(comparisonData);
             
@@ -632,6 +633,803 @@ function updateComparisonChartFromActual(fisData, sawData) {
         console.error('Error initializing comparison chart:', error);
         chartElement.html('<p class="error">Error initializing chart: ' + error.message + '</p>');
     }
+}
+
+// Update Metrics Comparison Table
+function updateComparisonMetricsTable(fisData, sawData) {
+    console.log('Updating comparison metrics table...');
+    console.log('FIS Data structure:', fisData);
+    console.log('SAW Data structure:', sawData);
+    
+    // Ambil metrics dari FIS dan SAW
+    // Pastikan struktur data benar
+    // FIS: metrics ada di fisData.metrics atau fisData.result.metrics
+    const fisMetrics = fisData.metrics || fisData.result?.metrics || {};
+    
+    // SAW: metrics bisa di sawData.metrics, sawData.evaluation.metrics, atau langsung di sawData (root level)
+    // Karena evaluate_saw_performance mengembalikan metrics langsung di root
+    let sawMetrics = {};
+    if (sawData.metrics) {
+        sawMetrics = sawData.metrics;
+    } else if (sawData.evaluation && sawData.evaluation.metrics) {
+        sawMetrics = sawData.evaluation.metrics;
+    } else if (sawData.evaluation) {
+        // SAW evaluation mengembalikan metrics langsung di root evaluation
+        sawMetrics = sawData.evaluation;
+    } else {
+        // Fallback: coba langsung dari sawData
+        sawMetrics = sawData;
+    }
+    
+    console.log('FIS Metrics:', fisMetrics);
+    console.log('FIS Metrics keys:', Object.keys(fisMetrics));
+    console.log('FIS precision:', fisMetrics.precision, typeof fisMetrics.precision);
+    console.log('FIS recall:', fisMetrics.recall, typeof fisMetrics.recall);
+    
+    console.log('SAW Metrics:', sawMetrics);
+    console.log('SAW Metrics keys:', Object.keys(sawMetrics));
+    console.log('SAW precision:', sawMetrics.precision, typeof sawMetrics.precision);
+    console.log('SAW recall:', sawMetrics.recall, typeof sawMetrics.recall);
+    
+    // Format nilai sebagai persentase
+    const formatPercent = (value) => {
+        if (value === undefined || value === null) return '-';
+        return (value * 100).toFixed(2) + '%';
+    };
+    
+    // Format selisih dengan warna
+    const formatDiff = (fisValue, sawValue) => {
+        // Periksa apakah nilai valid (bukan undefined atau null)
+        // Nilai 0 adalah valid, jadi kita hanya cek undefined/null
+        if (fisValue === undefined || fisValue === null) {
+            console.warn('FIS value is undefined or null:', fisValue);
+            return '-';
+        }
+        if (sawValue === undefined || sawValue === null) {
+            console.warn('SAW value is undefined or null:', sawValue);
+            return '-';
+        }
+        
+        // Pastikan nilai adalah number
+        let fisNum = typeof fisValue === 'number' ? fisValue : parseFloat(fisValue);
+        let sawNum = typeof sawValue === 'number' ? sawValue : parseFloat(sawValue);
+        
+        // Jika parseFloat menghasilkan NaN, coba lagi dengan konversi langsung
+        if (isNaN(fisNum) && fisValue !== 0) {
+            console.warn('FIS value cannot be parsed as number:', fisValue, typeof fisValue);
+            return '-';
+        }
+        if (isNaN(sawNum) && sawValue !== 0) {
+            console.warn('SAW value cannot be parsed as number:', sawValue, typeof sawValue);
+            return '-';
+        }
+        
+        // Set default 0 jika NaN (untuk kasus khusus)
+        if (isNaN(fisNum)) fisNum = 0;
+        if (isNaN(sawNum)) sawNum = 0;
+        
+        const diff = (fisNum - sawNum) * 100;
+        const diffFormatted = diff.toFixed(2);
+        const color = diff > 0 ? '#28a745' : diff < 0 ? '#dc3545' : '#6c757d';
+        const icon = diff > 0 ? 'fa-arrow-up' : diff < 0 ? 'fa-arrow-down' : 'fa-equals';
+        return `<span style="color: ${color}; font-weight: 600;">
+            <i class="fas ${icon}" style="margin-right: 4px;"></i>
+            ${diff > 0 ? '+' : ''}${diffFormatted}%
+        </span>`;
+    };
+    
+    // Update Precision
+    // Pastikan nilai dalam range 0-1 (bukan persentase)
+    // Cek berbagai kemungkinan lokasi data dengan fallback yang lebih baik
+    let fisPrecision = fisMetrics.precision;
+    if (fisPrecision === undefined || fisPrecision === null) {
+        // Coba ambil dari lokasi lain
+        fisPrecision = fisData.precision || fisData.result?.metrics?.precision;
+        if (fisPrecision === undefined || fisPrecision === null) {
+            console.warn('FIS Precision not found in any location');
+            fisPrecision = 0;
+        }
+    }
+    let sawPrecision = sawMetrics.precision;
+    if (sawPrecision === undefined || sawPrecision === null) {
+        // Coba ambil dari lokasi lain
+        sawPrecision = sawData.precision || sawData.evaluation?.precision;
+        if (sawPrecision === undefined || sawPrecision === null) {
+            console.warn('SAW Precision not found in any location');
+            sawPrecision = 0;
+        }
+    }
+    
+    // Konversi dan normalisasi
+    if (typeof fisPrecision === 'string') {
+        const parsed = parseFloat(fisPrecision);
+        fisPrecision = isNaN(parsed) ? 0 : (parsed > 1 ? parsed / 100 : parsed);
+    }
+    if (typeof sawPrecision === 'string') {
+        const parsed = parseFloat(sawPrecision);
+        sawPrecision = isNaN(parsed) ? 0 : (parsed > 1 ? parsed / 100 : parsed);
+    }
+    if (typeof fisPrecision !== 'number' || isNaN(fisPrecision)) {
+        console.warn('FIS Precision is not a valid number:', fisPrecision, typeof fisPrecision);
+        fisPrecision = 0;
+    }
+    if (typeof sawPrecision !== 'number' || isNaN(sawPrecision)) {
+        console.warn('SAW Precision is not a valid number:', sawPrecision, typeof sawPrecision);
+        sawPrecision = 0;
+    }
+    
+    // Normalisasi jika nilai > 1 (mungkin sudah dalam persentase)
+    const fisPrecisionNorm = fisPrecision > 1 ? fisPrecision / 100 : fisPrecision;
+    const sawPrecisionNorm = sawPrecision > 1 ? sawPrecision / 100 : sawPrecision;
+    
+    console.log('Precision - FIS:', fisPrecision, '->', fisPrecisionNorm, 'SAW:', sawPrecision, '->', sawPrecisionNorm);
+    console.log('Precision values for diff - FIS:', fisPrecisionNorm, 'SAW:', sawPrecisionNorm);
+    
+    $('#comparisonFISPrecision').text(formatPercent(fisPrecisionNorm));
+    $('#comparisonSAWPrecision').text(formatPercent(sawPrecisionNorm));
+    const precisionDiffHtml = formatDiff(fisPrecisionNorm, sawPrecisionNorm);
+    $('#comparisonPrecisionDiff').html(precisionDiffHtml);
+    $('#comparisonPrecisionDiffTable').html(precisionDiffHtml);
+    
+    // Update Recall
+    // Pastikan nilai dalam range 0-1 (bukan persentase)
+    // Cek berbagai kemungkinan lokasi data dengan fallback yang lebih baik
+    let fisRecall = fisMetrics.recall;
+    if (fisRecall === undefined || fisRecall === null) {
+        // Coba ambil dari lokasi lain
+        fisRecall = fisData.recall || fisData.result?.metrics?.recall;
+        if (fisRecall === undefined || fisRecall === null) {
+            console.warn('FIS Recall not found in any location');
+            fisRecall = 0;
+        }
+    }
+    let sawRecall = sawMetrics.recall;
+    if (sawRecall === undefined || sawRecall === null) {
+        // Coba ambil dari lokasi lain
+        sawRecall = sawData.recall || sawData.evaluation?.recall;
+        if (sawRecall === undefined || sawRecall === null) {
+            console.warn('SAW Recall not found in any location');
+            sawRecall = 0;
+        }
+    }
+    
+    // Konversi dan normalisasi
+    if (typeof fisRecall === 'string') {
+        const parsed = parseFloat(fisRecall);
+        fisRecall = isNaN(parsed) ? 0 : (parsed > 1 ? parsed / 100 : parsed);
+    }
+    if (typeof sawRecall === 'string') {
+        const parsed = parseFloat(sawRecall);
+        sawRecall = isNaN(parsed) ? 0 : (parsed > 1 ? parsed / 100 : parsed);
+    }
+    if (typeof fisRecall !== 'number' || isNaN(fisRecall)) {
+        console.warn('FIS Recall is not a valid number:', fisRecall, typeof fisRecall);
+        fisRecall = 0;
+    }
+    if (typeof sawRecall !== 'number' || isNaN(sawRecall)) {
+        console.warn('SAW Recall is not a valid number:', sawRecall, typeof sawRecall);
+        sawRecall = 0;
+    }
+    
+    // Normalisasi jika nilai > 1 (mungkin sudah dalam persentase)
+    const fisRecallNorm = fisRecall > 1 ? fisRecall / 100 : fisRecall;
+    const sawRecallNorm = sawRecall > 1 ? sawRecall / 100 : sawRecall;
+    
+    console.log('Recall - FIS:', fisRecall, '->', fisRecallNorm, 'SAW:', sawRecall, '->', sawRecallNorm);
+    console.log('Recall values for diff - FIS:', fisRecallNorm, 'SAW:', sawRecallNorm);
+    
+    $('#comparisonFISRecall').text(formatPercent(fisRecallNorm));
+    $('#comparisonSAWRecall').text(formatPercent(sawRecallNorm));
+    const recallDiffHtml = formatDiff(fisRecallNorm, sawRecallNorm);
+    $('#comparisonRecallDiff').html(recallDiffHtml);
+    $('#comparisonRecallDiffTable').html(recallDiffHtml);
+    
+    // Update F1-Score
+    // Pastikan nilai dalam range 0-1 (bukan persentase)
+    const fisF1Score = typeof fisMetrics.f1_score === 'number' ? fisMetrics.f1_score : 
+                       (typeof fisMetrics.f1_score === 'string' ? parseFloat(fisMetrics.f1_score) / 100 : 0);
+    const sawF1Score = typeof sawMetrics.f1_score === 'number' ? sawMetrics.f1_score : 
+                      (typeof sawMetrics.f1_score === 'string' ? parseFloat(sawMetrics.f1_score) / 100 : 0);
+    // Normalisasi jika nilai > 1 (mungkin sudah dalam persentase)
+    const fisF1ScoreNorm = fisF1Score > 1 ? fisF1Score / 100 : fisF1Score;
+    const sawF1ScoreNorm = sawF1Score > 1 ? sawF1Score / 100 : sawF1Score;
+    $('#comparisonFISF1Score').text(formatPercent(fisF1ScoreNorm));
+    $('#comparisonSAWF1Score').text(formatPercent(sawF1ScoreNorm));
+    const f1DiffHtml = formatDiff(fisF1ScoreNorm, sawF1ScoreNorm);
+    $('#comparisonF1ScoreDiff').html(f1DiffHtml);
+    $('#comparisonF1ScoreDiffTable').html(f1DiffHtml);
+    
+    // Update Specificity
+    // FIS: Hitung dari confusion matrix karena backend tidak mengirim specificity
+    // Pastikan confusion matrix tersedia dari berbagai struktur data
+    const fisCM = fisData.confusion_matrix || fisData.result?.confusion_matrix || [];
+    let fisSpecificity = fisMetrics.specificity || 0;
+    
+    if (fisCM && fisCM.length === 3 && (!fisMetrics.specificity || fisMetrics.specificity === 0)) {
+        // Hitung Specificity FIS menggunakan Macro Average per kelas
+        const classLabels = ['Tinggi', 'Sedang', 'Kecil'];
+        const fisSpecificityPerClass = [];
+        
+        fisCM.forEach((row, i) => {
+            // FP untuk kelas i = sum of off-diagonal dalam baris i
+            const fpClass = row.reduce((sum, cell, j) => sum + (j !== i ? (cell || 0) : 0), 0);
+            
+            // TN untuk kelas i = sum of all elements yang bukan di baris i dan bukan di kolom i
+            let tnClass = 0;
+            fisCM.forEach((r, k) => {
+                r.forEach((cell, l) => {
+                    if (k !== i && l !== i) {
+                        tnClass += (cell || 0);
+                    }
+                });
+            });
+            
+            // Specificity untuk kelas i
+            const specificityClass = (tnClass + fpClass) > 0 ? tnClass / (tnClass + fpClass) : 0;
+            fisSpecificityPerClass.push(specificityClass);
+        });
+        
+        // Macro Average Specificity
+        fisSpecificity = fisSpecificityPerClass.reduce((sum, s) => sum + s, 0) / fisSpecificityPerClass.length;
+    }
+    
+    // SAW: Gunakan dari metrics atau hitung dari confusion matrix
+    // Pastikan confusion matrix tersedia dari berbagai struktur data
+    const sawCM = sawData.confusion_matrix || sawData.result?.confusion_matrix || [];
+    let sawSpecificity = sawMetrics.specificity || 0;
+    
+    if (sawCM && sawCM.length === 3 && (!sawMetrics.specificity || sawMetrics.specificity === 0)) {
+        // Hitung Specificity SAW menggunakan Macro Average per kelas
+        const classLabels = ['Tinggi', 'Sedang', 'Kecil'];
+        const sawSpecificityPerClass = [];
+        
+        sawCM.forEach((row, i) => {
+            // FP untuk kelas i = sum of off-diagonal dalam baris i
+            const fpClass = row.reduce((sum, cell, j) => sum + (j !== i ? (cell || 0) : 0), 0);
+            
+            // TN untuk kelas i = sum of all elements yang bukan di baris i dan bukan di kolom i
+            let tnClass = 0;
+            sawCM.forEach((r, k) => {
+                r.forEach((cell, l) => {
+                    if (k !== i && l !== i) {
+                        tnClass += (cell || 0);
+                    }
+                });
+            });
+            
+            // Specificity untuk kelas i
+            const specificityClass = (tnClass + fpClass) > 0 ? tnClass / (tnClass + fpClass) : 0;
+            sawSpecificityPerClass.push(specificityClass);
+        });
+        
+        // Macro Average Specificity
+        sawSpecificity = sawSpecificityPerClass.reduce((sum, s) => sum + s, 0) / sawSpecificityPerClass.length;
+    }
+    
+    $('#comparisonFISSpecificity').text(formatPercent(fisSpecificity));
+    $('#comparisonSAWSpecificity').text(formatPercent(sawSpecificity));
+    const specificityDiffHtml = formatDiff(fisSpecificity, sawSpecificity);
+    $('#comparisonSpecificityDiff').html(specificityDiffHtml);
+    $('#comparisonSpecificityDiffTable').html(specificityDiffHtml);
+    
+    // Update Accuracy
+    // Pastikan nilai dalam range 0-1 (bukan persentase)
+    let fisAccuracy = fisData.accuracy || fisMetrics.accuracy || 0;
+    let sawAccuracy = sawData.accuracy || sawMetrics.accuracy || 0;
+    // Konversi jika string
+    if (typeof fisAccuracy === 'string') fisAccuracy = parseFloat(fisAccuracy) / 100;
+    if (typeof sawAccuracy === 'string') sawAccuracy = parseFloat(sawAccuracy) / 100;
+    // Normalisasi jika nilai > 1 (mungkin sudah dalam persentase)
+    const fisAccuracyNorm = fisAccuracy > 1 ? fisAccuracy / 100 : fisAccuracy;
+    const sawAccuracyNorm = sawAccuracy > 1 ? sawAccuracy / 100 : sawAccuracy;
+    $('#comparisonFISAccuracy').text(formatPercent(fisAccuracyNorm));
+    $('#comparisonSAWAccuracy').text(formatPercent(sawAccuracyNorm));
+    const accuracyDiffHtml = formatDiff(fisAccuracyNorm, sawAccuracyNorm);
+    $('#comparisonAccuracyDiff').html(accuracyDiffHtml);
+    $('#comparisonAccuracyDiffTable').html(accuracyDiffHtml);
+    
+    // Setup click handlers untuk metric rows
+    setupComparisonMetricsClickHandlers(fisData, sawData);
+}
+
+// Setup click handlers untuk metric rows pada comparison
+function setupComparisonMetricsClickHandlers(fisData, sawData) {
+    // Remove existing handlers
+    $('.comparison-metric-row').off('click');
+    
+    // Add click handlers
+    $('.comparison-metric-row').on('click', function() {
+        const metric = $(this).data('metric');
+        showComparisonMetricsDetailModal(metric, fisData, sawData);
+    });
+}
+
+// Show modal detail untuk metrics comparison
+function showComparisonMetricsDetailModal(metric, fisData, sawData) {
+    const fisMetrics = fisData.metrics || {};
+    const sawMetrics = sawData.metrics || sawData;
+    const fisCM = fisData.confusion_matrix || [];
+    const sawCM = sawData.confusion_matrix || [];
+    
+    if (!fisCM || !sawCM || fisCM.length === 0 || sawCM.length === 0) {
+        showNotification('error', 'Data tidak tersedia', 'Confusion matrix belum dimuat.');
+        return;
+    }
+    
+    // Hitung TP, TN, FP, FN untuk FIS (multi-class)
+    let fisTp = 0, fisTotal = 0;
+    fisCM.forEach((row, i) => {
+        row.forEach((cell, j) => {
+            const value = cell || 0;
+            fisTotal += value;
+            if (i === j) fisTp += value; // True Positive = sum diagonal
+        });
+    });
+    // FP = sum of off-diagonal elements in rows
+    let fisFp = 0;
+    fisCM.forEach((row, i) => {
+        row.forEach((cell, j) => {
+            if (i !== j) fisFp += (cell || 0);
+        });
+    });
+    // FN = sum of off-diagonal elements in columns
+    let fisFn = 0;
+    fisCM.forEach((row, i) => {
+        row.forEach((cell, j) => {
+            if (i !== j) fisFn += (cell || 0);
+        });
+    });
+    // TN = total - TP - FP - FN
+    let fisTn = fisTotal - fisTp - fisFp - fisFn;
+    if (fisTn < 0) {
+        fisTn = Math.max(0, fisTotal - fisTp - fisFp);
+    }
+    
+    // Hitung TP, TN, FP, FN untuk SAW (multi-class)
+    let sawTp = 0, sawTotal = 0;
+    sawCM.forEach((row, i) => {
+        row.forEach((cell, j) => {
+            const value = cell || 0;
+            sawTotal += value;
+            if (i === j) sawTp += value; // True Positive = sum diagonal
+        });
+    });
+    // FP = sum of off-diagonal elements in rows
+    let sawFp = 0;
+    sawCM.forEach((row, i) => {
+        row.forEach((cell, j) => {
+            if (i !== j) sawFp += (cell || 0);
+        });
+    });
+    // FN = sum of off-diagonal elements in columns
+    let sawFn = 0;
+    sawCM.forEach((row, i) => {
+        row.forEach((cell, j) => {
+            if (i !== j) sawFn += (cell || 0);
+        });
+    });
+    // TN = total - TP - FP - FN
+    let sawTn = sawTotal - sawTp - sawFp - sawFn;
+    if (sawTn < 0) {
+        sawTn = Math.max(0, sawTotal - sawTp - sawFp);
+    }
+    
+    // Hitung precision dan recall per kelas untuk breakdown
+    const classLabels = ['Tinggi', 'Sedang', 'Kecil'];
+    const fisPrecisionPerClass = [];
+    const fisRecallPerClass = [];
+    const sawPrecisionPerClass = [];
+    const sawRecallPerClass = [];
+    
+    fisCM.forEach((row, i) => {
+        const tpClass = row[i] || 0;
+        const fpClass = row.reduce((sum, cell, j) => sum + (j !== i ? (cell || 0) : 0), 0);
+        const fnClass = fisCM.reduce((sum, r, k) => sum + (k !== i ? (r[i] || 0) : 0), 0);
+        const precisionClass = (tpClass + fpClass) > 0 ? tpClass / (tpClass + fpClass) : 0;
+        const recallClass = (tpClass + fnClass) > 0 ? tpClass / (tpClass + fnClass) : 0;
+        fisPrecisionPerClass.push({ class: classLabels[i], tp: tpClass, fp: fpClass, precision: precisionClass });
+        fisRecallPerClass.push({ class: classLabels[i], tp: tpClass, fn: fnClass, recall: recallClass });
+    });
+    
+    sawCM.forEach((row, i) => {
+        const tpClass = row[i] || 0;
+        const fpClass = row.reduce((sum, cell, j) => sum + (j !== i ? (cell || 0) : 0), 0);
+        const fnClass = sawCM.reduce((sum, r, k) => sum + (k !== i ? (r[i] || 0) : 0), 0);
+        const precisionClass = (tpClass + fpClass) > 0 ? tpClass / (tpClass + fpClass) : 0;
+        const recallClass = (tpClass + fnClass) > 0 ? tpClass / (tpClass + fnClass) : 0;
+        sawPrecisionPerClass.push({ class: classLabels[i], tp: tpClass, fp: fpClass, precision: precisionClass });
+        sawRecallPerClass.push({ class: classLabels[i], tp: tpClass, fn: fnClass, recall: recallClass });
+    });
+    
+    let title = '';
+    let description = '';
+    let fisCalculation = '';
+    let sawCalculation = '';
+    let breakdown = '';
+    let color = '';
+    let icon = '';
+    let fisValue = 0;
+    let sawValue = 0;
+    
+    switch(metric) {
+        case 'precision':
+            title = 'Precision';
+            description = 'Precision mengukur proporsi prediksi positif yang benar. Untuk multi-class classification, nilai ini dihitung menggunakan Macro Average (rata-rata precision dari semua kelas).';
+            color = '#1a237e';
+            icon = 'fa-bullseye';
+            fisValue = fisMetrics.precision || 0;
+            sawValue = sawMetrics.precision || 0;
+            
+            fisCalculation = `FIS Precision = Macro Average dari semua kelas\n\nPrecision per kelas:\n${fisPrecisionPerClass.map(p => `Precision(${p.class}) = TP / (TP + FP) = ${p.tp} / (${p.tp} + ${p.fp}) = ${(p.precision * 100).toFixed(2)}%`).join('\n')}\n\nFIS Precision (Macro Average) = (${fisPrecisionPerClass.map(p => (p.precision * 100).toFixed(2)).join(' + ')}) / ${fisPrecisionPerClass.length} = ${(fisValue * 100).toFixed(2)}%`;
+            
+            sawCalculation = `SAW Precision = Macro Average dari semua kelas\n\nPrecision per kelas:\n${sawPrecisionPerClass.map(p => `Precision(${p.class}) = TP / (TP + FP) = ${p.tp} / (${p.tp} + ${p.fp}) = ${(p.precision * 100).toFixed(2)}%`).join('\n')}\n\nSAW Precision (Macro Average) = (${sawPrecisionPerClass.map(p => (p.precision * 100).toFixed(2)).join(' + ')}) / ${sawPrecisionPerClass.length} = ${(sawValue * 100).toFixed(2)}%`;
+            
+            breakdown = `
+                <tr style="background: #f8f9fa;">
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">Kelas</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">FIS TP</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">FIS FP</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #1a237e;">FIS Precision</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">SAW TP</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">SAW FP</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #1a237e;">SAW Precision</td>
+                </tr>
+                ${classLabels.map((label, i) => `
+                    <tr>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">${label}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${fisPrecisionPerClass[i].tp}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${fisPrecisionPerClass[i].fp}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1a237e;">${(fisPrecisionPerClass[i].precision * 100).toFixed(2)}%</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${sawPrecisionPerClass[i].tp}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${sawPrecisionPerClass[i].fp}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1a237e;">${(sawPrecisionPerClass[i].precision * 100).toFixed(2)}%</td>
+                    </tr>
+                `).join('')}
+            `;
+            break;
+            
+        case 'recall':
+            title = 'Recall (Sensitivity)';
+            description = 'Recall mengukur proporsi kasus positif yang terdeteksi. Untuk multi-class classification, nilai ini dihitung menggunakan Macro Average (rata-rata recall dari semua kelas).';
+            color = '#f57f17';
+            icon = 'fa-search';
+            fisValue = fisMetrics.recall || 0;
+            sawValue = sawMetrics.recall || 0;
+            
+            fisCalculation = `FIS Recall = Macro Average dari semua kelas\n\nRecall per kelas:\n${fisRecallPerClass.map(r => `Recall(${r.class}) = TP / (TP + FN) = ${r.tp} / (${r.tp} + ${r.fn}) = ${(r.recall * 100).toFixed(2)}%`).join('\n')}\n\nFIS Recall (Macro Average) = (${fisRecallPerClass.map(r => (r.recall * 100).toFixed(2)).join(' + ')}) / ${fisRecallPerClass.length} = ${(fisValue * 100).toFixed(2)}%`;
+            
+            sawCalculation = `SAW Recall = Macro Average dari semua kelas\n\nRecall per kelas:\n${sawRecallPerClass.map(r => `Recall(${r.class}) = TP / (TP + FN) = ${r.tp} / (${r.tp} + ${r.fn}) = ${(r.recall * 100).toFixed(2)}%`).join('\n')}\n\nSAW Recall (Macro Average) = (${sawRecallPerClass.map(r => (r.recall * 100).toFixed(2)).join(' + ')}) / ${sawRecallPerClass.length} = ${(sawValue * 100).toFixed(2)}%`;
+            
+            breakdown = `
+                <tr style="background: #f8f9fa;">
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">Kelas</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">FIS TP</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">FIS FN</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #f57f17;">FIS Recall</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">SAW TP</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">SAW FN</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #f57f17;">SAW Recall</td>
+                </tr>
+                ${classLabels.map((label, i) => `
+                    <tr>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">${label}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${fisRecallPerClass[i].tp}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${fisRecallPerClass[i].fn}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #f57f17;">${(fisRecallPerClass[i].recall * 100).toFixed(2)}%</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${sawRecallPerClass[i].tp}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${sawRecallPerClass[i].fn}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #f57f17;">${(sawRecallPerClass[i].recall * 100).toFixed(2)}%</td>
+                    </tr>
+                `).join('')}
+            `;
+            break;
+            
+        case 'f1score':
+            title = 'F1-Score';
+            description = 'F1-Score adalah harmonic mean dari Precision dan Recall. Untuk multi-class classification, nilai ini dihitung menggunakan Macro Average (rata-rata F1-Score dari semua kelas).';
+            color = '#dc3545';
+            icon = 'fa-balance-scale';
+            fisValue = fisMetrics.f1_score || 0;
+            sawValue = sawMetrics.f1_score || 0;
+            
+            // Hitung F1-Score per kelas untuk FIS
+            const fisF1ScorePerClass = [];
+            fisPrecisionPerClass.forEach((p, i) => {
+                const r = fisRecallPerClass[i];
+                const precisionClass = p.precision;
+                const recallClass = r.recall;
+                const f1Class = (precisionClass + recallClass) > 0 
+                    ? 2 * (precisionClass * recallClass) / (precisionClass + recallClass) 
+                    : 0;
+                fisF1ScorePerClass.push({
+                    class: p.class,
+                    precision: precisionClass,
+                    recall: recallClass,
+                    f1_score: f1Class
+                });
+            });
+            
+            // Hitung F1-Score per kelas untuk SAW
+            const sawF1ScorePerClass = [];
+            sawPrecisionPerClass.forEach((p, i) => {
+                const r = sawRecallPerClass[i];
+                const precisionClass = p.precision;
+                const recallClass = r.recall;
+                const f1Class = (precisionClass + recallClass) > 0 
+                    ? 2 * (precisionClass * recallClass) / (precisionClass + recallClass) 
+                    : 0;
+                sawF1ScorePerClass.push({
+                    class: p.class,
+                    precision: precisionClass,
+                    recall: recallClass,
+                    f1_score: f1Class
+                });
+            });
+            
+            // Macro Average F1-Score
+            const fisMacroAvgF1 = fisF1ScorePerClass.reduce((sum, f) => sum + f.f1_score, 0) / fisF1ScorePerClass.length;
+            const sawMacroAvgF1 = sawF1ScorePerClass.reduce((sum, f) => sum + f.f1_score, 0) / sawF1ScorePerClass.length;
+            
+            // Gunakan nilai dari metrics jika tersedia, jika tidak gunakan macro average
+            const finalFisF1 = fisValue || fisMacroAvgF1;
+            const finalSawF1 = sawValue || sawMacroAvgF1;
+            
+            fisCalculation = `FIS F1-Score = Macro Average dari semua kelas\n\nF1-Score per kelas:\n${fisF1ScorePerClass.map(f => {
+                const precisionPct = (f.precision * 100).toFixed(2);
+                const recallPct = (f.recall * 100).toFixed(2);
+                const f1Pct = (f.f1_score * 100).toFixed(2);
+                return `F1-Score(${f.class}) = 2 × (Precision × Recall) / (Precision + Recall)\nF1-Score(${f.class}) = 2 × (${precisionPct}% × ${recallPct}%) / (${precisionPct}% + ${recallPct}%)\nF1-Score(${f.class}) = ${f1Pct}%`;
+            }).join('\n\n')}\n\nFIS F1-Score (Macro Average) = (${fisF1ScorePerClass.map(f => (f.f1_score * 100).toFixed(2)).join(' + ')}) / ${fisF1ScorePerClass.length} = ${(finalFisF1 * 100).toFixed(2)}%`;
+            
+            sawCalculation = `SAW F1-Score = Macro Average dari semua kelas\n\nF1-Score per kelas:\n${sawF1ScorePerClass.map(f => {
+                const precisionPct = (f.precision * 100).toFixed(2);
+                const recallPct = (f.recall * 100).toFixed(2);
+                const f1Pct = (f.f1_score * 100).toFixed(2);
+                return `F1-Score(${f.class}) = 2 × (Precision × Recall) / (Precision + Recall)\nF1-Score(${f.class}) = 2 × (${precisionPct}% × ${recallPct}%) / (${precisionPct}% + ${recallPct}%)\nF1-Score(${f.class}) = ${f1Pct}%`;
+            }).join('\n\n')}\n\nSAW F1-Score (Macro Average) = (${sawF1ScorePerClass.map(f => (f.f1_score * 100).toFixed(2)).join(' + ')}) / ${sawF1ScorePerClass.length} = ${(finalSawF1 * 100).toFixed(2)}%`;
+            
+            breakdown = `
+                <tr style="background: #f8f9fa;">
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">Kelas</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #1a237e;">FIS Precision</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #f57f17;">FIS Recall</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color};">FIS F1-Score</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #1a237e;">SAW Precision</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #f57f17;">SAW Recall</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color};">SAW F1-Score</td>
+                </tr>
+                ${classLabels.map((label, i) => `
+                    <tr>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">${label}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; color: #1a237e;">${(fisF1ScorePerClass[i].precision * 100).toFixed(2)}%</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; color: #f57f17;">${(fisF1ScorePerClass[i].recall * 100).toFixed(2)}%</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: ${color};">${(fisF1ScorePerClass[i].f1_score * 100).toFixed(2)}%</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; color: #1a237e;">${(sawF1ScorePerClass[i].precision * 100).toFixed(2)}%</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; color: #f57f17;">${(sawF1ScorePerClass[i].recall * 100).toFixed(2)}%</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: ${color};">${(sawF1ScorePerClass[i].f1_score * 100).toFixed(2)}%</td>
+                    </tr>
+                `).join('')}
+                <tr style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">Macro Average</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #1a237e;">${(fisPrecisionPerClass.reduce((sum, p) => sum + p.precision, 0) / fisPrecisionPerClass.length * 100).toFixed(2)}%</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #f57f17;">${(fisRecallPerClass.reduce((sum, r) => sum + r.recall, 0) / fisRecallPerClass.length * 100).toFixed(2)}%</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color}; font-size: 16px;">${(finalFisF1 * 100).toFixed(2)}%</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #1a237e;">${(sawPrecisionPerClass.reduce((sum, p) => sum + p.precision, 0) / sawPrecisionPerClass.length * 100).toFixed(2)}%</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #f57f17;">${(sawRecallPerClass.reduce((sum, r) => sum + r.recall, 0) / sawRecallPerClass.length * 100).toFixed(2)}%</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color}; font-size: 16px;">${(finalSawF1 * 100).toFixed(2)}%</td>
+                </tr>
+            `;
+            break;
+            
+        case 'specificity':
+            title = 'Specificity';
+            description = 'Specificity mengukur proporsi prediksi negatif yang benar. Untuk multi-class classification, nilai ini dihitung menggunakan Macro Average (rata-rata specificity dari semua kelas).';
+            color = '#6c757d';
+            icon = 'fa-chart-line';
+            
+            // Hitung Specificity per kelas untuk FIS menggunakan Macro Average
+            const fisSpecificityPerClass = [];
+            fisCM.forEach((row, i) => {
+                // FP untuk kelas i = sum of off-diagonal dalam baris i
+                const fpClass = row.reduce((sum, cell, j) => sum + (j !== i ? (cell || 0) : 0), 0);
+                
+                // TN untuk kelas i = sum of all elements yang bukan di baris i dan bukan di kolom i
+                let tnClass = 0;
+                fisCM.forEach((r, k) => {
+                    r.forEach((cell, l) => {
+                        if (k !== i && l !== i) {
+                            tnClass += (cell || 0);
+                        }
+                    });
+                });
+                
+                // Specificity untuk kelas i
+                const specificityClass = (tnClass + fpClass) > 0 ? tnClass / (tnClass + fpClass) : 0;
+                
+                fisSpecificityPerClass.push({
+                    class: classLabels[i],
+                    tn: tnClass,
+                    fp: fpClass,
+                    specificity: specificityClass
+                });
+            });
+            
+            // Hitung Specificity per kelas untuk SAW menggunakan Macro Average
+            const sawSpecificityPerClass = [];
+            sawCM.forEach((row, i) => {
+                // FP untuk kelas i = sum of off-diagonal dalam baris i
+                const fpClass = row.reduce((sum, cell, j) => sum + (j !== i ? (cell || 0) : 0), 0);
+                
+                // TN untuk kelas i = sum of all elements yang bukan di baris i dan bukan di kolom i
+                let tnClass = 0;
+                sawCM.forEach((r, k) => {
+                    r.forEach((cell, l) => {
+                        if (k !== i && l !== i) {
+                            tnClass += (cell || 0);
+                        }
+                    });
+                });
+                
+                // Specificity untuk kelas i
+                const specificityClass = (tnClass + fpClass) > 0 ? tnClass / (tnClass + fpClass) : 0;
+                
+                sawSpecificityPerClass.push({
+                    class: classLabels[i],
+                    tn: tnClass,
+                    fp: fpClass,
+                    specificity: specificityClass
+                });
+            });
+            
+            // Macro Average Specificity
+            const fisMacroAvgSpecificity = fisSpecificityPerClass.reduce((sum, s) => sum + s.specificity, 0) / fisSpecificityPerClass.length;
+            const sawMacroAvgSpecificity = sawSpecificityPerClass.reduce((sum, s) => sum + s.specificity, 0) / sawSpecificityPerClass.length;
+            
+            // Gunakan nilai dari metrics jika tersedia dan valid, jika tidak gunakan macro average
+            fisValue = (fisMetrics.specificity && fisMetrics.specificity > 0) ? fisMetrics.specificity : fisMacroAvgSpecificity;
+            sawValue = (sawMetrics.specificity && sawMetrics.specificity > 0) ? sawMetrics.specificity : sawMacroAvgSpecificity;
+            
+            fisCalculation = `FIS Specificity = Macro Average dari semua kelas\n\nSpecificity per kelas:\n${fisSpecificityPerClass.map(s => `Specificity(${s.class}) = TN / (TN + FP) = ${s.tn} / (${s.tn} + ${s.fp}) = ${(s.specificity * 100).toFixed(2)}%`).join('\n')}\n\nFIS Specificity (Macro Average) = (${fisSpecificityPerClass.map(s => (s.specificity * 100).toFixed(2)).join(' + ')}) / ${fisSpecificityPerClass.length} = ${(fisValue * 100).toFixed(2)}%`;
+            
+            sawCalculation = `SAW Specificity = Macro Average dari semua kelas\n\nSpecificity per kelas:\n${sawSpecificityPerClass.map(s => `Specificity(${s.class}) = TN / (TN + FP) = ${s.tn} / (${s.tn} + ${s.fp}) = ${(s.specificity * 100).toFixed(2)}%`).join('\n')}\n\nSAW Specificity (Macro Average) = (${sawSpecificityPerClass.map(s => (s.specificity * 100).toFixed(2)).join(' + ')}) / ${sawSpecificityPerClass.length} = ${(sawValue * 100).toFixed(2)}%`;
+            
+            breakdown = `
+                <tr style="background: #f8f9fa;">
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">Kelas</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">FIS TN</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">FIS FP</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color};">FIS Specificity</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">SAW TN</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">SAW FP</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color};">SAW Specificity</td>
+                </tr>
+                ${classLabels.map((label, i) => `
+                    <tr>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">${label}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${fisSpecificityPerClass[i].tn}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${fisSpecificityPerClass[i].fp}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: ${color};">${(fisSpecificityPerClass[i].specificity * 100).toFixed(2)}%</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${sawSpecificityPerClass[i].tn}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${sawSpecificityPerClass[i].fp}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: ${color};">${(sawSpecificityPerClass[i].specificity * 100).toFixed(2)}%</td>
+                    </tr>
+                `).join('')}
+                <tr style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">Macro Average</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">-</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">-</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color}; font-size: 16px;">${(fisValue * 100).toFixed(2)}%</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">-</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">-</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color}; font-size: 16px;">${(sawValue * 100).toFixed(2)}%</td>
+                </tr>
+            `;
+            break;
+    }
+    
+    const diff = (fisValue - sawValue) * 100;
+    const diffFormatted = diff.toFixed(2);
+    const diffColor = diff > 0 ? '#28a745' : diff < 0 ? '#dc3545' : '#6c757d';
+    const diffIcon = diff > 0 ? 'fa-arrow-up' : diff < 0 ? 'fa-arrow-down' : 'fa-equals';
+    const betterMethod = diff > 0 ? 'FIS' : diff < 0 ? 'SAW' : 'Sama';
+    
+    const modalContent = $('<div>').html(`
+        <div style="padding: 20px;">
+            <div style="background: linear-gradient(135deg, ${color}15 0%, ${color}25 100%); padding: 18px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid ${color};">
+                <h4 style="margin: 0 0 12px 0; color: ${color}; font-weight: 600; display: flex; align-items: center;">
+                    <i class="fas ${icon}" style="margin-right: 10px;"></i>
+                    Perbandingan ${title}
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: 700; color: ${color};">FIS: ${(fisValue * 100).toFixed(2)}%</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: 700; color: ${color};">SAW: ${(sawValue * 100).toFixed(2)}%</div>
+                    </div>
+                </div>
+                <div style="text-align: center; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.1);">
+                    <div style="font-size: 18px; font-weight: 600; color: ${diffColor};">
+                        <i class="fas ${diffIcon}"></i> Selisih: ${diff > 0 ? '+' : ''}${diffFormatted}%
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                        ${betterMethod !== 'Sama' ? `${betterMethod} lebih baik` : 'Kedua metode memiliki nilai yang sama'}
+                    </div>
+                </div>
+                <div style="font-size: 14px; color: #666; line-height: 1.6; margin-top: 12px;">
+                    ${description}
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <div>
+                    <h5 style="margin: 0 0 12px 0; color: #333; font-weight: 600;">
+                        <i class="fas fa-calculator"></i> Perhitungan FIS
+                    </h5>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid ${color};">
+                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 11px; color: #333; white-space: pre-wrap; line-height: 1.5;">${fisCalculation}</pre>
+                    </div>
+                </div>
+                <div>
+                    <h5 style="margin: 0 0 12px 0; color: #333; font-weight: 600;">
+                        <i class="fas fa-calculator"></i> Perhitungan SAW
+                    </h5>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid ${color};">
+                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 11px; color: #333; white-space: pre-wrap; line-height: 1.5;">${sawCalculation}</pre>
+                    </div>
+                </div>
+            </div>
+            
+            ${breakdown ? `
+                <div>
+                    <h5 style="margin: 0 0 12px 0; color: #333; font-weight: 600;">
+                        <i class="fas fa-table"></i> Breakdown Detail Perbandingan
+                    </h5>
+                    <div style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <thead>
+                                <tr style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                                    ${metric === 'precision' || metric === 'recall' ? `
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Kelas</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">FIS ${metric === 'precision' ? 'TP' : 'TP'}</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">FIS ${metric === 'precision' ? 'FP' : 'FN'}</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">FIS ${title}</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">SAW ${metric === 'precision' ? 'TP' : 'TP'}</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">SAW ${metric === 'precision' ? 'FP' : 'FN'}</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">SAW ${title}</th>
+                                    ` : `
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Komponen</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">FIS</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">SAW</th>
+                                    `}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${breakdown}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div style="margin-top: 20px; padding: 12px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196F3;">
+                <div style="font-size: 12px; color: #1565C0;">
+                    <i class="fas fa-info-circle"></i> <strong>Catatan:</strong> Untuk multi-class classification (3 kategori), metrik dihitung menggunakan Macro Average untuk memberikan bobot yang sama pada setiap kelas.
+                </div>
+            </div>
+        </div>
+    `);
+    
+    const dialog = modalContent.kendoDialog({
+        width: "900px",
+        height: "700px",
+        title: `Perbandingan ${title}`,
+        closable: true,
+        modal: true,
+        actions: [{ text: "Tutup", primary: true }]
+    });
+    
+    dialog.data("kendoDialog").open();
 }
 
 // Update Confusion Matrix Comparison

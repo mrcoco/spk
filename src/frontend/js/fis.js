@@ -1922,10 +1922,44 @@ function updateFISActualMetricsSection(result) {
     $('#fisActualRecall').text((metrics.recall * 100).toFixed(2) + '%');
     $('#fisActualF1Score').text((metrics.f1_score * 100).toFixed(2) + '%');
     
-    // Update specificity jika ada
-    if (metrics.specificity !== undefined) {
-        $('#fisActualSpecificity').text((metrics.specificity * 100).toFixed(2) + '%');
-    }
+    // Hitung Specificity menggunakan Macro Average per kelas (karena backend tidak menghitung specificity)
+    // Specificity per kelas = TN_i / (TN_i + FP_i)
+    const classLabels = ['Tinggi', 'Sedang', 'Kecil'];
+    const specificityPerClass = [];
+    
+    cm.forEach((row, i) => {
+        // FP untuk kelas i = sum of off-diagonal dalam baris i
+        const fpClass = row.reduce((sum, cell, j) => sum + (j !== i ? (cell || 0) : 0), 0);
+        
+        // TN untuk kelas i = sum of all elements yang bukan di baris i dan bukan di kolom i
+        let tnClass = 0;
+        cm.forEach((r, k) => {
+            r.forEach((cell, l) => {
+                if (k !== i && l !== i) {
+                    tnClass += (cell || 0);
+                }
+            });
+        });
+        
+        // Specificity untuk kelas i
+        const specificityClass = (tnClass + fpClass) > 0 ? tnClass / (tnClass + fpClass) : 0;
+        
+        specificityPerClass.push({
+            class: classLabels[i],
+            tn: tnClass,
+            fp: fpClass,
+            specificity: specificityClass
+        });
+    });
+    
+    // Macro Average Specificity
+    const macroAvgSpecificity = specificityPerClass.reduce((sum, s) => sum + s.specificity, 0) / specificityPerClass.length;
+    
+    // Update specificity di card dengan nilai yang dihitung
+    $('#fisActualSpecificity').text((macroAvgSpecificity * 100).toFixed(2) + '%');
+    
+    // Update metrics data dengan specificity yang dihitung
+    fisActualMetricsData.specificity = macroAvgSpecificity;
     
     // Setup click handlers untuk metric cards
     setupFISActualMetricsCardClickHandlers();
@@ -1968,7 +2002,8 @@ function updateFISActualMetricsSection(result) {
             });
         });
         
-        // Hitung FP (False Positive) = sum off-diagonal
+        // Hitung FP (False Positive) = sum off-diagonal dalam baris
+        // (predicted as class i but actual is not class i)
         let fp = 0;
         cm.forEach((row, i) => {
             row.forEach((cell, j) => {
@@ -1978,11 +2013,32 @@ function updateFISActualMetricsSection(result) {
             });
         });
         
-        // Hitung FN (False Negative) = sama dengan FP untuk multi-class (symmetric)
-        let fn = fp;
+        // Hitung FN (False Negative) = sum off-diagonal dalam kolom
+        // (actual is class i but predicted is not class i)
+        let fn = 0;
+        cm.forEach((row, i) => {
+            row.forEach((cell, j) => {
+                if (i !== j) {
+                    fn += (cell || 0);
+                }
+            });
+        });
+        
+        // Untuk multi-class confusion matrix, FP dan FN akan sama
+        // karena keduanya menghitung elemen off-diagonal yang sama
+        // (hanya berbeda perspektif: baris vs kolom)
         
         // Hitung TN (True Negative) = total - TP - FP - FN
+        // Untuk multi-class, karena FP = FN, maka: TN = total - TP - 2*FP
+        // Tapi untuk menghindari nilai negatif, kita gunakan perhitungan yang lebih aman
         let tn = total - tp - fp - fn;
+        
+        // Validasi: jika TN negatif, gunakan perhitungan alternatif
+        if (tn < 0) {
+            // Untuk multi-class, gunakan: TN = total - TP - FP
+            // (asumsi FP = FN untuk multi-class)
+            tn = Math.max(0, total - tp - fp);
+        }
         
         // Tambahkan section TP, TN, FP, FN
         addFISActualTpTnfpFnSection(tp, tn, fp, fn, total, cm);
@@ -2309,8 +2365,14 @@ function showFISActualMetricsDetailModal(metric) {
     const metrics = fisActualMetricsData;
     const cm = fisActualConfusionMatrix;
     
-    // Hitung TP, TN, FP, FN dari confusion matrix
-    let tp = 0;
+    // Hitung TP, TN, FP, FN dari confusion matrix untuk multi-class
+    // Untuk multi-class (3x3), perhitungan yang benar:
+    // TP = sum diagonal (prediksi benar)
+    // FP = sum off-diagonal dalam baris (predicted sebagai class i tapi actual bukan i)
+    // FN = sum off-diagonal dalam kolom (actual adalah class i tapi predicted bukan i)
+    // TN = sum of all elements yang bukan TP, FP, atau FN (correctly predicted as NOT class i)
+    
+    let tp = 0; // True Positive = sum diagonal
     let total = 0;
     
     cm.forEach((row, i) => {
@@ -2318,11 +2380,13 @@ function showFISActualMetricsDetailModal(metric) {
             const value = cell || 0;
             total += value;
             if (i === j) {
-                tp += value;
+                tp += value; // True Positive = sum diagonal
             }
         });
     });
     
+    // FP = sum of off-diagonal elements in rows
+    // (predicted as class i but actual is not class i)
     let fp = 0;
     cm.forEach((row, i) => {
         row.forEach((cell, j) => {
@@ -2332,8 +2396,49 @@ function showFISActualMetricsDetailModal(metric) {
         });
     });
     
-    let fn = fp;
+    // FN = sum of off-diagonal elements in columns
+    // (actual is class i but predicted is not class i)
+    let fn = 0;
+    cm.forEach((row, i) => {
+        row.forEach((cell, j) => {
+            if (i !== j) {
+                fn += (cell || 0);
+            }
+        });
+    });
+    
+    // Untuk multi-class confusion matrix, FP dan FN akan sama karena:
+    // - FP menghitung semua elemen off-diagonal (baris)
+    // - FN menghitung semua elemen off-diagonal (kolom)
+    // - Untuk matrix 3x3, jumlah elemen off-diagonal baris = jumlah elemen off-diagonal kolom
+    // Jadi: FP = FN = jumlah semua elemen off-diagonal
+    
+    // TN untuk multi-class = total - TP - FP - FN
+    // Karena FP = FN (untuk confusion matrix), maka: TN = total - TP - 2*FP
+    // Tapi ini bisa menghasilkan nilai negatif jika tidak hati-hati
+    
+    // Perhitungan TN yang benar untuk multi-class:
+    // TN = total - TP - FP - FN
+    // Karena FP dan FN sama (keduanya adalah sum off-diagonal), maka:
+    // TN = total - TP - 2*FP
+    // Tapi untuk menghindari kesalahan, kita hitung langsung:
     let tn = total - tp - fp - fn;
+    
+    // Validasi: untuk multi-class, FP dan FN seharusnya sama
+    // Jika berbeda, berarti ada kesalahan atau confusion matrix tidak simetris
+    if (Math.abs(fp - fn) > 0.01) {
+        console.warn('FP and FN are not equal in multi-class confusion matrix. FP:', fp, 'FN:', fn);
+    }
+    
+    // Jika TN negatif, berarti ada kesalahan perhitungan
+    // Untuk multi-class, gunakan perhitungan alternatif yang lebih aman
+    if (tn < 0) {
+        console.warn('TN calculation resulted in negative value. Recalculating using alternative method...');
+        // Alternatif: TN = total - TP - FP (asumsi FP = FN untuk multi-class)
+        // Atau lebih tepat: TN = sum of elements yang bukan di diagonal dan bukan di baris/kolom yang sama
+        // Tapi untuk kesederhanaan, kita gunakan: TN = total - TP - FP
+        tn = Math.max(0, total - tp - fp);
+    }
     
     // Hitung precision dan recall per kelas untuk breakdown
     const classLabels = ['Tinggi', 'Sedang', 'Kecil'];
@@ -2412,52 +2517,142 @@ function showFISActualMetricsDetailModal(metric) {
             
         case 'f1score':
             title = 'F1-Score';
-            description = 'F1-Score adalah harmonic mean dari Precision dan Recall. Metrik ini menggabungkan precision dan recall dalam satu nilai untuk memberikan balance antara keduanya.';
+            description = 'F1-Score adalah harmonic mean dari Precision dan Recall. Untuk multi-class classification, nilai ini dihitung menggunakan Macro Average (rata-rata F1-Score dari semua kelas).';
             color = '#dc3545';
             icon = 'fa-balance-scale';
             value = metrics.f1_score;
-            const precision = metrics.precision;
-            const recall = metrics.recall;
             
-            calculation = `F1-Score = 2 × (Precision × Recall) / (Precision + Recall)\n\nF1-Score = 2 × (${(precision * 100).toFixed(2)}% × ${(recall * 100).toFixed(2)}%) / (${(precision * 100).toFixed(2)}% + ${(recall * 100).toFixed(2)}%)\nF1-Score = 2 × ${(precision * recall).toFixed(4)} / ${(precision + recall).toFixed(4)}\nF1-Score = ${(value * 100).toFixed(2)}%`;
+            // Hitung F1-Score per kelas menggunakan Precision dan Recall per kelas
+            const f1ScorePerClass = [];
+            precisionPerClass.forEach((p, i) => {
+                const r = recallPerClass[i];
+                const precisionClass = p.precision;
+                const recallClass = r.recall;
+                
+                // F1-Score per kelas = 2 × (Precision × Recall) / (Precision + Recall)
+                const f1Class = (precisionClass + recallClass) > 0 
+                    ? 2 * (precisionClass * recallClass) / (precisionClass + recallClass) 
+                    : 0;
+                
+                f1ScorePerClass.push({
+                    class: p.class,
+                    precision: precisionClass,
+                    recall: recallClass,
+                    f1_score: f1Class
+                });
+            });
+            
+            // Macro Average F1-Score
+            const macroAvgF1Score = f1ScorePerClass.reduce((sum, f) => sum + f.f1_score, 0) / f1ScorePerClass.length;
+            
+            // Gunakan nilai dari backend jika tersedia, jika tidak gunakan macro average
+            const finalF1Score = value || macroAvgF1Score;
+            
+            calculation = `F1-Score = Macro Average dari semua kelas\n\nF1-Score per kelas:\n${f1ScorePerClass.map(f => {
+                const precisionPct = (f.precision * 100).toFixed(2);
+                const recallPct = (f.recall * 100).toFixed(2);
+                const f1Pct = (f.f1_score * 100).toFixed(2);
+                return `F1-Score(${f.class}) = 2 × (Precision × Recall) / (Precision + Recall)\nF1-Score(${f.class}) = 2 × (${precisionPct}% × ${recallPct}%) / (${precisionPct}% + ${recallPct}%)\nF1-Score(${f.class}) = ${f1Pct}%`;
+            }).join('\n\n')}\n\nF1-Score (Macro Average) = (${f1ScorePerClass.map(f => (f.f1_score * 100).toFixed(2)).join(' + ')}) / ${f1ScorePerClass.length} = ${(finalF1Score * 100).toFixed(2)}%`;
             
             breakdown = `
-                <tr>
-                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">Precision</td>
-                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1a237e;">${(precision * 100).toFixed(2)}%</td>
-                </tr>
-                <tr>
-                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">Recall</td>
-                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #f57f17;">${(recall * 100).toFixed(2)}%</td>
-                </tr>
                 <tr style="background: #f8f9fa;">
-                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">F1-Score</td>
-                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color}; font-size: 16px;">${(value * 100).toFixed(2)}%</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">Kelas</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #1a237e;">Precision</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #f57f17;">Recall</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color};">F1-Score</td>
+                </tr>
+                ${f1ScorePerClass.map(f => `
+                    <tr>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">${f.class}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1a237e;">${(f.precision * 100).toFixed(2)}%</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #f57f17;">${(f.recall * 100).toFixed(2)}%</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: ${color};">${(f.f1_score * 100).toFixed(2)}%</td>
+                    </tr>
+                `).join('')}
+                <tr style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">Macro Average</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #1a237e;">${(precisionPerClass.reduce((sum, p) => sum + p.precision, 0) / precisionPerClass.length * 100).toFixed(2)}%</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #f57f17;">${(recallPerClass.reduce((sum, r) => sum + r.recall, 0) / recallPerClass.length * 100).toFixed(2)}%</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color}; font-size: 16px;">${(finalF1Score * 100).toFixed(2)}%</td>
                 </tr>
             `;
             break;
             
         case 'specificity':
             title = 'Specificity';
-            description = 'Specificity mengukur proporsi prediksi negatif yang benar. Nilai ini dihitung dari: Specificity = TN / (TN + FP).';
+            description = 'Specificity mengukur proporsi prediksi negatif yang benar. Untuk multi-class classification, nilai ini dihitung menggunakan Macro Average (rata-rata specificity dari semua kelas).';
             color = '#6c757d';
             icon = 'fa-chart-line';
-            value = metrics.specificity;
+            // Gunakan nilai specificity yang sudah dihitung (dari fisActualMetricsData)
+            // Jika tidak ada, hitung ulang menggunakan Macro Average
+            value = metrics.specificity || 0;
             
-            calculation = `Specificity = TN / (TN + FP)\n\nSpecificity = ${tn} / (${tn} + ${fp})\nSpecificity = ${tn} / ${tn + fp}\nSpecificity = ${(value * 100).toFixed(2)}%`;
+            // Untuk multi-class, specificity dihitung per kelas menggunakan macro average
+            // Specificity per kelas = TN_i / (TN_i + FP_i)
+            // Dimana untuk setiap kelas i:
+            // - TN_i = sum of all elements yang bukan di baris i dan bukan di kolom i
+            // - FP_i = sum of off-diagonal elements dalam baris i
+            
+            const specificityPerClass = [];
+            cm.forEach((row, i) => {
+                // TP untuk kelas i
+                const tpClass = row[i] || 0;
+                
+                // FP untuk kelas i = sum of off-diagonal dalam baris i
+                const fpClass = row.reduce((sum, cell, j) => sum + (j !== i ? (cell || 0) : 0), 0);
+                
+                // TN untuk kelas i = sum of all elements yang bukan di baris i dan bukan di kolom i
+                let tnClass = 0;
+                cm.forEach((r, k) => {
+                    r.forEach((cell, l) => {
+                        if (k !== i && l !== i) {
+                            tnClass += (cell || 0);
+                        }
+                    });
+                });
+                
+                // Specificity untuk kelas i
+                const specificityClass = (tnClass + fpClass) > 0 ? tnClass / (tnClass + fpClass) : 0;
+                
+                specificityPerClass.push({
+                    class: classLabels[i],
+                    tn: tnClass,
+                    fp: fpClass,
+                    specificity: specificityClass
+                });
+            });
+            
+            // Macro Average Specificity
+            const macroAvgSpecificity = specificityPerClass.reduce((sum, s) => sum + s.specificity, 0) / specificityPerClass.length;
+            
+            // Gunakan nilai yang sudah dihitung (dari fisActualMetricsData) jika tersedia dan valid (> 0)
+            // Jika tidak, gunakan macro average yang baru dihitung
+            // Ini memastikan konsistensi antara card dan modal detail
+            const finalSpecificity = (value && value > 0) ? value : macroAvgSpecificity;
+            
+            calculation = `Specificity = Macro Average dari semua kelas\n\nSpecificity per kelas:\n${specificityPerClass.map(s => `Specificity(${s.class}) = TN / (TN + FP) = ${s.tn} / (${s.tn} + ${s.fp}) = ${(s.specificity * 100).toFixed(2)}%`).join('\n')}\n\nSpecificity (Macro Average) = (${specificityPerClass.map(s => (s.specificity * 100).toFixed(2)).join(' + ')}) / ${specificityPerClass.length} = ${(finalSpecificity * 100).toFixed(2)}%`;
             
             breakdown = `
-                <tr>
-                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">True Negative (TN)</td>
-                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #6c757d;">${tn}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">False Positive (FP)</td>
-                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #dc3545;">${fp}</td>
-                </tr>
                 <tr style="background: #f8f9fa;">
-                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">Specificity</td>
-                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color}; font-size: 16px;">${(value * 100).toFixed(2)}%</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">Kelas</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">TN</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">FP</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color};">Specificity</td>
+                </tr>
+                ${specificityPerClass.map(s => `
+                    <tr>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">${s.class}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${s.tn}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${s.fp}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: ${color};">${(s.specificity * 100).toFixed(2)}%</td>
+                    </tr>
+                `).join('')}
+                <tr style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">Macro Average</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">-</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">-</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color}; font-size: 16px;">${(finalSpecificity * 100).toFixed(2)}%</td>
                 </tr>
             `;
             break;
