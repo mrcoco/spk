@@ -81,6 +81,12 @@ function initializeDashboard() {
     initializeFuzzyDistribution();
     // Inisialisasi distribusi SAW
     initializeSAWDistribution();
+    // Inisialisasi evaluation summary
+    initializeEvaluationSummary();
+    // Inisialisasi comparison summary
+    initializeComparisonSummary();
+    // Inisialisasi actual status stats
+    initializeActualStatusStats();
 }
 
 function initializeDashboardStats() {
@@ -1098,6 +1104,859 @@ function getFISClassificationThreshold(classification) {
     return 'Klasifikasi tidak tersedia';
 }
 
+// Inisialisasi Evaluation Summary
+function initializeEvaluationSummary() {
+    try {
+        // Pastikan CONFIG tersedia
+        if (typeof CONFIG === 'undefined') {
+            console.error('❌ CONFIG tidak tersedia di initializeEvaluationSummary');
+            return;
+        }
+
+        // Tampilkan loading state
+        showEvaluationSummaryLoading();
+        
+        // Mengambil data evaluation summary dari server
+        $.ajax({
+            url: CONFIG.getApiUrl('/api/dashboard/evaluation-summary'),
+            method: 'GET',
+            timeout: 60000, // 60 detik timeout karena evaluasi memerlukan waktu
+            success: function(response) {
+                hideEvaluationSummaryLoading();
+                if (response && typeof response === 'object') {
+                    updateEvaluationSummary(response);
+                } else {
+                    console.warn("Invalid evaluation summary response format:", response);
+                    updateEvaluationSummary(null);
+                }
+            },
+            error: function(xhr, status, error) {
+                hideEvaluationSummaryLoading();
+                console.error("Error loading evaluation summary:", {xhr, status, error});
+                
+                let errorMessage = "Gagal memuat statistik evaluasi";
+                if (xhr.responseJSON && xhr.responseJSON.detail) {
+                    errorMessage += ": " + xhr.responseJSON.detail;
+                } else if (status === 'timeout') {
+                    errorMessage += ": Server tidak merespons dalam waktu yang ditentukan (timeout)";
+                } else if (error) {
+                    errorMessage += ": " + error;
+                }
+                
+                showNotification(
+                    "Warning",
+                    errorMessage,
+                    "warning"
+                );
+                
+                // Update dengan data default
+                updateEvaluationSummary(null);
+            }
+        });
+    } catch (error) {
+        console.error("Error in initializeEvaluationSummary:", error);
+        hideEvaluationSummaryLoading();
+        updateEvaluationSummary(null);
+    }
+}
+
+function showEvaluationSummaryLoading() {
+    const loadingHtml = `
+        <div class="dashboard-evaluation-summary">
+            <div class="evaluation-summary-header">
+                <h3><i class="fas fa-chart-line"></i> Statistik Evaluasi Aktual</h3>
+            </div>
+            <div class="evaluation-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Memuat statistik evaluasi... (Ini mungkin memerlukan beberapa saat)</span>
+            </div>
+        </div>
+    `;
+    
+    // Cek apakah section sudah ada, jika tidak tambahkan
+    if ($('.dashboard-evaluation-summary').length === 0) {
+        $('.dashboard-stats').after(loadingHtml);
+    } else {
+        $('.dashboard-evaluation-summary').html(loadingHtml);
+    }
+}
+
+function hideEvaluationSummaryLoading() {
+    $('.evaluation-loading').remove();
+}
+
+function updateEvaluationSummary(data) {
+    // Default data jika API belum tersedia atau error
+    const defaultData = {
+        fis: {
+            total_data: 0,
+            accuracy: 0.0,
+            precision: 0.0,
+            recall: 0.0,
+            f1_score: 0.0,
+            available: false
+        },
+        saw: {
+            total_data: 0,
+            accuracy: 0.0,
+            precision: 0.0,
+            recall: 0.0,
+            f1_score: 0.0,
+            available: false
+        }
+    };
+
+    const evalData = data || defaultData;
+    const fisData = evalData.fis || defaultData.fis;
+    const sawData = evalData.saw || defaultData.saw;
+
+    // Render evaluation summary
+    const summaryHtml = `
+        <div class="evaluation-summary-header">
+            <h3><i class="fas fa-chart-line"></i> Statistik Evaluasi Aktual</h3>
+        </div>
+        <div class="evaluation-summary-container">
+            <!-- FIS Evaluation Card -->
+            <div class="evaluation-card fis-card ${!fisData.available ? 'unavailable' : ''}">
+                <div class="evaluation-card-header">
+                    <div class="evaluation-card-title fis-title">
+                        <i class="fas fa-brain"></i>
+                        <span>Evaluasi FIS</span>
+                    </div>
+                    ${fisData.available ? `
+                        <a href="#fis-actual-evaluation" class="evaluation-card-link">
+                            <span>Lihat Detail</span>
+                            <i class="fas fa-arrow-right" style="margin-left: 5px;"></i>
+                        </a>
+                    ` : ''}
+                </div>
+                ${fisData.available ? `
+                    <div class="evaluation-metrics">
+                        <div class="evaluation-metric accuracy">
+                            <div class="evaluation-metric-label">Akurasi</div>
+                            <div class="evaluation-metric-value">
+                                ${fisData.accuracy.toFixed(2)}<span class="unit">%</span>
+                            </div>
+                        </div>
+                        <div class="evaluation-metric precision">
+                            <div class="evaluation-metric-label">Precision</div>
+                            <div class="evaluation-metric-value">
+                                ${fisData.precision.toFixed(2)}<span class="unit">%</span>
+                            </div>
+                        </div>
+                        <div class="evaluation-metric recall">
+                            <div class="evaluation-metric-label">Recall</div>
+                            <div class="evaluation-metric-value">
+                                ${fisData.recall.toFixed(2)}<span class="unit">%</span>
+                            </div>
+                        </div>
+                        <div class="evaluation-metric f1-score">
+                            <div class="evaluation-metric-label">F1-Score</div>
+                            <div class="evaluation-metric-value">
+                                ${fisData.f1_score.toFixed(2)}<span class="unit">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="evaluation-total-data">
+                        <div class="evaluation-total-data-label">Total Data Evaluasi</div>
+                        <div class="evaluation-total-data-value">${fisData.total_data} mahasiswa</div>
+                    </div>
+                ` : `
+                    <div style="text-align: center; padding: 20px; color: #999;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 32px; margin-bottom: 10px;"></i>
+                        <p>Data evaluasi FIS belum tersedia</p>
+                        <a href="#fis-actual-evaluation" class="evaluation-card-link" style="justify-content: center; margin-top: 10px;">
+                            <span>Jalankan Evaluasi</span>
+                            <i class="fas fa-arrow-right" style="margin-left: 5px;"></i>
+                        </a>
+                    </div>
+                `}
+            </div>
+            
+            <!-- SAW Evaluation Card -->
+            <div class="evaluation-card saw-card ${!sawData.available ? 'unavailable' : ''}">
+                <div class="evaluation-card-header">
+                    <div class="evaluation-card-title saw-title">
+                        <i class="fas fa-calculator"></i>
+                        <span>Evaluasi SAW</span>
+                    </div>
+                    ${sawData.available ? `
+                        <a href="#saw-evaluation-actual" class="evaluation-card-link">
+                            <span>Lihat Detail</span>
+                            <i class="fas fa-arrow-right" style="margin-left: 5px;"></i>
+                        </a>
+                    ` : ''}
+                </div>
+                ${sawData.available ? `
+                    <div class="evaluation-metrics">
+                        <div class="evaluation-metric accuracy">
+                            <div class="evaluation-metric-label">Akurasi</div>
+                            <div class="evaluation-metric-value">
+                                ${sawData.accuracy.toFixed(2)}<span class="unit">%</span>
+                            </div>
+                        </div>
+                        <div class="evaluation-metric precision">
+                            <div class="evaluation-metric-label">Precision</div>
+                            <div class="evaluation-metric-value">
+                                ${sawData.precision.toFixed(2)}<span class="unit">%</span>
+                            </div>
+                        </div>
+                        <div class="evaluation-metric recall">
+                            <div class="evaluation-metric-label">Recall</div>
+                            <div class="evaluation-metric-value">
+                                ${sawData.recall.toFixed(2)}<span class="unit">%</span>
+                            </div>
+                        </div>
+                        <div class="evaluation-metric f1-score">
+                            <div class="evaluation-metric-label">F1-Score</div>
+                            <div class="evaluation-metric-value">
+                                ${sawData.f1_score.toFixed(2)}<span class="unit">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="evaluation-total-data">
+                        <div class="evaluation-total-data-label">Total Data Evaluasi</div>
+                        <div class="evaluation-total-data-value">${sawData.total_data} mahasiswa</div>
+                    </div>
+                ` : `
+                    <div style="text-align: center; padding: 20px; color: #999;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 32px; margin-bottom: 10px;"></i>
+                        <p>Data evaluasi SAW belum tersedia</p>
+                        <a href="#saw-evaluation-actual" class="evaluation-card-link" style="justify-content: center; margin-top: 10px;">
+                            <span>Jalankan Evaluasi</span>
+                            <i class="fas fa-arrow-right" style="margin-left: 5px;"></i>
+                        </a>
+                    </div>
+                `}
+            </div>
+        </div>
+    `;
+
+    // Update atau create evaluation summary section
+    if ($('.dashboard-evaluation-summary').length === 0) {
+        $('.dashboard-stats').after(`<div class="dashboard-evaluation-summary">${summaryHtml}</div>`);
+    } else {
+        $('.dashboard-evaluation-summary').html(summaryHtml);
+    }
+}
+
+// Inisialisasi Comparison Summary
+function initializeComparisonSummary() {
+    try {
+        // Pastikan CONFIG tersedia
+        if (typeof CONFIG === 'undefined') {
+            console.error('❌ CONFIG tidak tersedia di initializeComparisonSummary');
+            return;
+        }
+
+        // Tampilkan loading state
+        showComparisonSummaryLoading();
+        
+        // Mengambil data comparison summary dari server
+        $.ajax({
+            url: CONFIG.getApiUrl('/api/dashboard/comparison-summary'),
+            method: 'GET',
+            timeout: 120000, // 2 menit timeout karena evaluasi memerlukan waktu
+            success: function(response) {
+                hideComparisonSummaryLoading();
+                if (response && typeof response === 'object') {
+                    updateDashboardComparisonSummary(response);
+                } else {
+                    console.warn("Invalid comparison summary response format:", response);
+                    updateDashboardComparisonSummary(null);
+                }
+            },
+            error: function(xhr, status, error) {
+                hideComparisonSummaryLoading();
+                console.error("Error loading comparison summary:", {xhr, status, error});
+                
+                let errorMessage = "Gagal memuat perbandingan FIS vs SAW";
+                if (xhr.responseJSON && xhr.responseJSON.detail) {
+                    errorMessage += ": " + xhr.responseJSON.detail;
+                } else if (status === 'timeout') {
+                    errorMessage += ": Server tidak merespons dalam waktu yang ditentukan (timeout)";
+                } else if (error) {
+                    errorMessage += ": " + error;
+                }
+                
+                showNotification(
+                    "Warning",
+                    errorMessage,
+                    "warning"
+                );
+                
+                // Update dengan data default
+                updateDashboardComparisonSummary(null);
+            }
+        });
+    } catch (error) {
+        console.error("Error in initializeComparisonSummary:", error);
+        hideComparisonSummaryLoading();
+        updateDashboardComparisonSummary(null);
+    }
+}
+
+function showComparisonSummaryLoading() {
+    const loadingHtml = `
+        <div class="dashboard-comparison-summary">
+            <div class="comparison-summary-header">
+                <h3><i class="fas fa-balance-scale"></i> Perbandingan FIS vs SAW</h3>
+            </div>
+            <div class="comparison-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Memuat perbandingan... (Ini mungkin memerlukan beberapa saat)</span>
+            </div>
+        </div>
+    `;
+    
+    // Cek apakah section sudah ada, jika tidak tambahkan
+    if ($('.dashboard-comparison-summary').length === 0) {
+        $('.dashboard-evaluation-summary').after(loadingHtml);
+    } else {
+        $('.dashboard-comparison-summary').html(loadingHtml);
+    }
+}
+
+function hideComparisonSummaryLoading() {
+    $('.comparison-loading').remove();
+}
+
+function updateDashboardComparisonSummary(data) {
+    // Default data jika API belum tersedia atau error
+    const defaultData = {
+        consistency: 0.0,
+        correlation: 0.0,
+        accuracy_diff: 0.0,
+        fis_metrics: {
+            accuracy: 0.0,
+            precision: 0.0,
+            recall: 0.0,
+            f1_score: 0.0
+        },
+        saw_metrics: {
+            accuracy: 0.0,
+            precision: 0.0,
+            recall: 0.0,
+            f1_score: 0.0
+        },
+        fis_distribution: {
+            "Peluang Lulus Tinggi": 0,
+            "Peluang Lulus Sedang": 0,
+            "Peluang Lulus Kecil": 0
+        },
+        saw_distribution: {
+            "Peluang Lulus Tinggi": 0,
+            "Peluang Lulus Sedang": 0,
+            "Peluang Lulus Kecil": 0
+        },
+        available: false
+    };
+
+    const compData = data || defaultData;
+
+    // Render comparison summary
+    const summaryHtml = `
+        <div class="comparison-summary-header">
+            <h3><i class="fas fa-balance-scale"></i> Perbandingan FIS vs SAW</h3>
+            ${compData.available ? `
+                <a href="#comparison" class="comparison-summary-link">
+                    <span>Lihat Detail Perbandingan</span>
+                    <i class="fas fa-arrow-right" style="margin-left: 5px;"></i>
+                </a>
+            ` : ''}
+        </div>
+        ${compData.available ? `
+            <div class="comparison-summary-content">
+                <!-- Charts Row -->
+                <div class="comparison-charts-row">
+                    <div class="comparison-chart-container">
+                        <h4><i class="fas fa-brain"></i> Distribusi FIS</h4>
+                        <div id="dashboardComparisonFISChart" style="height: 250px;"></div>
+                    </div>
+                    <div class="comparison-chart-container">
+                        <h4><i class="fas fa-calculator"></i> Distribusi SAW</h4>
+                        <div id="dashboardComparisonSAWChart" style="height: 250px;"></div>
+                    </div>
+                </div>
+                
+                <!-- Metrics Comparison -->
+                <div class="comparison-metrics-section">
+                    <h4><i class="fas fa-chart-bar"></i> Perbandingan Metrik</h4>
+                    <div id="dashboardComparisonMetricsChart" style="height: 300px;"></div>
+                </div>
+                
+                <!-- Summary Stats -->
+                <div class="comparison-summary-stats">
+                    <div class="comparison-stat-item">
+                        <div class="comparison-stat-label">Konsistensi Hasil</div>
+                        <div class="comparison-stat-value">${compData.consistency.toFixed(1)}%</div>
+                        <div class="comparison-stat-desc">Hasil yang sama antara FIS dan SAW</div>
+                    </div>
+                    <div class="comparison-stat-item correlation-item" style="cursor: pointer;" title="Klik untuk penjelasan">
+                        <div class="comparison-stat-label">Korelasi Ranking</div>
+                        <div class="comparison-stat-value">${compData.correlation.toFixed(3)}</div>
+                        <div class="comparison-stat-desc">Spearman's Rank Correlation</div>
+                    </div>
+                    <div class="comparison-stat-item">
+                        <div class="comparison-stat-label">Perbedaan Akurasi</div>
+                        <div class="comparison-stat-value ${compData.accuracy_diff >= 0 ? 'positive' : 'negative'}">
+                            ${compData.accuracy_diff >= 0 ? '+' : ''}${compData.accuracy_diff.toFixed(2)}%
+                        </div>
+                        <div class="comparison-stat-desc">FIS ${compData.accuracy_diff >= 0 ? 'lebih tinggi' : 'lebih rendah'} dari SAW</div>
+                    </div>
+                </div>
+            </div>
+        ` : `
+            <div style="text-align: center; padding: 40px; color: #999;">
+                <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                <p style="font-size: 16px; margin-bottom: 20px;">Data perbandingan belum tersedia</p>
+                <a href="#comparison" class="comparison-summary-link" style="justify-content: center; display: inline-flex; align-items: center;">
+                    <span>Jalankan Perbandingan</span>
+                    <i class="fas fa-arrow-right" style="margin-left: 5px;"></i>
+                </a>
+            </div>
+        `}
+    `;
+
+    // Update atau create comparison summary section
+    if ($('.dashboard-comparison-summary').length === 0) {
+        $('.dashboard-evaluation-summary').after(`<div class="dashboard-comparison-summary">${summaryHtml}</div>`);
+    } else {
+        $('.dashboard-comparison-summary').html(summaryHtml);
+    }
+    
+    // Render charts jika data tersedia
+    if (compData.available) {
+        renderComparisonCharts(compData);
+        
+        // Attach click handler untuk correlation
+        $('.correlation-item').off('click').on('click', function() {
+            showCorrelationModal(compData.correlation);
+        });
+    }
+}
+
+function renderComparisonCharts(data) {
+    // Render FIS Distribution Pie Chart
+    if (typeof kendo !== 'undefined' && $('#dashboardComparisonFISChart').length > 0) {
+        const fisChartData = [
+            { category: "Peluang Lulus Tinggi", value: data.fis_distribution["Peluang Lulus Tinggi"], color: "#28a745" },
+            { category: "Peluang Lulus Sedang", value: data.fis_distribution["Peluang Lulus Sedang"], color: "#ffc107" },
+            { category: "Peluang Lulus Kecil", value: data.fis_distribution["Peluang Lulus Kecil"], color: "#dc3545" }
+        ].filter(item => item.value > 0);
+        
+        $("#dashboardComparisonFISChart").kendoChart({
+            seriesDefaults: {
+                type: "pie",
+                labels: {
+                    visible: true,
+                    template: "#= category #\n#= value # (#= kendo.format('{0:P}', percentage) #)"
+                }
+            },
+            series: [{
+                data: fisChartData,
+                field: "value",
+                categoryField: "category",
+                colorField: "color"
+            }],
+            tooltip: {
+                visible: true,
+                template: "#= category #: #= value # mahasiswa"
+            }
+        });
+    }
+    
+    // Render SAW Distribution Pie Chart
+    if (typeof kendo !== 'undefined' && $('#dashboardComparisonSAWChart').length > 0) {
+        const sawChartData = [
+            { category: "Peluang Lulus Tinggi", value: data.saw_distribution["Peluang Lulus Tinggi"], color: "#28a745" },
+            { category: "Peluang Lulus Sedang", value: data.saw_distribution["Peluang Lulus Sedang"], color: "#ffc107" },
+            { category: "Peluang Lulus Kecil", value: data.saw_distribution["Peluang Lulus Kecil"], color: "#dc3545" }
+        ].filter(item => item.value > 0);
+        
+        $("#dashboardComparisonSAWChart").kendoChart({
+            seriesDefaults: {
+                type: "pie",
+                labels: {
+                    visible: true,
+                    template: "#= category #\n#= value # (#= kendo.format('{0:P}', percentage) #)"
+                }
+            },
+            series: [{
+                data: sawChartData,
+                field: "value",
+                categoryField: "category",
+                colorField: "color"
+            }],
+            tooltip: {
+                visible: true,
+                template: "#= category #: #= value # mahasiswa"
+            }
+        });
+    }
+    
+    // Render Metrics Comparison Bar Chart
+    if (typeof kendo !== 'undefined' && $('#dashboardComparisonMetricsChart').length > 0) {
+        const metricsData = [
+            { metric: "Accuracy", fis: data.fis_metrics.accuracy, saw: data.saw_metrics.accuracy },
+            { metric: "Precision", fis: data.fis_metrics.precision, saw: data.saw_metrics.precision },
+            { metric: "Recall", fis: data.fis_metrics.recall, saw: data.saw_metrics.recall },
+            { metric: "F1-Score", fis: data.fis_metrics.f1_score, saw: data.saw_metrics.f1_score }
+        ];
+        
+        $("#dashboardComparisonMetricsChart").kendoChart({
+            dataSource: {
+                data: metricsData
+            },
+            series: [
+                {
+                    name: "FIS",
+                    field: "fis",
+                    color: "#1a237e"
+                },
+                {
+                    name: "SAW",
+                    field: "saw",
+                    color: "#27ae60"
+                }
+            ],
+            categoryAxis: {
+                field: "metric"
+            },
+            valueAxis: {
+                min: 0,
+                max: 100,
+                labels: {
+                    template: "#= value #%"
+                }
+            },
+            tooltip: {
+                visible: true,
+                template: "#= series.name #: #= value #%"
+            },
+            legend: {
+                position: "bottom"
+            }
+        });
+    }
+}
+
+function showCorrelationModal(correlationValue) {
+    // Reuse modal dari comparison.js jika tersedia
+    if (typeof showCorrelationRankingModal === 'function') {
+        // Set nilai korelasi terlebih dahulu
+        $('#statCorrelation').text(correlationValue.toFixed(3));
+        showCorrelationRankingModal();
+    } else {
+        // Fallback simple modal
+        alert(`Korelasi Ranking: ${correlationValue.toFixed(3)}\n\nNilai ini mengukur konsistensi urutan ranking antara FIS dan SAW.`);
+    }
+}
+
+// Inisialisasi Actual Status Stats
+function initializeActualStatusStats() {
+    try {
+        // Pastikan CONFIG tersedia
+        if (typeof CONFIG === 'undefined') {
+            console.error('❌ CONFIG tidak tersedia di initializeActualStatusStats');
+            return;
+        }
+
+        // Tampilkan loading state
+        showActualStatusStatsLoading();
+        
+        // Mengambil data actual status stats dari server
+        $.ajax({
+            url: CONFIG.getApiUrl('/api/dashboard/actual-status-stats'),
+            method: 'GET',
+            timeout: 120000, // 2 menit timeout karena mungkin perlu evaluasi
+            success: function(response) {
+                hideActualStatusStatsLoading();
+                if (response && typeof response === 'object') {
+                    updateActualStatusStats(response);
+                } else {
+                    console.warn("Invalid actual status stats response format:", response);
+                    updateActualStatusStats(null);
+                }
+            },
+            error: function(xhr, status, error) {
+                hideActualStatusStatsLoading();
+                console.error("Error loading actual status stats:", {xhr, status, error});
+                
+                let errorMessage = "Gagal memuat statistik status lulus aktual";
+                if (xhr.responseJSON && xhr.responseJSON.detail) {
+                    errorMessage += ": " + xhr.responseJSON.detail;
+                } else if (status === 'timeout') {
+                    errorMessage += ": Server tidak merespons dalam waktu yang ditentukan (timeout)";
+                } else if (error) {
+                    errorMessage += ": " + error;
+                }
+                
+                showNotification(
+                    "Warning",
+                    errorMessage,
+                    "warning"
+                );
+                
+                // Update dengan data default
+                updateActualStatusStats(null);
+            }
+        });
+    } catch (error) {
+        console.error("Error in initializeActualStatusStats:", error);
+        hideActualStatusStatsLoading();
+        updateActualStatusStats(null);
+    }
+}
+
+function showActualStatusStatsLoading() {
+    const loadingHtml = `
+        <div class="dashboard-actual-status-stats">
+            <div class="actual-status-header">
+                <h3><i class="fas fa-check-circle"></i> Status Lulus Aktual</h3>
+            </div>
+            <div class="actual-status-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Memuat statistik status lulus aktual... (Ini mungkin memerlukan beberapa saat)</span>
+            </div>
+        </div>
+    `;
+    
+    // Cek apakah section sudah ada, jika tidak tambahkan
+    if ($('.dashboard-actual-status-stats').length === 0) {
+        $('.dashboard-comparison-summary').after(loadingHtml);
+    } else {
+        $('.dashboard-actual-status-stats').html(loadingHtml);
+    }
+}
+
+function hideActualStatusStatsLoading() {
+    $('.actual-status-loading').remove();
+}
+
+function updateActualStatusStats(data) {
+    // Default data jika API belum tersedia atau error
+    const defaultData = {
+        total: 0,
+        distribution: {
+            "LULUS_TINGGI": 0,
+            "LULUS_SEDANG": 0,
+            "LULUS_KECIL": 0
+        },
+        percentages: {
+            "LULUS_TINGGI": 0.0,
+            "LULUS_SEDANG": 0.0,
+            "LULUS_KECIL": 0.0
+        },
+        comparison: {
+            available: false,
+            fis_distribution: {
+                "Peluang Lulus Tinggi": 0,
+                "Peluang Lulus Sedang": 0,
+                "Peluang Lulus Kecil": 0
+            },
+            saw_distribution: {
+                "Peluang Lulus Tinggi": 0,
+                "Peluang Lulus Sedang": 0,
+                "Peluang Lulus Kecil": 0
+            }
+        },
+        available: false
+    };
+
+    const statusData = data || defaultData;
+
+    // Helper function untuk format status
+    const formatStatus = (status) => {
+        return status ? status.replace(/_/g, ' ') : 'N/A';
+    };
+
+    // Helper function untuk get status color
+    const getStatusColor = (status) => {
+        switch(status) {
+            case 'LULUS_TINGGI':
+                return { bg: '#28a745', text: '#fff', name: 'Tinggi' };
+            case 'LULUS_SEDANG':
+                return { bg: '#ffc107', text: '#000', name: 'Sedang' };
+            case 'LULUS_KECIL':
+                return { bg: '#dc3545', text: '#fff', name: 'Kecil' };
+            default:
+                return { bg: '#6c757d', text: '#fff', name: 'N/A' };
+        }
+    };
+
+    // Render actual status stats
+    const statsHtml = `
+        <div class="actual-status-header">
+            <h3><i class="fas fa-check-circle"></i> Status Lulus Aktual</h3>
+        </div>
+        ${statusData.available ? `
+            <div class="actual-status-content">
+                <!-- Summary Stats -->
+                <div class="actual-status-summary">
+                    <div class="actual-status-total">
+                        <div class="actual-status-total-label">Total Data Berlabel</div>
+                        <div class="actual-status-total-value">${statusData.total} mahasiswa</div>
+                    </div>
+                    <div class="actual-status-breakdown">
+                        ${Object.entries(statusData.distribution).map(([status, count]) => {
+                            const color = getStatusColor(status);
+                            const percentage = statusData.percentages[status] || 0;
+                            return `
+                                <div class="actual-status-item" style="border-left: 4px solid ${color.bg};">
+                                    <div class="actual-status-item-label">${formatStatus(status)}</div>
+                                    <div class="actual-status-item-value" style="color: ${color.bg};">
+                                        ${count} mahasiswa
+                                    </div>
+                                    <div class="actual-status-item-percentage">${percentage.toFixed(1)}%</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                
+                <!-- Charts Row -->
+                <div class="actual-status-charts-row">
+                    <div class="actual-status-chart-container">
+                        <h4><i class="fas fa-chart-pie"></i> Distribusi Status Aktual</h4>
+                        <div id="dashboardActualStatusPieChart" style="height: 300px;"></div>
+                    </div>
+                    ${statusData.comparison.available ? `
+                        <div class="actual-status-chart-container">
+                            <h4><i class="fas fa-chart-bar"></i> Perbandingan dengan Prediksi</h4>
+                            <div id="dashboardActualStatusComparisonChart" style="height: 300px;"></div>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        ` : `
+            <div style="text-align: center; padding: 40px; color: #999;">
+                <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                <p style="font-size: 16px; margin-bottom: 20px;">Data status lulus aktual belum tersedia</p>
+                <p style="font-size: 14px; color: #666;">Pastikan data mahasiswa memiliki status_lulus_aktual (LULUS_TINGGI, LULUS_SEDANG, LULUS_KECIL)</p>
+            </div>
+        `}
+    `;
+
+    // Update atau create actual status stats section
+    if ($('.dashboard-actual-status-stats').length === 0) {
+        $('.dashboard-comparison-summary').after(`<div class="dashboard-actual-status-stats">${statsHtml}</div>`);
+    } else {
+        $('.dashboard-actual-status-stats').html(statsHtml);
+    }
+    
+    // Render charts jika data tersedia
+    if (statusData.available) {
+        renderActualStatusCharts(statusData);
+    }
+}
+
+function renderActualStatusCharts(data) {
+    // Render Pie Chart untuk distribusi status aktual
+    if (typeof kendo !== 'undefined' && $('#dashboardActualStatusPieChart').length > 0) {
+        const pieChartData = [
+            { 
+                category: "LULUS TINGGI", 
+                value: data.distribution["LULUS_TINGGI"], 
+                color: "#28a745" 
+            },
+            { 
+                category: "LULUS SEDANG", 
+                value: data.distribution["LULUS_SEDANG"], 
+                color: "#ffc107" 
+            },
+            { 
+                category: "LULUS KECIL", 
+                value: data.distribution["LULUS_KECIL"], 
+                color: "#dc3545" 
+            }
+        ].filter(item => item.value > 0);
+        
+        $("#dashboardActualStatusPieChart").kendoChart({
+            seriesDefaults: {
+                type: "pie",
+                labels: {
+                    visible: true,
+                    template: "#= category #\n#= value # (#= kendo.format('{0:P}', percentage) #)"
+                }
+            },
+            series: [{
+                data: pieChartData,
+                field: "value",
+                categoryField: "category",
+                colorField: "color"
+            }],
+            tooltip: {
+                visible: true,
+                template: "#= category #: #= value # mahasiswa (#= kendo.format('{0:P}', percentage) #)"
+            }
+        });
+    }
+    
+    // Render Bar Chart untuk perbandingan dengan prediksi
+    if (data.comparison.available && typeof kendo !== 'undefined' && $('#dashboardActualStatusComparisonChart').length > 0) {
+        const comparisonData = [
+            { 
+                category: "Tinggi", 
+                actual: data.distribution["LULUS_TINGGI"],
+                fis: data.comparison.fis_distribution["Peluang Lulus Tinggi"],
+                saw: data.comparison.saw_distribution["Peluang Lulus Tinggi"]
+            },
+            { 
+                category: "Sedang", 
+                actual: data.distribution["LULUS_SEDANG"],
+                fis: data.comparison.fis_distribution["Peluang Lulus Sedang"],
+                saw: data.comparison.saw_distribution["Peluang Lulus Sedang"]
+            },
+            { 
+                category: "Kecil", 
+                actual: data.distribution["LULUS_KECIL"],
+                fis: data.comparison.fis_distribution["Peluang Lulus Kecil"],
+                saw: data.comparison.saw_distribution["Peluang Lulus Kecil"]
+            }
+        ];
+        
+        $("#dashboardActualStatusComparisonChart").kendoChart({
+            dataSource: {
+                data: comparisonData
+            },
+            series: [
+                {
+                    name: "Status Aktual",
+                    field: "actual",
+                    color: "#6c757d"
+                },
+                {
+                    name: "Prediksi FIS",
+                    field: "fis",
+                    color: "#1a237e"
+                },
+                {
+                    name: "Prediksi SAW",
+                    field: "saw",
+                    color: "#27ae60"
+                }
+            ],
+            categoryAxis: {
+                field: "category"
+            },
+            valueAxis: {
+                min: 0,
+                labels: {
+                    template: "#= value #"
+                }
+            },
+            tooltip: {
+                visible: true,
+                template: "#= series.name #: #= value # mahasiswa"
+            },
+            legend: {
+                position: "bottom"
+            }
+        });
+    }
+}
+
 // Tambahkan style untuk dashboard
 const dashboardStyle = `
 <style>
@@ -1807,6 +2666,592 @@ const dashboardStyle = `
 @keyframes progressMove {
     0% { background-position: 0 0; }
     100% { background-position: 20px 0; }
+}
+
+/* Evaluation Summary Styles */
+.dashboard-evaluation-summary {
+    margin-top: 30px;
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.evaluation-summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.evaluation-summary-header h3 {
+    margin: 0;
+    color: #1a237e;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.evaluation-summary-header i {
+    margin-right: 10px;
+    color: #1a237e;
+}
+
+.evaluation-summary-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+}
+
+.evaluation-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.evaluation-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+    background: linear-gradient(180deg, #1a237e 0%, #3f51b5 100%);
+}
+
+.evaluation-card.fis-card::before {
+    background: linear-gradient(180deg, #1a237e 0%, #3f51b5 100%);
+}
+
+.evaluation-card.saw-card::before {
+    background: linear-gradient(180deg, #27ae60 0%, #2ecc71 100%);
+}
+
+.evaluation-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    border-color: #1a237e;
+}
+
+.evaluation-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.evaluation-card-title {
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a237e;
+}
+
+.evaluation-card-title i {
+    margin-right: 10px;
+    font-size: 24px;
+}
+
+.evaluation-card-title.fis-title i {
+    color: #1a237e;
+}
+
+.evaluation-card-title.saw-title i {
+    color: #27ae60;
+}
+
+.evaluation-card-link {
+    color: #1a237e;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.evaluation-card-link:hover {
+    color: #3f51b5;
+    transform: translateX(5px);
+}
+
+.evaluation-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.evaluation-metric {
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    border-left: 4px solid #1a237e;
+    transition: all 0.3s ease;
+}
+
+.evaluation-metric:hover {
+    background: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.evaluation-metric-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.evaluation-metric-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a237e;
+    display: flex;
+    align-items: baseline;
+}
+
+.evaluation-metric-value .unit {
+    font-size: 14px;
+    font-weight: 500;
+    margin-left: 4px;
+    color: #666;
+}
+
+.evaluation-metric.accuracy .evaluation-metric-value {
+    color: #27ae60;
+}
+
+.evaluation-metric.precision .evaluation-metric-value {
+    color: #3498db;
+}
+
+.evaluation-metric.recall .evaluation-metric-value {
+    color: #f39c12;
+}
+
+.evaluation-metric.f1-score .evaluation-metric-value {
+    color: #e74c3c;
+}
+
+.evaluation-total-data {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.evaluation-total-data-label {
+    font-size: 12px;
+    color: #1565C0;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.evaluation-total-data-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0d47a1;
+}
+
+.evaluation-card.unavailable {
+    opacity: 0.6;
+    background: #f5f5f5;
+}
+
+.evaluation-card.unavailable::before {
+    background: #bdbdbd;
+}
+
+.evaluation-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #666;
+}
+
+.evaluation-loading i {
+    margin-right: 10px;
+    color: #1a237e;
+    font-size: 24px;
+}
+
+@media (max-width: 768px) {
+    .evaluation-summary-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .evaluation-metrics {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Comparison Summary Styles */
+.dashboard-comparison-summary {
+    margin-top: 30px;
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.comparison-summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.comparison-summary-header h3 {
+    margin: 0;
+    color: #1a237e;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.comparison-summary-header i {
+    margin-right: 10px;
+    color: #1a237e;
+}
+
+.comparison-summary-link {
+    color: #1a237e;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.comparison-summary-link:hover {
+    color: #3f51b5;
+    transform: translateX(5px);
+}
+
+.comparison-summary-content {
+    margin-top: 20px;
+}
+
+.comparison-charts-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.comparison-chart-container {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.comparison-chart-container:hover {
+    border-color: #1a237e;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.comparison-chart-container h4 {
+    margin: 0 0 15px 0;
+    color: #1a237e;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.comparison-chart-container h4 i {
+    margin-right: 8px;
+}
+
+.comparison-metrics-section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    border: 2px solid #e9ecef;
+}
+
+.comparison-metrics-section h4 {
+    margin: 0 0 20px 0;
+    color: #1a237e;
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.comparison-metrics-section h4 i {
+    margin-right: 8px;
+}
+
+.comparison-summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.comparison-stat-item {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid #e9ecef;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.comparison-stat-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+    background: linear-gradient(180deg, #1a237e 0%, #3f51b5 100%);
+}
+
+.comparison-stat-item.correlation-item::before {
+    background: linear-gradient(180deg, #673AB7 0%, #9C27B0 100%);
+}
+
+.comparison-stat-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    border-color: #1a237e;
+}
+
+.comparison-stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.comparison-stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a237e;
+    margin-bottom: 8px;
+}
+
+.comparison-stat-value.positive {
+    color: #27ae60;
+}
+
+.comparison-stat-value.negative {
+    color: #e74c3c;
+}
+
+.comparison-stat-desc {
+    font-size: 12px;
+    color: #999;
+    line-height: 1.4;
+}
+
+.comparison-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #666;
+}
+
+.comparison-loading i {
+    margin-right: 10px;
+    color: #1a237e;
+    font-size: 24px;
+}
+
+@media (max-width: 768px) {
+    .comparison-charts-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .comparison-summary-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Actual Status Stats Styles */
+.dashboard-actual-status-stats {
+    margin-top: 30px;
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.actual-status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.actual-status-header h3 {
+    margin: 0;
+    color: #1a237e;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.actual-status-header i {
+    margin-right: 10px;
+    color: #1a237e;
+}
+
+.actual-status-content {
+    margin-top: 20px;
+}
+
+.actual-status-summary {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    border: 2px solid #e9ecef;
+}
+
+.actual-status-total {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.actual-status-total-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.actual-status-total-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a237e;
+}
+
+.actual-status-breakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.actual-status-item {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.3s ease;
+}
+
+.actual-status-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.actual-status-item-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.actual-status-item-value {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.actual-status-item-percentage {
+    font-size: 14px;
+    color: #999;
+    font-weight: 500;
+}
+
+.actual-status-charts-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.actual-status-chart-container {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.actual-status-chart-container:hover {
+    border-color: #1a237e;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.actual-status-chart-container h4 {
+    margin: 0 0 15px 0;
+    color: #1a237e;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.actual-status-chart-container h4 i {
+    margin-right: 8px;
+}
+
+.actual-status-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #666;
+}
+
+.actual-status-loading i {
+    margin-right: 10px;
+    color: #1a237e;
+    font-size: 24px;
+}
+
+@media (max-width: 768px) {
+    .actual-status-breakdown {
+        grid-template-columns: 1fr;
+    }
+    
+    .actual-status-charts-row {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
 `; 
