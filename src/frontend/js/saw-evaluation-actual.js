@@ -12,6 +12,7 @@ class SAWEvaluationActual {
         };
         this.fullData = [];
         this.confusionMatrix = null; // Simpan confusion matrix untuk modal
+        this.metricsData = null; // Simpan data metrics untuk modal
         this.init();
     }
 
@@ -185,11 +186,23 @@ class SAWEvaluationActual {
         $('#sawEvaluationActualTestData').text(data.test_data || 0);
         $('#sawEvaluationActualAccuracy').text(this.formatPercentage(data.accuracy || 0));
 
+        // Simpan data metrics untuk modal
+        this.metricsData = {
+            precision: data.precision || 0,
+            recall: data.recall || 0,
+            f1_score: data.f1_score || 0,
+            specificity: data.specificity || 0,
+            accuracy: data.accuracy || 0
+        };
+        
         // Update metrics
         $('#sawEvaluationActualPrecision').text(this.formatPercentage(data.precision || 0));
         $('#sawEvaluationActualRecall').text(this.formatPercentage(data.recall || 0));
         $('#sawEvaluationActualF1Score').text(this.formatPercentage(data.f1_score || 0));
         $('#sawEvaluationActualSpecificity').text(this.formatPercentage(data.specificity || 0));
+        
+        // Setup click handlers untuk metric cards
+        this.setupMetricsCardClickHandlers();
 
         // Update confusion matrix
         if (data.confusion_matrix) {
@@ -763,6 +776,257 @@ class SAWEvaluationActual {
         const dialog = modalContent.kendoDialog({
             width: "700px",
             height: "600px",
+            title: `Penjelasan ${title}`,
+            closable: true,
+            modal: true,
+            actions: [{ text: "Tutup", primary: true }]
+        });
+        
+        dialog.data("kendoDialog").open();
+    }
+    
+    setupMetricsCardClickHandlers() {
+        const self = this;
+        
+        // Remove existing handlers
+        $('.saw-metric-card-clickable').off('click');
+        
+        // Add click handlers
+        $('.saw-metric-card-clickable').on('click', function() {
+            const metric = $(this).data('metric');
+            self.showMetricsDetailModal(metric);
+        });
+    }
+    
+    showMetricsDetailModal(metric) {
+        if (!this.metricsData || !this.confusionMatrix) {
+            this.showNotification('error', 'Data tidak tersedia', 'Data evaluasi belum dimuat.');
+            return;
+        }
+        
+        const metrics = this.metricsData;
+        const cm = this.confusionMatrix;
+        
+        // Hitung TP, TN, FP, FN dari confusion matrix
+        let tp = 0;
+        let total = 0;
+        
+        cm.forEach((row, i) => {
+            row.forEach((cell, j) => {
+                const value = cell || 0;
+                total += value;
+                if (i === j) {
+                    tp += value;
+                }
+            });
+        });
+        
+        let fp = 0;
+        cm.forEach((row, i) => {
+            row.forEach((cell, j) => {
+                if (i !== j) {
+                    fp += (cell || 0);
+                }
+            });
+        });
+        
+        let fn = fp;
+        let tn = total - tp - fp - fn;
+        
+        // Hitung precision dan recall per kelas untuk breakdown
+        const classLabels = ['Tinggi', 'Sedang', 'Kecil'];
+        const precisionPerClass = [];
+        const recallPerClass = [];
+        
+        cm.forEach((row, i) => {
+            const tpClass = row[i] || 0;
+            const fpClass = row.reduce((sum, cell, j) => sum + (j !== i ? (cell || 0) : 0), 0);
+            const fnClass = cm.reduce((sum, r, k) => sum + (k !== i ? (r[i] || 0) : 0), 0);
+            
+            const precisionClass = (tpClass + fpClass) > 0 ? tpClass / (tpClass + fpClass) : 0;
+            const recallClass = (tpClass + fnClass) > 0 ? tpClass / (tpClass + fnClass) : 0;
+            
+            precisionPerClass.push({
+                class: classLabels[i],
+                tp: tpClass,
+                fp: fpClass,
+                precision: precisionClass
+            });
+            
+            recallPerClass.push({
+                class: classLabels[i],
+                tp: tpClass,
+                fn: fnClass,
+                recall: recallClass
+            });
+        });
+        
+        let title = '';
+        let description = '';
+        let calculation = '';
+        let breakdown = '';
+        let color = '';
+        let icon = '';
+        let value = 0;
+        
+        switch(metric) {
+            case 'precision':
+                title = 'Precision';
+                description = 'Precision mengukur proporsi prediksi positif yang benar. Untuk multi-class classification, nilai ini dihitung menggunakan Macro Average (rata-rata precision dari semua kelas).';
+                color = '#1a237e';
+                icon = 'fa-bullseye';
+                value = metrics.precision;
+                
+                calculation = `Precision = Macro Average dari semua kelas\n\nPrecision per kelas:\n${precisionPerClass.map(p => `Precision(${p.class}) = TP / (TP + FP) = ${p.tp} / (${p.tp} + ${p.fp}) = ${(p.precision * 100).toFixed(2)}%`).join('\n')}\n\nPrecision (Macro Average) = (${precisionPerClass.map(p => (p.precision * 100).toFixed(2)).join(' + ')}) / ${precisionPerClass.length} = ${(value * 100).toFixed(2)}%`;
+                
+                breakdown = precisionPerClass.map(p => 
+                    `<tr>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">${p.class}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${p.tp}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${p.fp}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: ${color};">${(p.precision * 100).toFixed(2)}%</td>
+                    </tr>`
+                ).join('');
+                break;
+                
+            case 'recall':
+                title = 'Recall (Sensitivity)';
+                description = 'Recall mengukur proporsi kasus positif yang terdeteksi. Untuk multi-class classification, nilai ini dihitung menggunakan Macro Average (rata-rata recall dari semua kelas).';
+                color = '#f57f17';
+                icon = 'fa-search';
+                value = metrics.recall;
+                
+                calculation = `Recall = Macro Average dari semua kelas\n\nRecall per kelas:\n${recallPerClass.map(r => `Recall(${r.class}) = TP / (TP + FN) = ${r.tp} / (${r.tp} + ${r.fn}) = ${(r.recall * 100).toFixed(2)}%`).join('\n')}\n\nRecall (Macro Average) = (${recallPerClass.map(r => (r.recall * 100).toFixed(2)).join(' + ')}) / ${recallPerClass.length} = ${(value * 100).toFixed(2)}%`;
+                
+                breakdown = recallPerClass.map(r => 
+                    `<tr>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">${r.class}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${r.tp}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${r.fn}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: ${color};">${(r.recall * 100).toFixed(2)}%</td>
+                    </tr>`
+                ).join('');
+                break;
+                
+            case 'f1score':
+                title = 'F1-Score';
+                description = 'F1-Score adalah harmonic mean dari Precision dan Recall. Metrik ini menggabungkan precision dan recall dalam satu nilai untuk memberikan balance antara keduanya.';
+                color = '#dc3545';
+                icon = 'fa-balance-scale';
+                value = metrics.f1_score;
+                const precision = metrics.precision;
+                const recall = metrics.recall;
+                
+                calculation = `F1-Score = 2 × (Precision × Recall) / (Precision + Recall)\n\nF1-Score = 2 × (${(precision * 100).toFixed(2)}% × ${(recall * 100).toFixed(2)}%) / (${(precision * 100).toFixed(2)}% + ${(recall * 100).toFixed(2)}%)\nF1-Score = 2 × ${(precision * recall).toFixed(4)} / ${(precision + recall).toFixed(4)}\nF1-Score = ${(value * 100).toFixed(2)}%`;
+                
+                breakdown = `
+                    <tr>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">Precision</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1a237e;">${(precision * 100).toFixed(2)}%</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">Recall</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #f57f17;">${(recall * 100).toFixed(2)}%</td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">F1-Score</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color}; font-size: 16px;">${(value * 100).toFixed(2)}%</td>
+                    </tr>
+                `;
+                break;
+                
+            case 'specificity':
+                title = 'Specificity';
+                description = 'Specificity mengukur proporsi prediksi negatif yang benar. Nilai ini dihitung dari: Specificity = TN / (TN + FP).';
+                color = '#6c757d';
+                icon = 'fa-chart-line';
+                value = metrics.specificity;
+                
+                calculation = `Specificity = TN / (TN + FP)\n\nSpecificity = ${tn} / (${tn} + ${fp})\nSpecificity = ${tn} / ${tn + fp}\nSpecificity = ${(value * 100).toFixed(2)}%`;
+                
+                breakdown = `
+                    <tr>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">True Negative (TN)</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #6c757d;">${tn}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">False Positive (FP)</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #dc3545;">${fp}</td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">Specificity</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color}; font-size: 16px;">${(value * 100).toFixed(2)}%</td>
+                    </tr>
+                `;
+                break;
+        }
+        
+        const modalContent = $('<div>').html(`
+            <div style="padding: 20px;">
+                <div style="background: linear-gradient(135deg, ${color}15 0%, ${color}25 100%); padding: 18px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid ${color};">
+                    <h4 style="margin: 0 0 12px 0; color: ${color}; font-weight: 600; display: flex; align-items: center;">
+                        <i class="fas ${icon}" style="margin-right: 10px;"></i>
+                        ${title}
+                    </h4>
+                    <div style="font-size: 32px; font-weight: 700; color: ${color}; margin-bottom: 8px;">${(value * 100).toFixed(2)}%</div>
+                    <div style="font-size: 14px; color: #666; line-height: 1.6;">
+                        ${description}
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h5 style="margin: 0 0 12px 0; color: #333; font-weight: 600;">
+                        <i class="fas fa-calculator"></i> Perhitungan
+                    </h5>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid ${color};">
+                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 12px; color: #333; white-space: pre-wrap; line-height: 1.6;">${calculation}</pre>
+                    </div>
+                </div>
+                
+                ${breakdown ? `
+                    <div>
+                        <h5 style="margin: 0 0 12px 0; color: #333; font-weight: 600;">
+                            <i class="fas fa-table"></i> Breakdown Detail
+                        </h5>
+                        <div style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                <thead>
+                                    <tr style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                                        ${metric === 'precision' ? `
+                                            <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Kelas</th>
+                                            <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">TP</th>
+                                            <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">FP</th>
+                                            <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Precision</th>
+                                        ` : metric === 'recall' ? `
+                                            <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Kelas</th>
+                                            <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">TP</th>
+                                            <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">FN</th>
+                                            <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Recall</th>
+                                        ` : `
+                                            <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Komponen</th>
+                                            <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Nilai</th>
+                                        `}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${breakdown}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <div style="margin-top: 20px; padding: 12px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196F3;">
+                    <div style="font-size: 12px; color: #1565C0;">
+                        <i class="fas fa-info-circle"></i> <strong>Catatan:</strong> Untuk multi-class classification (3 kategori), metrik dihitung menggunakan Macro Average untuk memberikan bobot yang sama pada setiap kelas.
+                    </div>
+                </div>
+            </div>
+        `);
+        
+        const dialog = modalContent.kendoDialog({
+            width: "750px",
+            height: "650px",
             title: `Penjelasan ${title}`,
             closable: true,
             modal: true,
