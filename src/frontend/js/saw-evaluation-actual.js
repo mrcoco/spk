@@ -1461,7 +1461,21 @@ class SAWEvaluationActual {
 // Initialize the module when DOM is ready
 $(document).ready(function() {
     window.sawEvaluationActual = new SAWEvaluationActual();
-}); 
+});
+
+// Function to toggle formula section
+function toggleSAWActualFormulaSection() {
+    const content = $('#sawActualFormulaContent');
+    const chevron = $('#sawActualFormulaChevron');
+    
+    if (content.is(':visible')) {
+        content.slideUp(300);
+        chevron.css('transform', 'rotate(0deg)');
+    } else {
+        content.slideDown(300);
+        chevron.css('transform', 'rotate(180deg)');
+    }
+} 
 
 function exportSAWActualEvaluationResults() {
     try {

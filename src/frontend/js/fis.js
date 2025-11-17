@@ -3246,4 +3246,18 @@ $(document).ready(function() {
     setTimeout(() => {
         initializeFISActualSearchHandlers();
     }, 500);
-}); 
+});
+
+// Function to toggle formula section for FIS Actual Evaluation
+function toggleFISActualFormulaSection() {
+    const content = $('#fisActualFormulaContent');
+    const chevron = $('#fisActualFormulaChevron');
+    
+    if (content.is(':visible')) {
+        content.slideUp(300);
+        chevron.css('transform', 'rotate(0deg)');
+    } else {
+        content.slideDown(300);
+        chevron.css('transform', 'rotate(180deg)');
+    }
+} 

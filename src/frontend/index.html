@@ -1491,6 +1491,130 @@
                                                         <div class="metric-description">Proporsi prediksi negatif yang benar</div>
                                                     </div>
                                                 </div>
+                                                
+                                                <!-- Rumus Perhitungan Section -->
+                                                <div class="formula-section" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+                                                    <div class="formula-header" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin-bottom: 10px;" onclick="toggleSAWActualFormulaSection()">
+                                                        <h5 style="margin: 0; color: #1a237e; font-weight: 600; display: flex; align-items: center;">
+                                                            <i class="fas fa-calculator" style="margin-right: 8px;"></i>
+                                                            Rumus Perhitungan Metrik Evaluasi
+                                                        </h5>
+                                                        <i class="fas fa-chevron-down" id="sawActualFormulaChevron" style="color: #1a237e; transition: transform 0.3s;"></i>
+                                                    </div>
+                                                    <div id="sawActualFormulaContent" style="display: none; padding-top: 15px; border-top: 1px solid #e9ecef;">
+                                                        <div class="formula-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                                                            <!-- Accuracy Formula -->
+                                                            <div class="formula-card" style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #28a745;">
+                                                                <h6 style="margin: 0 0 10px 0; color: #28a745; font-weight: 600;">
+                                                                    <i class="fas fa-bullseye"></i> Accuracy
+                                                                </h6>
+                                                                <div style="font-size: 13px; color: #666; margin-bottom: 8px;">
+                                                                    Proporsi prediksi yang benar dari seluruh prediksi
+                                                                </div>
+                                                                <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; text-align: center; margin-bottom: 8px;">
+                                                                    Accuracy = (TP + TN) / (TP + TN + FP + FN)
+                                                                </div>
+                                                                <div style="font-size: 11px; color: #999;">
+                                                                    TP = True Positive, TN = True Negative<br>
+                                                                    FP = False Positive, FN = False Negative
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Precision Formula -->
+                                                            <div class="formula-card" style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #1a237e;">
+                                                                <h6 style="margin: 0 0 10px 0; color: #1a237e; font-weight: 600;">
+                                                                    <i class="fas fa-bullseye"></i> Precision
+                                                                </h6>
+                                                                <div style="font-size: 13px; color: #666; margin-bottom: 8px;">
+                                                                    Proporsi prediksi positif yang benar (Macro Average)
+                                                                </div>
+                                                                <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; text-align: center; margin-bottom: 8px;">
+                                                                    Precision = TP / (TP + FP)
+                                                                </div>
+                                                                <div style="font-size: 11px; color: #999;">
+                                                                    Untuk multi-class: Macro Average dari semua kelas
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Recall Formula -->
+                                                            <div class="formula-card" style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #ffc107;">
+                                                                <h6 style="margin: 0 0 10px 0; color: #f57f17; font-weight: 600;">
+                                                                    <i class="fas fa-search"></i> Recall (Sensitivity)
+                                                                </h6>
+                                                                <div style="font-size: 13px; color: #666; margin-bottom: 8px;">
+                                                                    Proporsi kasus positif yang terdeteksi (Macro Average)
+                                                                </div>
+                                                                <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; text-align: center; margin-bottom: 8px;">
+                                                                    Recall = TP / (TP + FN)
+                                                                </div>
+                                                                <div style="font-size: 11px; color: #999;">
+                                                                    Untuk multi-class: Macro Average dari semua kelas
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- F1-Score Formula -->
+                                                            <div class="formula-card" style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #dc3545;">
+                                                                <h6 style="margin: 0 0 10px 0; color: #dc3545; font-weight: 600;">
+                                                                    <i class="fas fa-balance-scale"></i> F1-Score
+                                                                </h6>
+                                                                <div style="font-size: 13px; color: #666; margin-bottom: 8px;">
+                                                                    Harmonic mean dari Precision dan Recall
+                                                                </div>
+                                                                <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; text-align: center; margin-bottom: 8px;">
+                                                                    F1 = 2 × (Precision × Recall) / (Precision + Recall)
+                                                                </div>
+                                                                <div style="font-size: 11px; color: #999;">
+                                                                    Menggabungkan precision dan recall dalam satu metrik
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Specificity Formula -->
+                                                            <div class="formula-card" style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #6c757d;">
+                                                                <h6 style="margin: 0 0 10px 0; color: #6c757d; font-weight: 600;">
+                                                                    <i class="fas fa-chart-line"></i> Specificity
+                                                                </h6>
+                                                                <div style="font-size: 13px; color: #666; margin-bottom: 8px;">
+                                                                    Proporsi prediksi negatif yang benar
+                                                                </div>
+                                                                <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; text-align: center; margin-bottom: 8px;">
+                                                                    Specificity = TN / (TN + FP)
+                                                                </div>
+                                                                <div style="font-size: 11px; color: #999;">
+                                                                    Kemampuan model untuk mengidentifikasi kasus negatif
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Confusion Matrix Info -->
+                                                            <div class="formula-card" style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #17a2b8; grid-column: 1 / -1;">
+                                                                <h6 style="margin: 0 0 10px 0; color: #17a2b8; font-weight: 600;">
+                                                                    <i class="fas fa-table"></i> Confusion Matrix (3x3)
+                                                                </h6>
+                                                                <div style="font-size: 13px; color: #666; margin-bottom: 12px;">
+                                                                    Matriks yang menampilkan perbandingan antara prediksi dan status aktual untuk 3 kategori:
+                                                                </div>
+                                                                <div style="background: #f8f9fa; padding: 12px; border-radius: 4px; margin-bottom: 10px;">
+                                                                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                                                        <tr>
+                                                                            <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6; background: #e8f5e9;"><strong>Diagonal</strong></td>
+                                                                            <td style="padding: 8px; text-align: left; border: 1px solid #dee2e6;">= True Positive (TP) - Prediksi benar</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6; background: #fff3cd;"><strong>Off-Diagonal</strong></td>
+                                                                            <td style="padding: 8px; text-align: left; border: 1px solid #dee2e6;">= False Positive/Negative - Prediksi salah</td>
+                                                                        </tr>
+                                                                    </table>
+                                                                </div>
+                                                                <div style="font-size: 11px; color: #999; margin-top: 8px;">
+                                                                    <strong>Keterangan:</strong><br>
+                                                                    • Baris = Status Aktual (LULUS_TINGGI, LULUS_SEDANG, LULUS_KECIL)<br>
+                                                                    • Kolom = Prediksi SAW (Peluang Lulus Tinggi, Sedang, Kecil)<br>
+                                                                    • Nilai diagonal menunjukkan prediksi yang benar<br>
+                                                                    • Nilai off-diagonal menunjukkan prediksi yang salah
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="saw-actual-confusion-panel">
@@ -2484,6 +2608,114 @@
                                                     </div>
                                                     <div style="font-size: 13px; color: #1976D2;">
                                                         <i class="fas fa-mouse-pointer"></i> <em>Klik pada cell untuk melihat detail mahasiswa</em>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Rumus Perhitungan Section -->
+                                    <div class="formula-section" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+                                        <div class="formula-header" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin-bottom: 10px;" onclick="toggleFISActualFormulaSection()">
+                                            <h5 style="margin: 0; color: #1a237e; font-weight: 600; display: flex; align-items: center;">
+                                                <i class="fas fa-calculator" style="margin-right: 8px;"></i>
+                                                Rumus Perhitungan Metrik Evaluasi
+                                            </h5>
+                                            <i class="fas fa-chevron-down" id="fisActualFormulaChevron" style="color: #1a237e; transition: transform 0.3s;"></i>
+                                        </div>
+                                        <div id="fisActualFormulaContent" style="display: none; padding-top: 15px; border-top: 1px solid #e9ecef;">
+                                            <div class="formula-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                                                <!-- Accuracy Formula -->
+                                                <div class="formula-card" style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #28a745;">
+                                                    <h6 style="margin: 0 0 10px 0; color: #28a745; font-weight: 600;">
+                                                        <i class="fas fa-bullseye"></i> Accuracy
+                                                    </h6>
+                                                    <div style="font-size: 13px; color: #666; margin-bottom: 8px;">
+                                                        Proporsi prediksi yang benar dari seluruh prediksi
+                                                    </div>
+                                                    <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; text-align: center; margin-bottom: 8px;">
+                                                        Accuracy = (TP + TN) / (TP + TN + FP + FN)
+                                                    </div>
+                                                    <div style="font-size: 11px; color: #999;">
+                                                        TP = True Positive, TN = True Negative<br>
+                                                        FP = False Positive, FN = False Negative
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Precision Formula -->
+                                                <div class="formula-card" style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #1a237e;">
+                                                    <h6 style="margin: 0 0 10px 0; color: #1a237e; font-weight: 600;">
+                                                        <i class="fas fa-bullseye"></i> Precision
+                                                    </h6>
+                                                    <div style="font-size: 13px; color: #666; margin-bottom: 8px;">
+                                                        Proporsi prediksi positif yang benar (Macro Average)
+                                                    </div>
+                                                    <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; text-align: center; margin-bottom: 8px;">
+                                                        Precision = TP / (TP + FP)
+                                                    </div>
+                                                    <div style="font-size: 11px; color: #999;">
+                                                        Untuk multi-class: Macro Average dari semua kelas
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Recall Formula -->
+                                                <div class="formula-card" style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #ffc107;">
+                                                    <h6 style="margin: 0 0 10px 0; color: #f57f17; font-weight: 600;">
+                                                        <i class="fas fa-search"></i> Recall (Sensitivity)
+                                                    </h6>
+                                                    <div style="font-size: 13px; color: #666; margin-bottom: 8px;">
+                                                        Proporsi kasus positif yang terdeteksi (Macro Average)
+                                                    </div>
+                                                    <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; text-align: center; margin-bottom: 8px;">
+                                                        Recall = TP / (TP + FN)
+                                                    </div>
+                                                    <div style="font-size: 11px; color: #999;">
+                                                        Untuk multi-class: Macro Average dari semua kelas
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- F1-Score Formula -->
+                                                <div class="formula-card" style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #dc3545;">
+                                                    <h6 style="margin: 0 0 10px 0; color: #dc3545; font-weight: 600;">
+                                                        <i class="fas fa-balance-scale"></i> F1-Score
+                                                    </h6>
+                                                    <div style="font-size: 13px; color: #666; margin-bottom: 8px;">
+                                                        Harmonic mean dari Precision dan Recall
+                                                    </div>
+                                                    <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; text-align: center; margin-bottom: 8px;">
+                                                        F1 = 2 × (Precision × Recall) / (Precision + Recall)
+                                                    </div>
+                                                    <div style="font-size: 11px; color: #999;">
+                                                        Menggabungkan precision dan recall dalam satu metrik
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Confusion Matrix Info -->
+                                                <div class="formula-card" style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #17a2b8; grid-column: 1 / -1;">
+                                                    <h6 style="margin: 0 0 10px 0; color: #17a2b8; font-weight: 600;">
+                                                        <i class="fas fa-table"></i> Confusion Matrix (3x3)
+                                                    </h6>
+                                                    <div style="font-size: 13px; color: #666; margin-bottom: 12px;">
+                                                        Matriks yang menampilkan perbandingan antara prediksi dan status aktual untuk 3 kategori:
+                                                    </div>
+                                                    <div style="background: #f8f9fa; padding: 12px; border-radius: 4px; margin-bottom: 10px;">
+                                                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                                            <tr>
+                                                                <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6; background: #e8f5e9;"><strong>Diagonal</strong></td>
+                                                                <td style="padding: 8px; text-align: left; border: 1px solid #dee2e6;">= True Positive (TP) - Prediksi benar</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6; background: #fff3cd;"><strong>Off-Diagonal</strong></td>
+                                                                <td style="padding: 8px; text-align: left; border: 1px solid #dee2e6;">= False Positive/Negative - Prediksi salah</td>
+                                                            </tr>
+                                                        </table>
+                                                    </div>
+                                                    <div style="font-size: 11px; color: #999; margin-top: 8px;">
+                                                        <strong>Keterangan:</strong><br>
+                                                        • Baris = Status Aktual (LULUS_TINGGI, LULUS_SEDANG, LULUS_KECIL)<br>
+                                                        • Kolom = Prediksi FIS (Peluang Lulus Tinggi, Sedang, Kecil)<br>
+                                                        • Nilai diagonal menunjukkan prediksi yang benar<br>
+                                                        • Nilai off-diagonal menunjukkan prediksi yang salah
                                                     </div>
                                                 </div>
                                             </div>
