@@ -1892,6 +1892,10 @@ function updateFISActualSummarySection(result) {
 // Global variable untuk menyimpan full data evaluasi (untuk confusion matrix modal)
 let fisActualEvaluationFullData = null;
 
+// Global variable untuk menyimpan metrics data dan confusion matrix untuk modal
+let fisActualMetricsData = null;
+let fisActualConfusionMatrix = null;
+
 // Update metrics section
 function updateFISActualMetricsSection(result) {
     const metrics = result.metrics;
@@ -1902,11 +1906,29 @@ function updateFISActualMetricsSection(result) {
     // Jadi modal juga filter dari full_data
     fisActualEvaluationFullData = result.full_data || result.results || [];
     
+    // Simpan metrics data dan confusion matrix untuk modal
+    fisActualMetricsData = {
+        precision: metrics.precision || 0,
+        recall: metrics.recall || 0,
+        f1_score: metrics.f1_score || 0,
+        specificity: metrics.specificity || 0,
+        accuracy: metrics.accuracy || 0
+    };
+    fisActualConfusionMatrix = cm;
+    
     // Update overall metrics
     $('#fisActualAccuracy').text((metrics.accuracy * 100).toFixed(2) + '%');
     $('#fisActualPrecision').text((metrics.precision * 100).toFixed(2) + '%');
     $('#fisActualRecall').text((metrics.recall * 100).toFixed(2) + '%');
     $('#fisActualF1Score').text((metrics.f1_score * 100).toFixed(2) + '%');
+    
+    // Update specificity jika ada
+    if (metrics.specificity !== undefined) {
+        $('#fisActualSpecificity').text((metrics.specificity * 100).toFixed(2) + '%');
+    }
+    
+    // Setup click handlers untuk metric cards
+    setupFISActualMetricsCardClickHandlers();
     
     // Update confusion matrix 3x3
     // Matrix format: [Tinggi, Sedang, Kecil] x [Tinggi, Sedang, Kecil]
@@ -1931,6 +1953,40 @@ function updateFISActualMetricsSection(result) {
         
         console.log('Confusion Matrix updated successfully');
         
+        // Hitung TP, TN, FP, FN dari confusion matrix 3x3
+        let tp = 0; // True Positive = sum diagonal
+        let total = 0;
+        
+        // Hitung TP (diagonal) dan total
+        cm.forEach((row, i) => {
+            row.forEach((cell, j) => {
+                const value = cell || 0;
+                total += value;
+                if (i === j) {
+                    tp += value; // Diagonal = TP
+                }
+            });
+        });
+        
+        // Hitung FP (False Positive) = sum off-diagonal
+        let fp = 0;
+        cm.forEach((row, i) => {
+            row.forEach((cell, j) => {
+                if (i !== j) {
+                    fp += (cell || 0);
+                }
+            });
+        });
+        
+        // Hitung FN (False Negative) = sama dengan FP untuk multi-class (symmetric)
+        let fn = fp;
+        
+        // Hitung TN (True Negative) = total - TP - FP - FN
+        let tn = total - tp - fp - fn;
+        
+        // Tambahkan section TP, TN, FP, FN
+        addFISActualTpTnfpFnSection(tp, tn, fp, fn, total, cm);
+        
         // Setup click handlers untuk confusion matrix cells
         setupConfusionMatrixClickHandlers();
     } else {
@@ -1938,6 +1994,548 @@ function updateFISActualMetricsSection(result) {
         // Set default values jika format tidak sesuai
         $('#fisActual-tt, #fisActual-ts, #fisActual-tk, #fisActual-st, #fisActual-ss, #fisActual-sk, #fisActual-kt, #fisActual-ks, #fisActual-kk').text('0');
     }
+}
+
+// Fungsi untuk menambahkan section TP, TN, FP, FN pada FIS actual evaluation
+function addFISActualTpTnfpFnSection(tp, tn, fp, fn, total, confusionMatrix) {
+    // Hapus section lama jika ada (untuk refresh)
+    $('#fisActualTpTnfpFnSection').remove();
+    
+    // Tambahkan section TP, TN, FP, FN
+    const tpTnfpFnHtml = `
+        <div id="fisActualTpTnfpFnSection" style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 2px solid #dee2e6; width: 100%;">
+            <h5 style="margin: 0 0 15px 0; color: #1a237e; font-weight: 600; display: flex; align-items: center;">
+                <i class="fas fa-calculator" style="margin-right: 8px;"></i>
+                Nilai TP, TN, FP, FN
+            </h5>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <div class="fis-tp-tn-fp-fn-card" data-metric="TP" data-value="${tp}" style="background: white; padding: 12px; border-radius: 6px; border-left: 4px solid #28a745; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500;">True Positive (TP)</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #28a745;">${tp}</div>
+                    <div style="font-size: 11px; color: #999; margin-top: 3px;">Prediksi benar (diagonal) <i class="fas fa-info-circle" style="margin-left: 4px;"></i></div>
+                </div>
+                <div class="fis-tp-tn-fp-fn-card" data-metric="FP" data-value="${fp}" style="background: white; padding: 12px; border-radius: 6px; border-left: 4px solid #dc3545; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500;">False Positive (FP)</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #dc3545;">${fp}</div>
+                    <div style="font-size: 11px; color: #999; margin-top: 3px;">Prediksi positif yang salah <i class="fas fa-info-circle" style="margin-left: 4px;"></i></div>
+                </div>
+                <div class="fis-tp-tn-fp-fn-card" data-metric="FN" data-value="${fn}" style="background: white; padding: 12px; border-radius: 6px; border-left: 4px solid #ffc107; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500;">False Negative (FN)</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #f57f17;">${fn}</div>
+                    <div style="font-size: 11px; color: #999; margin-top: 3px;">Kasus positif tidak terdeteksi <i class="fas fa-info-circle" style="margin-left: 4px;"></i></div>
+                </div>
+                <div class="fis-tp-tn-fp-fn-card" data-metric="TN" data-value="${tn}" style="background: white; padding: 12px; border-radius: 6px; border-left: 4px solid #6c757d; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500;">True Negative (TN)</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #6c757d;">${tn}</div>
+                    <div style="font-size: 11px; color: #999; margin-top: 3px;">Prediksi negatif yang benar <i class="fas fa-info-circle" style="margin-left: 4px;"></i></div>
+                </div>
+            </div>
+            <div style="margin-top: 12px; padding: 10px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196F3;">
+                <div style="font-size: 12px; color: #1565C0;">
+                    <strong>Total Data:</strong> ${total} mahasiswa | 
+                    <strong>Akurasi:</strong> ${total > 0 ? ((tp / total) * 100).toFixed(2) : '0.00'}% (TP / Total)
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Cari container confusion matrix dan insert section tepat di bawah table
+    // Struktur: .confusion-matrix-simple > table > info box
+    // Kita perlu insert section setelah table dan sebelum info box
+    const confusionMatrixSimple = $('.confusion-matrix-simple').first();
+    const confusionTable = confusionMatrixSimple.find('table.confusion-table-simple').first();
+    
+    if (confusionTable.length > 0) {
+        // Insert section tepat setelah table (sebelum info box)
+        confusionTable.after(tpTnfpFnHtml);
+    } else {
+        // Fallback: cari dengan selector lain
+        const confusionContainer = $('.confusion-matrix-wrapper, .confusion-matrix-section, .confusion-matrix-simple').first();
+        const noteBox = confusionContainer.find('.confusion-panel-note-box, .note-box').first();
+        
+        if (noteBox.length > 0) {
+            // Insert sebelum note box
+            noteBox.before(tpTnfpFnHtml);
+        } else {
+            // Fallback: append ke container jika note box tidak ditemukan
+            confusionContainer.append(tpTnfpFnHtml);
+        }
+    }
+    
+    // Setup click handlers untuk TP, TN, FP, FN cards
+    setupFISActualTpTnfpFnClickHandlers(tp, tn, fp, fn, total, confusionMatrix);
+}
+
+// Setup click handlers untuk TP, TN, FP, FN cards pada FIS
+function setupFISActualTpTnfpFnClickHandlers(tp, tn, fp, fn, total, confusionMatrix) {
+    // Remove existing handlers
+    $('.fis-tp-tn-fp-fn-card').off('click');
+    
+    // Add click handlers
+    $('.fis-tp-tn-fp-fn-card').on('click', function() {
+        const metric = $(this).data('metric');
+        const value = $(this).data('value');
+        showFISActualTpTnfpFnDetailModal(metric, value, tp, tn, fp, fn, total, confusionMatrix);
+    });
+}
+
+// Show modal detail untuk TP, TN, FP, FN pada FIS
+function showFISActualTpTnfpFnDetailModal(metric, value, tp, tn, fp, fn, total, confusionMatrix) {
+    if (!confusionMatrix) {
+        showNotification('error', 'Data tidak tersedia', 'Confusion matrix belum dimuat.');
+        return;
+    }
+    
+    const cm = confusionMatrix;
+    const actualLabels = ['Actual Tinggi', 'Actual Sedang', 'Actual Kecil'];
+    const predictedLabels = ['Pred. Tinggi', 'Pred. Sedang', 'Pred. Kecil'];
+    
+    let title = '';
+    let description = '';
+    let calculation = '';
+    let breakdown = '';
+    let color = '';
+    let icon = '';
+    
+    switch(metric) {
+        case 'TP':
+            title = 'True Positive (TP)';
+            description = 'Jumlah prediksi yang benar. Nilai ini diperoleh dari penjumlahan semua nilai diagonal pada confusion matrix (prediksi sesuai dengan status aktual).';
+            color = '#28a745';
+            icon = 'fa-check-circle';
+            
+            // Breakdown TP dari diagonal
+            const tpBreakdown = [];
+            cm.forEach((row, i) => {
+                const diagonalValue = row[i] || 0;
+                if (diagonalValue > 0) {
+                    tpBreakdown.push({
+                        actual: actualLabels[i],
+                        predicted: predictedLabels[i],
+                        value: diagonalValue
+                    });
+                }
+            });
+            
+            calculation = `TP = Sum(Diagonal)\nTP = ${tpBreakdown.map(b => `${b.value}`).join(' + ')}\nTP = ${tp}`;
+            
+            breakdown = tpBreakdown.map(b => 
+                `<tr>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6;">${b.actual}</td>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6;">${b.predicted}</td>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #28a745;">${b.value}</td>
+                </tr>`
+            ).join('');
+            break;
+            
+        case 'FP':
+            title = 'False Positive (FP)';
+            description = 'Jumlah prediksi positif yang salah. Nilai ini diperoleh dari penjumlahan semua nilai off-diagonal pada confusion matrix (prediksi tidak sesuai dengan status aktual).';
+            color = '#dc3545';
+            icon = 'fa-times-circle';
+            
+            // Breakdown FP dari off-diagonal
+            const fpBreakdown = [];
+            cm.forEach((row, i) => {
+                row.forEach((cell, j) => {
+                    if (i !== j && (cell || 0) > 0) {
+                        fpBreakdown.push({
+                            actual: actualLabels[i],
+                            predicted: predictedLabels[j],
+                            value: cell || 0
+                        });
+                    }
+                });
+            });
+            
+            calculation = `FP = Sum(Off-Diagonal)\nFP = ${fpBreakdown.map(b => `${b.value}`).join(' + ')}\nFP = ${fp}`;
+            
+            breakdown = fpBreakdown.map(b => 
+                `<tr>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6;">${b.actual}</td>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6;">${b.predicted}</td>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #dc3545;">${b.value}</td>
+                </tr>`
+            ).join('');
+            break;
+            
+        case 'FN':
+            title = 'False Negative (FN)';
+            description = 'Jumlah kasus positif yang tidak terdeteksi. Untuk multi-class classification, nilai FN sama dengan FP karena confusion matrix bersifat simetris.';
+            color = '#f57f17';
+            icon = 'fa-exclamation-triangle';
+            
+            // FN sama dengan FP untuk multi-class
+            const fnBreakdown = [];
+            cm.forEach((row, i) => {
+                row.forEach((cell, j) => {
+                    if (i !== j && (cell || 0) > 0) {
+                        fnBreakdown.push({
+                            actual: actualLabels[i],
+                            predicted: predictedLabels[j],
+                            value: cell || 0
+                        });
+                    }
+                });
+            });
+            
+            calculation = `FN = FP (untuk multi-class)\nFN = ${fnBreakdown.map(b => `${b.value}`).join(' + ')}\nFN = ${fn}`;
+            
+            breakdown = fnBreakdown.map(b => 
+                `<tr>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6;">${b.actual}</td>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6;">${b.predicted}</td>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #f57f17;">${b.value}</td>
+                </tr>`
+            ).join('');
+            break;
+            
+        case 'TN':
+            title = 'True Negative (TN)';
+            description = 'Jumlah prediksi negatif yang benar. Nilai ini diperoleh dari: TN = Total - TP - FP - FN.';
+            color = '#6c757d';
+            icon = 'fa-minus-circle';
+            
+            calculation = `TN = Total - TP - FP - FN\nTN = ${total} - ${tp} - ${fp} - ${fn}\nTN = ${tn}`;
+            
+            breakdown = `
+                <tr>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6;">Total Data</td>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">${total}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6;">True Positive (TP)</td>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #28a745;">${tp}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6;">False Positive (FP)</td>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #dc3545;">${fp}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6;">False Negative (FN)</td>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #f57f17;">${fn}</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">True Negative (TN)</td>
+                    <td style="padding: 8px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: #6c757d; font-size: 16px;">${tn}</td>
+                </tr>
+            `;
+            break;
+    }
+    
+    const modalContent = $('<div>').html(`
+        <div style="padding: 20px;">
+            <div style="background: linear-gradient(135deg, ${color}15 0%, ${color}25 100%); padding: 18px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid ${color};">
+                <h4 style="margin: 0 0 12px 0; color: ${color}; font-weight: 600; display: flex; align-items: center;">
+                    <i class="fas ${icon}" style="margin-right: 10px;"></i>
+                    ${title}
+                </h4>
+                <div style="font-size: 32px; font-weight: 700; color: ${color}; margin-bottom: 8px;">${value}</div>
+                <div style="font-size: 14px; color: #666; line-height: 1.6;">
+                    ${description}
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h5 style="margin: 0 0 12px 0; color: #333; font-weight: 600;">
+                    <i class="fas fa-calculator"></i> Perhitungan
+                </h5>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid ${color};">
+                    <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px; color: #333; white-space: pre-wrap;">${calculation}</pre>
+                </div>
+            </div>
+            
+            ${breakdown ? `
+                <div>
+                    <h5 style="margin: 0 0 12px 0; color: #333; font-weight: 600;">
+                        <i class="fas fa-table"></i> Breakdown Detail
+                    </h5>
+                    <div style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                                    <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Status Aktual</th>
+                                    <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Prediksi FIS</th>
+                                    <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Nilai</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${breakdown}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div style="margin-top: 20px; padding: 12px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196F3;">
+                <div style="font-size: 12px; color: #1565C0;">
+                    <i class="fas fa-info-circle"></i> <strong>Total Data Evaluasi:</strong> ${total} mahasiswa
+                </div>
+            </div>
+        </div>
+    `);
+    
+    const dialog = modalContent.kendoDialog({
+        width: "700px",
+        height: "600px",
+        title: `Penjelasan ${title}`,
+        closable: true,
+        modal: true,
+        actions: [{ text: "Tutup", primary: true }]
+    });
+    
+    dialog.data("kendoDialog").open();
+}
+
+// Setup click handlers untuk metric cards pada FIS
+function setupFISActualMetricsCardClickHandlers() {
+    // Remove existing handlers
+    $('.fis-metric-card-clickable').off('click');
+    
+    // Add click handlers
+    $('.fis-metric-card-clickable').on('click', function() {
+        const metric = $(this).data('metric');
+        showFISActualMetricsDetailModal(metric);
+    });
+}
+
+// Show modal detail untuk metrics pada FIS
+function showFISActualMetricsDetailModal(metric) {
+    if (!fisActualMetricsData || !fisActualConfusionMatrix) {
+        showNotification('error', 'Data tidak tersedia', 'Data evaluasi belum dimuat.');
+        return;
+    }
+    
+    const metrics = fisActualMetricsData;
+    const cm = fisActualConfusionMatrix;
+    
+    // Hitung TP, TN, FP, FN dari confusion matrix
+    let tp = 0;
+    let total = 0;
+    
+    cm.forEach((row, i) => {
+        row.forEach((cell, j) => {
+            const value = cell || 0;
+            total += value;
+            if (i === j) {
+                tp += value;
+            }
+        });
+    });
+    
+    let fp = 0;
+    cm.forEach((row, i) => {
+        row.forEach((cell, j) => {
+            if (i !== j) {
+                fp += (cell || 0);
+            }
+        });
+    });
+    
+    let fn = fp;
+    let tn = total - tp - fp - fn;
+    
+    // Hitung precision dan recall per kelas untuk breakdown
+    const classLabels = ['Tinggi', 'Sedang', 'Kecil'];
+    const precisionPerClass = [];
+    const recallPerClass = [];
+    
+    cm.forEach((row, i) => {
+        const tpClass = row[i] || 0;
+        const fpClass = row.reduce((sum, cell, j) => sum + (j !== i ? (cell || 0) : 0), 0);
+        const fnClass = cm.reduce((sum, r, k) => sum + (k !== i ? (r[i] || 0) : 0), 0);
+        
+        const precisionClass = (tpClass + fpClass) > 0 ? tpClass / (tpClass + fpClass) : 0;
+        const recallClass = (tpClass + fnClass) > 0 ? tpClass / (tpClass + fnClass) : 0;
+        
+        precisionPerClass.push({
+            class: classLabels[i],
+            tp: tpClass,
+            fp: fpClass,
+            precision: precisionClass
+        });
+        
+        recallPerClass.push({
+            class: classLabels[i],
+            tp: tpClass,
+            fn: fnClass,
+            recall: recallClass
+        });
+    });
+    
+    let title = '';
+    let description = '';
+    let calculation = '';
+    let breakdown = '';
+    let color = '';
+    let icon = '';
+    let value = 0;
+    
+    switch(metric) {
+        case 'precision':
+            title = 'Precision';
+            description = 'Precision mengukur proporsi prediksi positif yang benar. Untuk multi-class classification, nilai ini dihitung menggunakan Macro Average (rata-rata precision dari semua kelas).';
+            color = '#1a237e';
+            icon = 'fa-bullseye';
+            value = metrics.precision;
+            
+            calculation = `Precision = Macro Average dari semua kelas\n\nPrecision per kelas:\n${precisionPerClass.map(p => `Precision(${p.class}) = TP / (TP + FP) = ${p.tp} / (${p.tp} + ${p.fp}) = ${(p.precision * 100).toFixed(2)}%`).join('\n')}\n\nPrecision (Macro Average) = (${precisionPerClass.map(p => (p.precision * 100).toFixed(2)).join(' + ')}) / ${precisionPerClass.length} = ${(value * 100).toFixed(2)}%`;
+            
+            breakdown = precisionPerClass.map(p => 
+                `<tr>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">${p.class}</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${p.tp}</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${p.fp}</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: ${color};">${(p.precision * 100).toFixed(2)}%</td>
+                </tr>`
+            ).join('');
+            break;
+            
+        case 'recall':
+            title = 'Recall (Sensitivity)';
+            description = 'Recall mengukur proporsi kasus positif yang terdeteksi. Untuk multi-class classification, nilai ini dihitung menggunakan Macro Average (rata-rata recall dari semua kelas).';
+            color = '#f57f17';
+            icon = 'fa-search';
+            value = metrics.recall;
+            
+            calculation = `Recall = Macro Average dari semua kelas\n\nRecall per kelas:\n${recallPerClass.map(r => `Recall(${r.class}) = TP / (TP + FN) = ${r.tp} / (${r.tp} + ${r.fn}) = ${(r.recall * 100).toFixed(2)}%`).join('\n')}\n\nRecall (Macro Average) = (${recallPerClass.map(r => (r.recall * 100).toFixed(2)).join(' + ')}) / ${recallPerClass.length} = ${(value * 100).toFixed(2)}%`;
+            
+            breakdown = recallPerClass.map(r => 
+                `<tr>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">${r.class}</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${r.tp}</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${r.fn}</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: ${color};">${(r.recall * 100).toFixed(2)}%</td>
+                </tr>`
+            ).join('');
+            break;
+            
+        case 'f1score':
+            title = 'F1-Score';
+            description = 'F1-Score adalah harmonic mean dari Precision dan Recall. Metrik ini menggabungkan precision dan recall dalam satu nilai untuk memberikan balance antara keduanya.';
+            color = '#dc3545';
+            icon = 'fa-balance-scale';
+            value = metrics.f1_score;
+            const precision = metrics.precision;
+            const recall = metrics.recall;
+            
+            calculation = `F1-Score = 2 × (Precision × Recall) / (Precision + Recall)\n\nF1-Score = 2 × (${(precision * 100).toFixed(2)}% × ${(recall * 100).toFixed(2)}%) / (${(precision * 100).toFixed(2)}% + ${(recall * 100).toFixed(2)}%)\nF1-Score = 2 × ${(precision * recall).toFixed(4)} / ${(precision + recall).toFixed(4)}\nF1-Score = ${(value * 100).toFixed(2)}%`;
+            
+            breakdown = `
+                <tr>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">Precision</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1a237e;">${(precision * 100).toFixed(2)}%</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">Recall</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #f57f17;">${(recall * 100).toFixed(2)}%</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">F1-Score</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color}; font-size: 16px;">${(value * 100).toFixed(2)}%</td>
+                </tr>
+            `;
+            break;
+            
+        case 'specificity':
+            title = 'Specificity';
+            description = 'Specificity mengukur proporsi prediksi negatif yang benar. Nilai ini dihitung dari: Specificity = TN / (TN + FP).';
+            color = '#6c757d';
+            icon = 'fa-chart-line';
+            value = metrics.specificity;
+            
+            calculation = `Specificity = TN / (TN + FP)\n\nSpecificity = ${tn} / (${tn} + ${fp})\nSpecificity = ${tn} / ${tn + fp}\nSpecificity = ${(value * 100).toFixed(2)}%`;
+            
+            breakdown = `
+                <tr>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">True Negative (TN)</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #6c757d;">${tn}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600;">False Positive (FP)</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #dc3545;">${fp}</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700;">Specificity</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 700; color: ${color}; font-size: 16px;">${(value * 100).toFixed(2)}%</td>
+                </tr>
+            `;
+            break;
+    }
+    
+    const modalContent = $('<div>').html(`
+        <div style="padding: 20px;">
+            <div style="background: linear-gradient(135deg, ${color}15 0%, ${color}25 100%); padding: 18px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid ${color};">
+                <h4 style="margin: 0 0 12px 0; color: ${color}; font-weight: 600; display: flex; align-items: center;">
+                    <i class="fas ${icon}" style="margin-right: 10px;"></i>
+                    ${title}
+                </h4>
+                <div style="font-size: 32px; font-weight: 700; color: ${color}; margin-bottom: 8px;">${(value * 100).toFixed(2)}%</div>
+                <div style="font-size: 14px; color: #666; line-height: 1.6;">
+                    ${description}
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h5 style="margin: 0 0 12px 0; color: #333; font-weight: 600;">
+                    <i class="fas fa-calculator"></i> Perhitungan
+                </h5>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid ${color};">
+                    <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 12px; color: #333; white-space: pre-wrap; line-height: 1.6;">${calculation}</pre>
+                </div>
+            </div>
+            
+            ${breakdown ? `
+                <div>
+                    <h5 style="margin: 0 0 12px 0; color: #333; font-weight: 600;">
+                        <i class="fas fa-table"></i> Breakdown Detail
+                    </h5>
+                    <div style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                                    ${metric === 'precision' ? `
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Kelas</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">TP</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">FP</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Precision</th>
+                                    ` : metric === 'recall' ? `
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Kelas</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">TP</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">FN</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Recall</th>
+                                    ` : `
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Komponen</th>
+                                        <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: 600; color: #1565C0;">Nilai</th>
+                                    `}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${breakdown}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div style="margin-top: 20px; padding: 12px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196F3;">
+                <div style="font-size: 12px; color: #1565C0;">
+                    <i class="fas fa-info-circle"></i> <strong>Catatan:</strong> Untuk multi-class classification (3 kategori), metrik dihitung menggunakan Macro Average untuk memberikan bobot yang sama pada setiap kelas.
+                </div>
+            </div>
+        </div>
+    `);
+    
+    const dialog = modalContent.kendoDialog({
+        width: "750px",
+        height: "650px",
+        title: `Penjelasan ${title}`,
+        closable: true,
+        modal: true,
+        actions: [{ text: "Tutup", primary: true }]
+    });
+    
+    dialog.data("kendoDialog").open();
 }
 
 // Update category analysis section
