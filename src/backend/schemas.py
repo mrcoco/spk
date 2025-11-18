@@ -39,11 +39,32 @@ class MahasiswaUpdate(BaseModel):
     status_lulus_aktual: Optional[str] = Field(None, max_length=20)
     tanggal_lulus: Optional[datetime] = None
 
-    @validator('ipk')
+    @validator('ipk', pre=True)
     def validate_ipk(cls, v):
-        if v is not None:
+        if v is None:
+            return None
+        try:
             return round(float(v), 2)
-        return v
+        except (ValueError, TypeError):
+            return None
+
+    @validator('persen_dek', pre=True)
+    def validate_persen_dek(cls, v):
+        if v is None:
+            return None
+        try:
+            return round(float(v), 2)
+        except (ValueError, TypeError):
+            return None
+
+    @validator('sks', pre=True)
+    def validate_sks(cls, v):
+        if v is None:
+            return None
+        try:
+            return int(v)
+        except (ValueError, TypeError):
+            return None
 
 class KlasifikasiKelulusanBase(BaseModel):
     nim: str = Field(..., min_length=8, max_length=20)

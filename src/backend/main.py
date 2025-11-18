@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime
+import os
 
 from database import engine, get_db
 from models import Base, Mahasiswa, KlasifikasiKelulusan
@@ -28,23 +29,55 @@ app = FastAPI(
 )
 
 # Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost",
-        "http://localhost:80",
-        "http://localhost:3000",
-        "http://localhost:8080",
-        "http://127.0.0.1",
-        "http://127.0.0.1:80",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:8080",
-        "*"  # Fallback untuk development
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
+# For development: Use permissive CORS settings
+# For production: Restrict to specific origins
+
+# Check if we're in development mode
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
+IS_DEVELOPMENT = ENVIRONMENT in ["development", "dev", "local"]
+
+if IS_DEVELOPMENT:
+    # Development: Allow all origins (more permissive)
+    # Note: When using "*", we cannot use allow_credentials=True
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Allow all origins in development
+        allow_credentials=False,  # Must be False when using "*"
+        allow_methods=["*"],  # Allow all methods
+        allow_headers=["*"],  # Allow all headers
+        expose_headers=["*"],
+        max_age=3600,
+    )
+else:
+    # Production: Use specific origins
+    CORS_ORIGINS = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost,http://localhost:80,http://localhost:3000,http://localhost:8080,http://127.0.0.1,http://127.0.0.1:80,http://127.0.0.1:3000,http://127.0.0.1:8080"
+    ).split(",")
+    
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
+        allow_headers=[
+            "Content-Type",
+            "Authorization",
+            "Accept",
+            "Origin",
+            "X-Requested-With",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers",
+        ],
+        expose_headers=["*"],
+        max_age=3600,
+    )
+
+# Add explicit OPTIONS handler for all routes to ensure CORS works
+@app.options("/{full_path:path}")
+async def options_handler(full_path: str):
+    """Handle OPTIONS requests for CORS preflight"""
+    return {"message": "OK"}
 
 @app.get("/")
 def read_root():

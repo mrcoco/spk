@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 from sqlalchemy import func
+import logging
+import traceback
 
 from database import get_db
 from models import Mahasiswa, KlasifikasiKelulusan, Nilai, SAWResults, SAWFinalResults
@@ -14,6 +16,10 @@ from fuzzy_logic import FuzzyKelulusan
 
 router = APIRouter(prefix="/api/mahasiswa", tags=["mahasiswa"])
 fuzzy_system = FuzzyKelulusan()
+
+# Setup logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 @router.get("", response_model=GridResponse)
 def get_mahasiswa(
@@ -116,20 +122,121 @@ def get_mahasiswa_by_nim(nim: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Mahasiswa tidak ditemukan")
     return mahasiswa
 
-@router.put("/{nim}", response_model=MahasiswaResponse)
+@router.put("/{nim}")
 def update_mahasiswa(nim: str, mahasiswa: MahasiswaUpdate, db: Session = Depends(get_db)):
-    db_mahasiswa = db.query(Mahasiswa).filter(Mahasiswa.nim == nim).first()
-    if not db_mahasiswa:
-        raise HTTPException(status_code=404, detail="Mahasiswa tidak ditemukan")
-    
-    update_data = mahasiswa.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_mahasiswa, field, value)
-    
-    db_mahasiswa.updated_at = datetime.utcnow()
-    db.commit()
-    db.refresh(db_mahasiswa)
-    return db_mahasiswa
+    try:
+        db_mahasiswa = db.query(Mahasiswa).filter(Mahasiswa.nim == nim).first()
+        if not db_mahasiswa:
+            raise HTTPException(status_code=404, detail="Mahasiswa tidak ditemukan")
+        
+        # Convert Pydantic model to dict, excluding unset fields
+        update_data = mahasiswa.dict(exclude_unset=True)
+        
+        # Log untuk debugging
+        logger.info(f"Updating mahasiswa {nim} with data: {update_data}")
+        
+        # Update only valid fields that exist in the model
+        valid_fields = ['nama', 'program_studi', 'ipk', 'sks', 'persen_dek', 'status_lulus_aktual', 'tanggal_lulus']
+        for field, value in update_data.items():
+            if field in valid_fields:
+                # Handle None values - skip if None (don't update)
+                if value is not None:
+                    try:
+                        setattr(db_mahasiswa, field, value)
+                        logger.debug(f"Set field {field} = {value}")
+                    except Exception as setattr_error:
+                        logger.error(f"Error setting field {field} to {value}: {str(setattr_error)}")
+                        raise
+            else:
+                logger.warning(f"Field '{field}' is not a valid field for Mahasiswa model, skipping...")
+        
+        db_mahasiswa.updated_at = datetime.utcnow()
+        
+        try:
+            db.commit()
+            logger.info(f"Database commit successful for mahasiswa {nim}")
+            
+            # Refresh dengan eager loading untuk relationships
+            db.refresh(db_mahasiswa)
+            
+            # Eager load relationships untuk response (dalam try-except untuk safety)
+            try:
+                if hasattr(db_mahasiswa, 'nilai_list'):
+                    _ = db_mahasiswa.nilai_list  # Trigger lazy load
+                if hasattr(db_mahasiswa, 'klasifikasi'):
+                    _ = db_mahasiswa.klasifikasi  # Trigger lazy load
+            except Exception as rel_error:
+                logger.warning(f"Error loading relationships for mahasiswa {nim}: {str(rel_error)}")
+                # Continue anyway, relationships are optional
+            
+            logger.info(f"Successfully updated mahasiswa {nim}")
+        except Exception as commit_error:
+            db.rollback()
+            error_detail = str(commit_error)
+            error_trace = traceback.format_exc()
+            logger.error(f"Error committing update for mahasiswa {nim}: {error_detail}")
+            logger.error(f"Traceback: {error_trace}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Gagal menyimpan perubahan ke database: {error_detail}"
+            )
+        
+        # Return response dengan format yang aman
+        # Pastikan relationships tidak menyebabkan error serialization
+        try:
+            # Convert to dict untuk memastikan serialization aman
+            response_data = {
+                "nim": db_mahasiswa.nim,
+                "nama": db_mahasiswa.nama,
+                "program_studi": db_mahasiswa.program_studi,
+                "ipk": float(db_mahasiswa.ipk) if db_mahasiswa.ipk is not None else 0.0,
+                "sks": int(db_mahasiswa.sks) if db_mahasiswa.sks is not None else 0,
+                "persen_dek": float(db_mahasiswa.persen_dek) if db_mahasiswa.persen_dek is not None else 0.0,
+                "status_lulus_aktual": db_mahasiswa.status_lulus_aktual,
+                "tanggal_lulus": db_mahasiswa.tanggal_lulus.isoformat() if db_mahasiswa.tanggal_lulus else None,
+                "created_at": db_mahasiswa.created_at.isoformat() if db_mahasiswa.created_at else None,
+                "updated_at": db_mahasiswa.updated_at.isoformat() if db_mahasiswa.updated_at else None
+            }
+            
+            # Tambahkan relationships jika ada (opsional, untuk compatibility)
+            try:
+                if hasattr(db_mahasiswa, 'nilai_list') and db_mahasiswa.nilai_list:
+                    response_data["nilai_list"] = []
+                if hasattr(db_mahasiswa, 'klasifikasi') and db_mahasiswa.klasifikasi:
+                    response_data["klasifikasi"] = None  # Set to None untuk menghindari serialization error
+            except Exception as rel_serialize_error:
+                logger.warning(f"Error serializing relationships: {str(rel_serialize_error)}")
+                # Continue without relationships
+            
+            return response_data
+        except Exception as serialize_error:
+            logger.error(f"Error serializing response: {str(serialize_error)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            # Fallback: return basic data
+            return {
+                "nim": db_mahasiswa.nim,
+                "nama": db_mahasiswa.nama,
+                "program_studi": db_mahasiswa.program_studi,
+                "ipk": float(db_mahasiswa.ipk) if db_mahasiswa.ipk is not None else 0.0,
+                "sks": int(db_mahasiswa.sks) if db_mahasiswa.sks is not None else 0,
+                "persen_dek": float(db_mahasiswa.persen_dek) if db_mahasiswa.persen_dek is not None else 0.0,
+                "status_lulus_aktual": db_mahasiswa.status_lulus_aktual,
+                "created_at": db_mahasiswa.created_at.isoformat() if db_mahasiswa.created_at else None,
+                "updated_at": db_mahasiswa.updated_at.isoformat() if db_mahasiswa.updated_at else None
+            }
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404)
+        raise
+    except Exception as e:
+        # Rollback on any error
+        db.rollback()
+        error_message = f"Terjadi kesalahan saat mengupdate mahasiswa: {str(e)}"
+        error_trace = traceback.format_exc()
+        logger.error(f"Error updating mahasiswa {nim}: {error_message}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        logger.error(f"Traceback: {error_trace}")
+        raise HTTPException(status_code=500, detail=error_message)
 
 @router.delete("/{nim}")
 def delete_mahasiswa(nim: str, db: Session = Depends(get_db)):

@@ -1279,8 +1279,78 @@ $("#submitMahasiswaBtn").click(function(e) {
                         `Data mahasiswa ${formData.nama} (${formData.nim}) berhasil diupdate`,
                         "success"
                     );
-                    // Refresh grid
-                    $("#mahasiswaGrid").data("kendoGrid").dataSource.read();
+                    
+                    // Refresh grid dengan error handling dan update langsung
+                    try {
+                        const grid = $("#mahasiswaGrid").data("kendoGrid");
+                        if (!grid) {
+                            console.warn("⚠️ Grid not found, reloading page...");
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                            return;
+                        }
+                        
+                        if (!grid.dataSource) {
+                            console.warn("⚠️ Grid dataSource not found, reloading page...");
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                            return;
+                        }
+                        
+                        // Validasi response
+                        if (!response || !response.nim) {
+                            console.error("❌ Invalid response from server:", response);
+                            // Fallback: refresh dari server
+                            grid.dataSource.read();
+                            return;
+                        }
+                        
+                        // Update item langsung di dataSource jika ada
+                        const currentData = grid.dataSource.data();
+                        if (!currentData || !Array.isArray(currentData)) {
+                            console.warn("⚠️ Current data is not an array, refreshing from server");
+                            grid.dataSource.read();
+                            return;
+                        }
+                        
+                        const itemIndex = currentData.findIndex(function(item) {
+                            return item && item.nim === response.nim;
+                        });
+                        
+                        if (itemIndex !== -1) {
+                            // Update item yang sudah ada di dataSource
+                            console.log("🔄 Updating existing item in grid:", response.nim);
+                            try {
+                                // Update semua field dari response (skip relationships yang kompleks)
+                                const simpleFields = ['nim', 'nama', 'program_studi', 'ipk', 'sks', 'persen_dek', 'status_lulus_aktual', 'tanggal_lulus', 'created_at', 'updated_at'];
+                                simpleFields.forEach(function(key) {
+                                    if (response.hasOwnProperty(key)) {
+                                        currentData[itemIndex][key] = response[key];
+                                    }
+                                });
+                                // Refresh grid untuk menampilkan perubahan
+                                grid.refresh();
+                                console.log("✅ Grid item updated successfully");
+                            } catch (updateError) {
+                                console.error("❌ Error updating grid item:", updateError);
+                                // Fallback: refresh dari server
+                                grid.dataSource.read();
+                            }
+                        } else {
+                            // Item tidak ada di halaman saat ini, refresh dari server
+                            console.log("🔄 Item not in current page, refreshing from server");
+                            grid.dataSource.read();
+                        }
+                    } catch (refreshError) {
+                        console.error("❌ Error during grid refresh:", refreshError);
+                        console.error("Error details:", refreshError.message, refreshError.stack);
+                        // Fallback: reload page
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    }
                 },
                 error: function(xhr) {
                     console.error("🔧 ❌ Update gagal:", xhr);
