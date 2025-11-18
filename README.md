@@ -66,6 +66,12 @@ Lihat `docs/database/README_DATABASE_RESTORE.md` untuk instruksi restore data re
 - **[docs/evaluation/DOKUMENTASI_LENGKAP_EVALUASI_FIS.md](docs/evaluation/DOKUMENTASI_LENGKAP_EVALUASI_FIS.md)** - Dokumentasi lengkap evaluasi FIS: penjelasan metode, alur evaluasi, contoh hasil, dan analisis performa model FIS secara detail.
 - **[docs/evaluation/DOKUMENTASI_PERBANDINGAN_EVALUASI_SAW.md](docs/evaluation/DOKUMENTASI_PERBANDINGAN_EVALUASI_SAW.md)** - Dokumentasi lengkap perbandingan evaluasi SAW synthetic vs data aktual: teori, rumus, contoh, script Python, visualisasi, dan analisis gap.
 
+### 📖 Dokumentasi Alur Aplikasi
+- **[docs/FIS_CLASSIFICATION_FLOW.md](docs/FIS_CLASSIFICATION_FLOW.md)** - Dokumentasi lengkap alur klasifikasi FIS dari frontend hingga backend: diagram alur, function reference, contoh request/response, dan diagram sequence.
+- **[docs/SAW_CLASSIFICATION_FLOW.md](docs/SAW_CLASSIFICATION_FLOW.md)** - Dokumentasi lengkap alur klasifikasi SAW dari frontend hingga backend: diagram alur, function reference, contoh request/response, perhitungan normalisasi dan pembobotan, dan diagram sequence.
+- **[docs/SAW_ACTUAL_EVALUATION_FLOW.md](docs/SAW_ACTUAL_EVALUATION_FLOW.md)** - Dokumentasi lengkap alur evaluasi SAW dengan data aktual: diagram alur, function reference, contoh request/response, perhitungan metrics (accuracy, precision, recall, f1-score, specificity), dan diagram sequence.
+- **[docs/FIS_ACTUAL_EVALUATION_FLOW.md](docs/FIS_ACTUAL_EVALUATION_FLOW.md)** - Dokumentasi lengkap alur evaluasi FIS dengan data aktual: diagram alur, function reference, contoh request/response, perhitungan metrics, dan diagram sequence.
+
 ## 🔧 Teknologi yang Digunakan
 
 ### Backend
