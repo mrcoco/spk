@@ -22,21 +22,21 @@ $(document).ready(function() {
         // Tambahkan style ke head
         $('head').append(dashboardStyle);
 
-        // Inisialisasi Form FIS saat section FIS ditampilkan
-        // Ubah event handler untuk mendeteksi perubahan display
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.target.id === 'fisSection' && 
-                    mutation.target.style.display !== 'none') {
-                    initializeFISForm();
-                }
-            });
-        });
+        // HAPUS: Inisialisasi Form FIS sudah ditangani di fis.js
+        // Tidak perlu inisialisasi lagi di dashboard untuk menghindari duplikasi
+        // const observer = new MutationObserver(function(mutations) {
+        //     mutations.forEach(function(mutation) {
+        //         if (mutation.target.id === 'fisSection' && 
+        //             mutation.target.style.display !== 'none') {
+        //             initializeFISForm();
+        //         }
+        //     });
+        // });
 
-        observer.observe(document.getElementById('fisSection'), {
-            attributes: true,
-            attributeFilter: ['style']
-        });
+        // observer.observe(document.getElementById('fisSection'), {
+        //     attributes: true,
+        //     attributeFilter: ['style']
+        // });
     }).catch(error => {
         console.error('Failed to initialize dashboard:', error);
     });
@@ -889,7 +889,23 @@ function updateSAWStats(data) {
 }
 
 // Inisialisasi Form FIS
+// CATATAN: Fungsi ini sudah tidak digunakan karena inisialisasi FIS ditangani di fis.js
+// Fungsi ini tetap ada untuk kompatibilitas, tapi tidak akan membuat ComboBox jika sudah ada
 function initializeFISForm() {
+    // Cek apakah kita berada di halaman FIS (#fis)
+    // Jika ya, biarkan fis.js yang menangani
+    if (window.location.hash === '#fis') {
+        console.log('⚠️ initializeFISForm dipanggil di halaman FIS, skip (ditangani oleh fis.js)');
+        return;
+    }
+    
+    // Cek apakah ComboBox sudah ada (dibuat oleh fis.js)
+    var existingComboBox = $("#mahasiswaDropdown").data("kendoComboBox");
+    if (existingComboBox) {
+        console.log('⚠️ ComboBox sudah ada, skip initializeFISForm (ditangani oleh fis.js)');
+        return;
+    }
+    
     // Pastikan CONFIG tersedia
     if (typeof CONFIG === 'undefined') {
         console.error('❌ CONFIG tidak tersedia di initializeFISForm');
@@ -901,7 +917,7 @@ function initializeFISForm() {
         return;
     }
 
-    // Inisialisasi Dropdown Mahasiswa
+    // Inisialisasi Dropdown Mahasiswa (hanya jika belum ada)
     $("#mahasiswaDropdown").kendoComboBox({
         dataSource: {
             transport: {
@@ -940,6 +956,13 @@ function initializeFISForm() {
         valueTemplate: "#: nim #",
         placeholder: "Ketik minimal 3 karakter...",
         change: function(e) {
+            // Hanya aktif jika berada di halaman dashboard, bukan di halaman FIS
+            // Cek apakah kita berada di halaman FIS (#fis)
+            if (window.location.hash === '#fis') {
+                // Biarkan fis.js yang menangani
+                return;
+            }
+            
             var comboBox = this;
             var value = comboBox.value();
             var dataSource = comboBox.dataSource;
@@ -963,7 +986,14 @@ function initializeFISForm() {
     window.selectedMahasiswaDataDashboard = null;
 
     // Event handler untuk tombol Klasifikasi
-    $("#btnKlasifikasi").click(function() {
+    // Hanya aktif jika berada di halaman dashboard, bukan di halaman FIS
+    $("#btnKlasifikasi").off('click.dashboard').on('click.dashboard', function() {
+        // Cek apakah kita berada di halaman FIS (#fis)
+        if (window.location.hash === '#fis') {
+            // Biarkan fis.js yang menangani
+            return;
+        }
+        
         var dropdown = $("#mahasiswaDropdown").data("kendoComboBox");
         var selectedNim = dropdown.value();
         

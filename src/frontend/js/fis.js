@@ -1,16 +1,34 @@
 // Inisialisasi komponen FIS saat dokumen siap
 $(document).ready(function() {
-    initializeFISComponents();
-    initializeFISSearchHandlers();
+    // Pastikan hanya diinisialisasi sekali
+    if (!window.fisComponentsInitialized) {
+        initializeFISComponents();
+        initializeFISSearchHandlers();
+        window.fisComponentsInitialized = true;
+    }
 });
 
 function initializeFISComponents() {
+    // Cegah multiple initialization
+    if (window.fisComponentsInitializing) {
+        console.log('⚠️ FIS components sedang diinisialisasi, skip...');
+        return;
+    }
+    
+    window.fisComponentsInitializing = true;
     console.log('Initializing FIS components...');
-    initializeFISGrid();
-    initializeMahasiswaDropdown();
-    initializeButtons();
-    loadInitialFISBatchResults();
-    console.log('FIS components initialized successfully');
+    
+    try {
+        initializeFISGrid();
+        initializeMahasiswaDropdown();
+        initializeButtons();
+        loadInitialFISBatchResults();
+        console.log('✅ FIS components initialized successfully');
+    } catch (error) {
+        console.error('❌ Error initializing FIS components:', error);
+    } finally {
+        window.fisComponentsInitializing = false;
+    }
 }
 
 // Inisialisasi event handler untuk pencarian FIS
@@ -475,6 +493,13 @@ function loadFISGridData() {
 }
 
 function initializeMahasiswaDropdown() {
+    // Hapus ComboBox yang sudah ada untuk mencegah duplikasi
+    var existingComboBox = $("#mahasiswaDropdown").data("kendoComboBox");
+    if (existingComboBox) {
+        console.log('⚠️ ComboBox sudah ada, menghapus yang lama...');
+        existingComboBox.destroy();
+    }
+    
     $("#mahasiswaDropdown").kendoComboBox({
         dataSource: {
             transport: {
@@ -530,21 +555,112 @@ function initializeMahasiswaDropdown() {
         },
         select: function(e) {
             var dataItem = e.dataItem;
-            if (dataItem) {
+            if (dataItem && dataItem.nim) {
                 window.selectedMahasiswaData = dataItem;
                 window.selectedNimFIS = dataItem.nim;
                 $("#btnKlasifikasi").attr('data-nim', dataItem.nim);
-                console.log('Selected NIM from select event stored in button dataset:', dataItem.nim);
+                console.log('✅ Selected NIM from select event stored:', dataItem.nim);
+            } else {
+                // Fallback: ambil dari value jika dataItem tidak ada
+                var value = e.sender.value();
+                if (value) {
+                    window.selectedNimFIS = value;
+                    $("#btnKlasifikasi").attr('data-nim', value);
+                    console.log('✅ Selected NIM from dropdown value (fallback):', value);
+                }
+            }
+        },
+        change: function(e) {
+            // Handle change event untuk memastikan NIM ter-update
+            var dropdown = e.sender;
+            var value = dropdown.value();
+            var dataItem = dropdown.dataItem();
+            
+            if (dataItem && dataItem.nim) {
+                window.selectedMahasiswaData = dataItem;
+                window.selectedNimFIS = dataItem.nim;
+                $("#btnKlasifikasi").attr('data-nim', dataItem.nim);
+                console.log('✅ NIM updated from change event (dataItem):', dataItem.nim);
+            } else if (value && value.trim() !== '') {
+                // Cari dataItem dari dataSource berdasarkan value
+                var dataSource = dropdown.dataSource;
+                if (dataSource) {
+                    var foundItem = dataSource.data().find(function(item) {
+                        return item && (item.nim === value || item.nim === value.toString());
+                    });
+                    if (foundItem) {
+                        window.selectedMahasiswaData = foundItem;
+                        window.selectedNimFIS = foundItem.nim;
+                        $("#btnKlasifikasi").attr('data-nim', foundItem.nim);
+                        console.log('✅ NIM updated from change event (found in dataSource):', foundItem.nim);
+                    } else {
+                        window.selectedNimFIS = value;
+                        $("#btnKlasifikasi").attr('data-nim', value);
+                        console.log('✅ NIM updated from change event (value only):', value);
+                    }
+                } else {
+                    window.selectedNimFIS = value;
+                    $("#btnKlasifikasi").attr('data-nim', value);
+                    console.log('✅ NIM updated from change event (value, no dataSource):', value);
+                }
+            } else {
+                // Clear jika value kosong
+                window.selectedMahasiswaData = null;
+                window.selectedNimFIS = null;
+                $("#btnKlasifikasi").removeAttr('data-nim');
+                console.log('⚠️ NIM cleared from change event (empty value)');
             }
         },
         dataBound: function(e) {
             console.log('Dropdown dataBound event - data items:', e.sender.dataSource.data());
+            // Pastikan NIM tersimpan jika ada value yang sudah terpilih
+            var dropdown = e.sender;
+            var value = dropdown.value();
+            if (value) {
+                var dataItem = dropdown.dataItem();
+                if (dataItem && dataItem.nim) {
+                    window.selectedMahasiswaData = dataItem;
+                    window.selectedNimFIS = dataItem.nim;
+                    $("#btnKlasifikasi").attr('data-nim', dataItem.nim);
+                    console.log('✅ NIM synced from dataBound event:', dataItem.nim);
+                }
+            }
         },
         open: function(e) {
             console.log('Dropdown open event');
         },
         close: function(e) {
             console.log('Dropdown close event');
+            // Pastikan NIM tersimpan saat dropdown ditutup
+            var dropdown = e.sender;
+            var value = dropdown.value();
+            if (value) {
+                var dataItem = dropdown.dataItem();
+                if (dataItem && dataItem.nim) {
+                    window.selectedMahasiswaData = dataItem;
+                    window.selectedNimFIS = dataItem.nim;
+                    $("#btnKlasifikasi").attr('data-nim', dataItem.nim);
+                    console.log('✅ NIM synced from close event:', dataItem.nim);
+                } else if (value) {
+                    // Cari dari dataSource
+                    var dataSource = dropdown.dataSource;
+                    if (dataSource) {
+                        var foundItem = dataSource.data().find(function(item) {
+                            return item && (item.nim === value || item.nim === value.toString());
+                        });
+                        if (foundItem) {
+                            window.selectedMahasiswaData = foundItem;
+                            window.selectedNimFIS = foundItem.nim;
+                            $("#btnKlasifikasi").attr('data-nim', foundItem.nim);
+                            console.log('✅ NIM synced from close event (found in dataSource):', foundItem.nim);
+                        } else {
+                            window.selectedNimFIS = value;
+                            $("#btnKlasifikasi").attr('data-nim', value);
+                            console.log('✅ NIM synced from close event (value only):', value);
+                        }
+                    }
+                }
+            }
         }
     });
     window.selectedMahasiswaData = null;
@@ -567,20 +683,105 @@ function initializeMahasiswaDropdown() {
 function initializeButtons() {
     console.log('Initializing FIS buttons...');
     
+    // Hapus event handler yang sudah ada untuk mencegah duplikasi
+    $("#btnKlasifikasi").off('click.fis');
+    
     // Event handler untuk tombol klasifikasi single
-    $("#btnKlasifikasi").click(function() {
-        console.log('Button klasifikasi clicked!');
-        var finalNim = $(this).attr('data-nim');
-        console.log('NIM from button dataset:', finalNim);
+    $("#btnKlasifikasi").on('click.fis', function() {
+        console.log('🔵 Button klasifikasi clicked!');
+        
+        // Coba ambil NIM dari beberapa sumber (prioritas)
+        var finalNim = null;
+        var dropdown = $("#mahasiswaDropdown").data("kendoComboBox");
+        
+        // 1. Coba dari button data-nim attribute
+        finalNim = $(this).attr('data-nim');
+        console.log('📍 NIM from button dataset:', finalNim);
+        
+        // 2. Jika tidak ada, coba dari dropdown value
         if (!finalNim || finalNim.trim() === '') {
+            if (dropdown) {
+                finalNim = dropdown.value();
+                console.log('📍 NIM from dropdown value:', finalNim);
+                
+                // Jika ada value, coba ambil dataItem untuk validasi
+                if (finalNim && finalNim.trim() !== '') {
+                    var dataItem = dropdown.dataItem();
+                    if (dataItem && dataItem.nim) {
+                        // Pastikan NIM dari dataItem sesuai dengan value
+                        finalNim = dataItem.nim;
+                        console.log('📍 NIM from dropdown dataItem:', finalNim);
+                        // Update button data-nim untuk konsistensi
+                        $("#btnKlasifikasi").attr('data-nim', finalNim);
+                        window.selectedNimFIS = finalNim;
+                        window.selectedMahasiswaData = dataItem;
+                    } else {
+                        // Cari dari dataSource
+                        var dataSource = dropdown.dataSource;
+                        if (dataSource) {
+                            var foundItem = dataSource.data().find(function(item) {
+                                return item && (item.nim === finalNim || item.nim === finalNim.toString());
+                            });
+                            if (foundItem) {
+                                finalNim = foundItem.nim;
+                                console.log('📍 NIM from dataSource search:', finalNim);
+                                $("#btnKlasifikasi").attr('data-nim', finalNim);
+                                window.selectedNimFIS = finalNim;
+                                window.selectedMahasiswaData = foundItem;
+                            } else {
+                                // Gunakan value langsung
+                                console.log('📍 Using NIM from value directly:', finalNim);
+                                $("#btnKlasifikasi").attr('data-nim', finalNim);
+                                window.selectedNimFIS = finalNim;
+                            }
+                        } else {
+                            // Gunakan value langsung jika tidak ada dataSource
+                            console.log('📍 Using NIM from value (no dataSource):', finalNim);
+                            $("#btnKlasifikasi").attr('data-nim', finalNim);
+                            window.selectedNimFIS = finalNim;
+                        }
+                    }
+                } else {
+                    // Value kosong, coba dari dataItem langsung
+                    var dataItem = dropdown.dataItem();
+                    if (dataItem && dataItem.nim) {
+                        finalNim = dataItem.nim;
+                        console.log('📍 NIM from dropdown dataItem (value empty):', finalNim);
+                        $("#btnKlasifikasi").attr('data-nim', finalNim);
+                        window.selectedNimFIS = finalNim;
+                        window.selectedMahasiswaData = dataItem;
+                    }
+                }
+            }
+        } else {
+            // Jika sudah ada dari button dataset, pastikan juga tersimpan di window
+            window.selectedNimFIS = finalNim;
+        }
+        
+        // 3. Coba dari window.selectedNimFIS (fallback terakhir)
+        if (!finalNim || finalNim.trim() === '') {
+            if (window.selectedNimFIS) {
+                finalNim = window.selectedNimFIS;
+                console.log('📍 NIM from window.selectedNimFIS (fallback):', finalNim);
+                $("#btnKlasifikasi").attr('data-nim', finalNim);
+            }
+        }
+        
+        // Validasi akhir - pastikan NIM valid
+        if (!finalNim || finalNim.trim() === '' || finalNim === 'undefined' || finalNim === 'null') {
+            console.error('❌ NIM tidak valid:', finalNim);
             showNotification(
                 "warning",
                 "Peringatan",
                 "Silakan pilih mahasiswa dari daftar terlebih dahulu"
             );
-            $("#mahasiswaDropdown").data("kendoComboBox").focus();
+            if (dropdown) {
+                dropdown.focus();
+            }
             return;
         }
+        
+        console.log('✅ Final NIM to use:', finalNim);
 
         // Tampilkan loading
         kendo.ui.progress($("#fisSection"), true);
