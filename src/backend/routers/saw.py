@@ -90,6 +90,7 @@ def calculate_saw_individual(nim: str, db: Session = Depends(get_db)):
         return {
             "nim": nim,
             "nama": mahasiswa.nama,
+            "program_studi": mahasiswa.program_studi,
             "ipk": mahasiswa.ipk,
             "sks": mahasiswa.sks,
             "persen_dek": mahasiswa.persen_dek,
